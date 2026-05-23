@@ -139,16 +139,46 @@ Bressloff's V1 form-constant model interactive and inspectable.
 
 ## Sources
 
+- Bressloff, P. C., J. D. Cowan, M. Golubitsky, P. J. Thomas, and M. C.
+  Wiener. "Geometric Visual Hallucinations, Euclidean Symmetry and the
+  Functional Architecture of Striate Cortex." *Philosophical Transactions of
+  the Royal Society B* 356, no. 1407 (2001): 299-330.
+  <https://doi.org/10.1098/rstb.2000.0769>
 - Bressloff, P. C., J. D. Cowan, M. Golubitsky, P. J. Thomas, and M. C. Wiener.
   "What Geometric Visual Hallucinations Tell Us About the Visual Cortex."
   *Neural Computation* 14, no. 3 (2002): 473-491.
   <https://doi.org/10.1162/089976602317250861>
+  Public PDF mirror: <https://gwern.net/doc/psychology/vision/2002-bressloff.pdf>
+- Bressloff, P. C. "Spatiotemporal Dynamics of Continuum Neural Fields."
+  *Journal of Physics A: Mathematical and Theoretical* 45, no. 3 (2012):
+  033001. <https://doi.org/10.1088/1751-8113/45/3/033001>
+  Note: search indexes an old Utah PDF path for this review, but direct requests
+  currently return 404, so the DOI/IOP landing page is the stable public link.
 - Ermentrout, G. B., and J. D. Cowan. "A Mathematical Theory of Visual
   Hallucination Patterns." *Biological Cybernetics* 34 (1979): 137-150.
   <https://doi.org/10.1007/BF00336965>
 - Rule, M., M. Stoffregen, and B. Ermentrout. "A Model for the Origin and
   Properties of Flicker-Induced Geometric Phosphenes." *PLOS Computational
   Biology* 7, no. 9 (2011). <https://doi.org/10.1371/journal.pcbi.1002158>
+- Amaya, I. A., N. Behrens, D. J. Schwartzman, T. Hewitt, and T. T. Schmidt.
+  "Effect of Frequency and Rhythmicity on Flicker Light-Induced Hallucinatory
+  Phenomena." *PLOS ONE* 18, no. 4 (2023).
+  <https://doi.org/10.1371/journal.pone.0284271>
+- Hewitt, T., I. Amaya, R. Beaute, A. K. Seth, T. T. Schmidt, and D. J.
+  Schwartzman. "Stroboscopically Induced Visual Hallucinations: Historical,
+  Phenomenological, and Neurobiological Perspectives." *Neuroscience of
+  Consciousness* (2025). <https://doi.org/10.1093/nc/niaf020>
+- Hewitt, T., E. J. Grove, A. Seth, and D. J. Schwartzman. "Image Recreation
+  Methods Enable Quantitative Characterization of Geometric Visual
+  Hallucinations." PsyArXiv preprint (2026).
+  <https://doi.org/10.31234/osf.io/2gtsy_v1>
+  Interactive visualization: <https://imagerecreationdataviz.netlify.app/>
+- CountYourCulture. "Form Constants and the Visual Cortex."
+  <https://isomerdesign.com/countyourculture/2011/03/13/form-constants-visual-cortex/>
+- CountYourCulture. "Form Constant Visualization - Type I."
+  <https://isomerdesign.com/countyourculture/2011/03/16/form-constant-visualization-type-1/>
+- Qualia Research Institute. "Oscilleditor Reference Manual."
+  <https://qri.org/oscilleditor/doc/reference-manual>
 - karacsm. "V1-sim." GitHub repository.
   <https://github.com/karacsm/V1-sim>
 
