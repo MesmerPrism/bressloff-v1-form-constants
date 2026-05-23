@@ -47,7 +47,9 @@ rhombic, and honeycomb families.
 `Paper preset` loads named starting points for the paper's stability and
 double-map figures. The Rust payload carries the preset metadata and a
 calibration report, so the readout can distinguish the rendered planform from
-the branch selected by the amplitude-equation approximation.
+the same-lattice branch selected by the amplitude-equation approximation. The
+payload also keeps the global cross-lattice score winner as a diagnostic field;
+that number is useful for debugging but is not the paper-figure branch answer.
 
 Generate or refresh the frame payload:
 

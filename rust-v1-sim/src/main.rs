@@ -529,6 +529,10 @@ struct CalibrationReport {
     rendered_pattern: &'static str,
     selected_family: &'static str,
     selected_pattern: &'static str,
+    selected_scope: &'static str,
+    global_selected_family: &'static str,
+    global_selected_pattern: &'static str,
+    target_lattice: &'static str,
     critical_q: f64,
     critical_branch: &'static str,
     dominant_cycles: f32,
@@ -551,6 +555,10 @@ struct CalibrationRun {
     rendered_pattern: &'static str,
     selected_family: &'static str,
     selected_pattern: &'static str,
+    selected_scope: &'static str,
+    global_selected_family: &'static str,
+    global_selected_pattern: &'static str,
+    target_lattice: &'static str,
     critical_q: f64,
     critical_branch: &'static str,
     dominant_cycles: f32,
@@ -627,8 +635,14 @@ struct BranchSelectionDetails {
     gamma_rhombic: f64,
     gamma_hex: f64,
     eta_hex: f64,
+    target_lattice: &'static str,
+    selected_scope: &'static str,
     selected_family: &'static str,
     selected_pattern: &'static str,
+    selected_lattice_stable: bool,
+    global_selected_family: &'static str,
+    global_selected_pattern: &'static str,
+    global_selected_stable: bool,
     candidates: Vec<BranchCandidate>,
 }
 
@@ -837,6 +851,10 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
             rendered_pattern: calibration.rendered_pattern,
             selected_family: calibration.selected_family,
             selected_pattern: calibration.selected_pattern,
+            selected_scope: calibration.selected_scope,
+            global_selected_family: calibration.global_selected_family,
+            global_selected_pattern: calibration.global_selected_pattern,
+            target_lattice: calibration.target_lattice,
             critical_q: calibration.critical_q,
             critical_branch: calibration.critical_branch,
             dominant_cycles: calibration.dominant_cycles,
@@ -849,7 +867,7 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
     }
     let run_count = runs.len();
     let body = serde_json::json!({
-        "format": "bressloff-paper-calibration-v1",
+        "format": "bressloff-paper-calibration-v2",
         "runs": runs,
     });
     fs::write(&out, serde_json::to_vec_pretty(&body)?)?;
@@ -1618,6 +1636,8 @@ fn calibration_report(
     let rendered_family = pattern_family(rendered_pattern);
     let selected_family = planform.branch_selection.selected_family;
     let selected_pattern = planform.branch_selection.selected_pattern;
+    let global_selected_family = planform.branch_selection.global_selected_family;
+    let global_selected_pattern = planform.branch_selection.global_selected_pattern;
     let mut checks = Vec::new();
 
     checks.push(CalibrationCheck {
@@ -1635,11 +1655,20 @@ fn calibration_report(
             passed: rendered_pattern.as_str() == preset.expected_pattern,
         });
         checks.push(CalibrationCheck {
-            name: "branch-selector-pattern",
+            name: "same-lattice-branch-pattern",
             expected: preset.expected_pattern,
             actual: selected_pattern.to_string(),
             passed: selected_pattern == preset.expected_pattern,
         });
+
+        if selected_pattern != global_selected_pattern {
+            checks.push(CalibrationCheck {
+                name: "global-score-pattern",
+                expected: selected_pattern,
+                actual: global_selected_pattern.to_string(),
+                passed: false,
+            });
+        }
     }
 
     if preset.expected_family != "branch-selected" {
@@ -1650,11 +1679,20 @@ fn calibration_report(
             passed: rendered_family == preset.expected_family,
         });
         checks.push(CalibrationCheck {
-            name: "branch-selector-family",
+            name: "same-lattice-branch-family",
             expected: preset.expected_family,
             actual: selected_family.to_string(),
             passed: selected_family == preset.expected_family,
         });
+
+        if selected_family != global_selected_family {
+            checks.push(CalibrationCheck {
+                name: "global-score-family",
+                expected: selected_family,
+                actual: global_selected_family.to_string(),
+                passed: false,
+            });
+        }
     }
 
     let status = if checks.iter().all(|check| check.passed) {
@@ -1670,6 +1708,10 @@ fn calibration_report(
         rendered_pattern: rendered_pattern.as_str(),
         selected_family,
         selected_pattern,
+        selected_scope: planform.branch_selection.selected_scope,
+        global_selected_family,
+        global_selected_pattern,
+        target_lattice: planform.branch_selection.target_lattice,
         critical_q: planform.stability.critical_q,
         critical_branch: planform.stability.critical_branch,
         dominant_cycles: metrics.dominant_cycles,
@@ -1943,7 +1985,17 @@ fn branch_selection_for(params: FrameParams, q: f64, growth: f64) -> BranchSelec
             .cmp(&a.stable)
             .then_with(|| b.score.total_cmp(&a.score))
     });
-    let selected = candidates.first().copied().unwrap_or(roll);
+    let global_selected = candidates.first().copied().unwrap_or(roll);
+    let target_lattice = branch_target_lattice(params.pattern);
+    let (selected, selected_scope, selected_lattice_stable) = select_lattice_branch(
+        &candidates,
+        target_lattice,
+        gamma0,
+        gamma_square,
+        gamma_rhombic,
+        gamma_hex,
+        global_selected,
+    );
 
     BranchSelectionDetails {
         model: "cubic-amplitude-equation",
@@ -1953,9 +2005,104 @@ fn branch_selection_for(params: FrameParams, q: f64, growth: f64) -> BranchSelec
         gamma_rhombic,
         gamma_hex,
         eta_hex,
+        target_lattice,
+        selected_scope,
         selected_family: selected.family,
         selected_pattern: selected.pattern,
+        selected_lattice_stable,
+        global_selected_family: global_selected.family,
+        global_selected_pattern: global_selected.pattern,
+        global_selected_stable: global_selected.stable,
         candidates,
+    }
+}
+
+fn branch_target_lattice(pattern: PatternPreset) -> &'static str {
+    match pattern {
+        PatternPreset::Auto => "global",
+        PatternPreset::Cobweb => "square",
+        PatternPreset::Rhombic => "rhombic",
+        PatternPreset::Honeycomb | PatternPreset::HexPi => "hexagonal",
+        PatternPreset::Rings | PatternPreset::Rays | PatternPreset::Spiral => "roll",
+    }
+}
+
+fn select_lattice_branch(
+    candidates: &[BranchCandidate],
+    target_lattice: &'static str,
+    gamma0: f64,
+    gamma_square: f64,
+    gamma_rhombic: f64,
+    gamma_hex: f64,
+    global_selected: BranchCandidate,
+) -> (BranchCandidate, &'static str, bool) {
+    if target_lattice == "global" {
+        return (global_selected, "global", global_selected.stable);
+    }
+
+    let mut scoped: Vec<(BranchCandidate, bool)> = candidates
+        .iter()
+        .copied()
+        .filter(|candidate| candidate_in_lattice(*candidate, target_lattice))
+        .map(|candidate| {
+            let stable = lattice_local_stable(
+                candidate,
+                target_lattice,
+                gamma0,
+                gamma_square,
+                gamma_rhombic,
+                gamma_hex,
+            );
+            (candidate, stable)
+        })
+        .collect();
+
+    scoped.sort_by(|(a, a_stable), (b, b_stable)| {
+        b_stable
+            .cmp(a_stable)
+            .then_with(|| b.score.total_cmp(&a.score))
+    });
+
+    scoped
+        .first()
+        .copied()
+        .map(|(candidate, stable)| (candidate, "lattice-local", stable))
+        .unwrap_or((global_selected, "global-fallback", global_selected.stable))
+}
+
+fn candidate_in_lattice(candidate: BranchCandidate, target_lattice: &str) -> bool {
+    match target_lattice {
+        "roll" => candidate.family == "roll",
+        "square" => candidate.family == "square" || candidate.family == "roll",
+        "rhombic" => candidate.family == "rhombic" || candidate.family == "roll",
+        "hexagonal" => candidate.family == "hexagonal" || candidate.family == "roll",
+        _ => true,
+    }
+}
+
+fn lattice_local_stable(
+    candidate: BranchCandidate,
+    target_lattice: &str,
+    gamma0: f64,
+    gamma_square: f64,
+    gamma_rhombic: f64,
+    gamma_hex: f64,
+) -> bool {
+    if candidate.family == "roll" {
+        return match target_lattice {
+            "square" => gamma0 > 0.0 && 2.0 * gamma_square > gamma0,
+            "rhombic" => gamma0 > 0.0 && 2.0 * gamma_rhombic > gamma0,
+            "hexagonal" => gamma0 > 0.0 && 2.0 * gamma_hex > gamma0,
+            "roll" => gamma0 > 0.0,
+            _ => candidate.stable,
+        };
+    }
+
+    match candidate.family {
+        "square" => gamma_square > 0.0 && 2.0 * gamma_square < gamma0,
+        "rhombic" => gamma_rhombic > 0.0 && 2.0 * gamma_rhombic < gamma0,
+        "hexagonal" => candidate.stable,
+        _ => candidate.stable,
     }
 }
 

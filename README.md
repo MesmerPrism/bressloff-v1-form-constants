@@ -123,6 +123,8 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
   the implemented formulas, normalizations, and remaining fidelity targets.
 - [`viewer/BRESSLOFF_FIDELITY.md`](viewer/BRESSLOFF_FIDELITY.md) is the current
   fidelity checklist.
+- [`viewer/PAPER_FIGURE_COMPARISON.md`](viewer/PAPER_FIGURE_COMPARISON.md)
+  tracks the named paper figure presets and public comparison rules.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.
 
 ## Public Article

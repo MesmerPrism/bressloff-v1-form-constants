@@ -14,3 +14,12 @@ can become large. Example:
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe export --paper-preset fig31_square_even --export-orientations --out reports\fig31-square-even-orientation.json
 ```
+
+The calibration report distinguishes three levels:
+
+- `rendered_pattern`: the explicit planform drawn by the preset.
+- `selected_family` / `selected_pattern`: the same-lattice amplitude-equation
+  branch choice for that preset.
+- `global_selected_family` / `global_selected_pattern`: a diagnostic cross-lattice
+  score winner. This is useful for debugging but should not be read as the paper
+  figure's branch-selection result.

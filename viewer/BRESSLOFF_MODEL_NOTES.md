@@ -22,6 +22,10 @@ about the visual cortex".
 - Cubic amplitude equations: `branch_selection_for` evaluates `Gamma3(theta)` and
   the even hexagonal `Gamma2` integral numerically from the current eigenfunction,
   then reports roll, square/cobweb, rhombic, and hexagonal branches.
+- Lattice-local selection: named square, rhombic, and hexagonal paper presets now
+  read the amplitude-equation result inside the preset's lattice family. A
+  separate global score is still exported as a diagnostic, but it is not used as
+  the paper-figure branch answer.
 - Paper presets: the Rust model exposes starting points for the marginal-stability
   examples and the double-map planform figures. These set the branch family,
   parity, lateral spread, and scan resolution; they are not final calibrated
@@ -30,7 +34,8 @@ about the visual cortex".
   `frame,row,col,orientation` tensor with the same angular channels used by the
   model or analytic planform.
 - Calibration reports: each named paper preset records expected parity/family
-  checks against the rendered planform and the current branch selector.
+  checks against the rendered planform, the same-lattice branch selector, and the
+  global score winner.
 
 ## Current Normalizations
 
@@ -42,6 +47,13 @@ about the visual cortex".
 - The nonlinear constants multiplying `Gamma2` and `Gamma3` are normalized to one
   for visualization. The signs and relative values come from the eigenfunction,
   but absolute amplitudes should not be interpreted physiologically yet.
+- The current square presets therefore have a useful split reading: the analytic
+  target renders as cobweb/square, while the same-lattice stability calculation
+  selects the roll/spiral branch. The earlier honeycomb mismatch is retained only
+  as a global cross-lattice diagnostic.
+- The hexagonal preset renders `hex_pi`, but the current sign convention for the
+  even quadratic term selects its honeycomb phase partner. That is now tracked as
+  a phase-selection calibration target rather than a family failure.
 
 ## Next Fidelity Targets
 

@@ -612,7 +612,15 @@ function updateStats() {
     const branch = meta.planform.branch_selection;
     const candidate = branch?.candidates?.[0];
     const amplitude = candidate ? `, A ${shortNumber(candidate.amplitude, 2)}` : "";
-    els.stability.textContent = `q* ${shortNumber(stability.critical_q, 2)}, ${stability.critical_branch}, G ${shortNumber(stability.critical_growth, 3)}, ${branch?.selected_family || "-"}${amplitude}`;
+    const scope =
+      branch?.target_lattice && branch.target_lattice !== "global"
+        ? `${branch.target_lattice} ${branch.selected_scope}`
+        : branch?.selected_scope || "global";
+    const global =
+      branch?.global_selected_family && branch.global_selected_family !== branch.selected_family
+        ? `, global ${branch.global_selected_family}`
+        : "";
+    els.stability.textContent = `q* ${shortNumber(stability.critical_q, 2)}, ${stability.critical_branch}, G ${shortNumber(stability.critical_growth, 3)}, ${scope}: ${branch?.selected_family || "-"}${global}${amplitude}`;
   } else {
     els.stability.textContent = "No stability scan";
   }
@@ -623,7 +631,7 @@ function updateStats() {
       .map((check) => `${check.name}: ${check.actual}`)
       .join("; ");
     const suffix = failed ? `, review ${failed}` : "";
-    els.calibration.textContent = `${meta.calibration.preset.paper_figure}: ${meta.calibration.status}, rendered ${meta.calibration.rendered_pattern}, branch ${meta.calibration.selected_family}${suffix}`;
+    els.calibration.textContent = `${meta.calibration.preset.paper_figure}: ${meta.calibration.status}, rendered ${meta.calibration.rendered_pattern}, ${meta.calibration.target_lattice} branch ${meta.calibration.selected_family}${suffix}`;
   } else {
     els.calibration.textContent = "No paper preset selected";
   }

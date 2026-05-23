@@ -32,6 +32,8 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
   - computes the even hexagonal `Gamma2` term
   - reports roll, square/cobweb, rhombic, and hexagonal candidates with amplitude
     and stability flags
+  - separates the lattice-local selection used for named figure presets from the
+    global cross-lattice score comparison
 - `Auto branch` planform preset that uses the amplitude-equation selector to
   choose the rendered planform family.
 - `Auto branch` now also adopts the critical parity selected by the stability
@@ -42,7 +44,8 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 - Optional orientation-channel payload export with
   `frame,row,col,orientation` ordering.
 - `calibrate` command that writes a JSON side-by-side report comparing each
-  named preset's expected family with the rendered planform and branch selector.
+  named preset's expected family with the rendered planform, same-lattice branch
+  selection, and global score winner.
 
 ## Approximate
 
@@ -54,6 +57,12 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 - Branch selection now follows the cubic amplitude-equation coefficient structure,
   but the bifurcation distance and nonlinear sigmoid constants are normalized
   rather than fit to a biological parameter set.
+- The square/cobweb paper presets intentionally render their target planforms.
+  The same-lattice branch readout currently selects a roll/spiral branch, matching
+  the known instability issue better than the earlier honeycomb-like global
+  comparison.
+- The hex-pi preset renders the requested phase variant, while the current
+  quadratic-term sign selects the honeycomb phase partner.
 
 ## Still Missing
 
@@ -62,4 +71,6 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 - Efficient compact-basis export for orientation channels when the full tensor is
   too large.
 - Dynamics-to-contour overlay from simulated orientation channels.
-- Side-by-side figure comparison panels for named figures from the paper.
+- Public side-by-side figure comparison panels with generated animations and
+  original-paper figure links. Direct reproduction of paper figures needs
+  permission or a confirmed compatible license.

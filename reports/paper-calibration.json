@@ -1,5 +1,5 @@
 {
-  "format": "bressloff-paper-calibration-v1",
+  "format": "bressloff-paper-calibration-v2",
   "runs": [
     {
       "checks": [
@@ -13,6 +13,8 @@
       "critical_branch": "odd",
       "critical_q": 1.0279527559055117,
       "dominant_cycles": 40.79215621948242,
+      "global_selected_family": "rhombic",
+      "global_selected_pattern": "rhombic",
       "preset": {
         "expected_family": "branch-selected",
         "expected_kind": "linear-stability",
@@ -28,7 +30,9 @@
       "rendered_pattern": "rhombic",
       "selected_family": "rhombic",
       "selected_pattern": "rhombic",
-      "status": "pass"
+      "selected_scope": "global",
+      "status": "pass",
+      "target_lattice": "global"
     },
     {
       "checks": [
@@ -42,6 +46,8 @@
       "critical_branch": "even",
       "critical_q": 1.000787401574803,
       "dominant_cycles": 10.0,
+      "global_selected_family": "rhombic",
+      "global_selected_pattern": "rhombic",
       "preset": {
         "expected_family": "branch-selected",
         "expected_kind": "linear-stability",
@@ -57,7 +63,9 @@
       "rendered_pattern": "rhombic",
       "selected_family": "rhombic",
       "selected_pattern": "rhombic",
-      "status": "pass"
+      "selected_scope": "global",
+      "status": "pass",
+      "target_lattice": "global"
     },
     {
       "checks": [
@@ -74,9 +82,15 @@
           "passed": true
         },
         {
-          "actual": "honeycomb",
+          "actual": "spiral",
           "expected": "cobweb",
-          "name": "branch-selector-pattern",
+          "name": "same-lattice-branch-pattern",
+          "passed": false
+        },
+        {
+          "actual": "honeycomb",
+          "expected": "spiral",
+          "name": "global-score-pattern",
           "passed": false
         },
         {
@@ -86,15 +100,23 @@
           "passed": true
         },
         {
-          "actual": "hexagonal",
+          "actual": "roll",
           "expected": "square",
-          "name": "branch-selector-family",
+          "name": "same-lattice-branch-family",
+          "passed": false
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "roll",
+          "name": "global-score-family",
           "passed": false
         }
       ],
       "critical_branch": "even",
       "critical_q": 1.44746835443038,
       "dominant_cycles": 16.970561981201172,
+      "global_selected_family": "hexagonal",
+      "global_selected_pattern": "honeycomb",
       "preset": {
         "expected_family": "square",
         "expected_kind": "double-map-planform",
@@ -108,9 +130,11 @@
       },
       "rendered_parity": "even",
       "rendered_pattern": "cobweb",
-      "selected_family": "hexagonal",
-      "selected_pattern": "honeycomb",
-      "status": "review"
+      "selected_family": "roll",
+      "selected_pattern": "spiral",
+      "selected_scope": "lattice-local",
+      "status": "review",
+      "target_lattice": "square"
     },
     {
       "checks": [
@@ -127,9 +151,15 @@
           "passed": true
         },
         {
-          "actual": "honeycomb",
+          "actual": "spiral",
           "expected": "cobweb",
-          "name": "branch-selector-pattern",
+          "name": "same-lattice-branch-pattern",
+          "passed": false
+        },
+        {
+          "actual": "honeycomb",
+          "expected": "spiral",
+          "name": "global-score-pattern",
           "passed": false
         },
         {
@@ -139,15 +169,23 @@
           "passed": true
         },
         {
-          "actual": "hexagonal",
+          "actual": "roll",
           "expected": "square",
-          "name": "branch-selector-family",
+          "name": "same-lattice-branch-family",
+          "passed": false
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "roll",
+          "name": "global-score-family",
           "passed": false
         }
       ],
       "critical_branch": "odd",
       "critical_q": 1.5784810126582278,
       "dominant_cycles": 16.970561981201172,
+      "global_selected_family": "hexagonal",
+      "global_selected_pattern": "honeycomb",
       "preset": {
         "expected_family": "square",
         "expected_kind": "double-map-planform",
@@ -161,9 +199,11 @@
       },
       "rendered_parity": "odd",
       "rendered_pattern": "cobweb",
-      "selected_family": "hexagonal",
-      "selected_pattern": "honeycomb",
-      "status": "review"
+      "selected_family": "roll",
+      "selected_pattern": "spiral",
+      "selected_scope": "lattice-local",
+      "status": "review",
+      "target_lattice": "square"
     },
     {
       "checks": [
@@ -182,7 +222,7 @@
         {
           "actual": "rhombic",
           "expected": "rhombic",
-          "name": "branch-selector-pattern",
+          "name": "same-lattice-branch-pattern",
           "passed": true
         },
         {
@@ -194,13 +234,15 @@
         {
           "actual": "rhombic",
           "expected": "rhombic",
-          "name": "branch-selector-family",
+          "name": "same-lattice-branch-family",
           "passed": true
         }
       ],
       "critical_branch": "even",
       "critical_q": 1.44746835443038,
       "dominant_cycles": 14.422204971313477,
+      "global_selected_family": "rhombic",
+      "global_selected_pattern": "rhombic",
       "preset": {
         "expected_family": "rhombic",
         "expected_kind": "double-map-planform",
@@ -216,7 +258,9 @@
       "rendered_pattern": "rhombic",
       "selected_family": "rhombic",
       "selected_pattern": "rhombic",
-      "status": "pass"
+      "selected_scope": "lattice-local",
+      "status": "pass",
+      "target_lattice": "rhombic"
     },
     {
       "checks": [
@@ -235,7 +279,7 @@
         {
           "actual": "honeycomb",
           "expected": "hex_pi",
-          "name": "branch-selector-pattern",
+          "name": "same-lattice-branch-pattern",
           "passed": false
         },
         {
@@ -247,13 +291,15 @@
         {
           "actual": "hexagonal",
           "expected": "hexagonal",
-          "name": "branch-selector-family",
+          "name": "same-lattice-branch-family",
           "passed": true
         }
       ],
       "critical_branch": "even",
       "critical_q": 1.44746835443038,
       "dominant_cycles": 31.890438079833984,
+      "global_selected_family": "hexagonal",
+      "global_selected_pattern": "honeycomb",
       "preset": {
         "expected_family": "hexagonal",
         "expected_kind": "double-map-planform",
@@ -269,7 +315,9 @@
       "rendered_pattern": "hex_pi",
       "selected_family": "hexagonal",
       "selected_pattern": "honeycomb",
-      "status": "review"
+      "selected_scope": "lattice-local",
+      "status": "review",
+      "target_lattice": "hexagonal"
     }
   ]
 }
