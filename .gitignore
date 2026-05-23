@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+V1-sim.executed.ipynb
+v1-hallucination.png
+
+rust-v1-sim/target/
+
+viewer/*.log
+viewer/v1-canvas-viewer-screenshot.png
+viewer/v1-planform-cobweb-screenshot.png

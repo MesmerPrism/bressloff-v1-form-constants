@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bressloff V1 Form Constants Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <h1>Bressloff V1</h1>
+      <div class="stats" id="stats">Loading frames...</div>
+    </header>
+
+    <section class="workbench">
+      <section class="stage" aria-label="V1 simulation playback">
+        <canvas id="viewer" width="720" height="720"></canvas>
+      </section>
+
+      <aside class="sidepanel">
+        <form id="paramForm" class="control-group" aria-label="Model controls">
+          <h2>Model</h2>
+
+          <label class="field">
+            <span>Paper preset</span>
+            <select id="paper_preset" name="paper_preset">
+              <option value="manual" selected>Manual</option>
+              <option value="fig16_odd">Fig 16 odd scan</option>
+              <option value="fig17_even">Fig 17 even spread</option>
+              <option value="fig31_square_even">Fig 31 square even</option>
+              <option value="fig32_square_odd">Fig 32 square odd</option>
+              <option value="fig33_rhombic_even">Fig 33 rhombic even</option>
+              <option value="fig35_hex_even">Fig 35 hex even</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Generator</span>
+            <select id="generator" name="generator">
+              <option value="dynamics" selected>Dynamics</option>
+              <option value="planform">Planform</option>
+            </select>
+          </label>
+
+          <label class="field planform-control">
+            <span>Pattern</span>
+            <select id="pattern" name="pattern">
+              <option value="auto">Auto branch</option>
+              <option value="rings">Rings / tunnel</option>
+              <option value="rays">Rays / funnel</option>
+              <option value="spiral">Log spiral</option>
+              <option value="cobweb" selected>Cobweb square</option>
+              <option value="honeycomb">Honeycomb</option>
+              <option value="rhombic">Rhombic lattice</option>
+              <option value="hex_pi">Hex π</option>
+            </select>
+          </label>
+
+          <label class="field planform-control">
+            <span>Eigen parity</span>
+            <select id="parity" name="parity">
+              <option value="even" selected>Even</option>
+              <option value="odd">Odd</option>
+            </select>
+          </label>
+
+          <label class="field planform-control">
+            <span>Wave count</span>
+            <span class="value-row">
+              <input id="wave_count" name="wave_count" type="range" min="1" max="40" step="1" value="12">
+              <output id="wave_countValue">12</output>
+            </span>
+          </label>
+
+          <label class="field planform-control">
+            <span>Drift</span>
+            <span class="value-row">
+              <input id="drift" name="drift" type="range" min="-4" max="4" step="0.05" value="0.35">
+              <output id="driftValue">0.35</output>
+            </span>
+          </label>
+
+          <label class="field planform-control">
+            <span>Angle</span>
+            <span class="value-row">
+              <input id="pattern_angle" name="pattern_angle" type="range" min="0" max="90" step="1" value="45">
+              <output id="pattern_angleValue">45</output>
+            </span>
+          </label>
+
+          <label class="field planform-control">
+            <span>Sharpness</span>
+            <span class="value-row">
+              <input id="sharpness" name="sharpness" type="range" min="0.25" max="8" step="0.25" value="1">
+              <output id="sharpnessValue">1.0</output>
+            </span>
+          </label>
+
+          <label class="field planform-control">
+            <span>Eigen beta</span>
+            <span class="value-row">
+              <input id="eigen_beta" name="eigen_beta" type="range" min="0" max="1.5" step="0.05" value="0.35">
+              <output id="eigen_betaValue">0.35</output>
+            </span>
+          </label>
+
+          <label class="field planform-control">
+            <span>Hypercolumn mm</span>
+            <span class="value-row">
+              <input id="hypercolumn_mm" name="hypercolumn_mm" type="range" min="0.1" max="4" step="0.05" value="2">
+              <output id="hypercolumn_mmValue">2.00</output>
+            </span>
+          </label>
+
+          <details class="control-details planform-control">
+            <summary>Kernel</summary>
+            <label class="field">
+              <span>Local sigma</span>
+              <span class="value-row">
+                <input id="local_sigma_deg" name="local_sigma_deg" type="range" min="1" max="80" step="1" value="20">
+                <output id="local_sigma_degValue">20</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Local wide sigma</span>
+              <span class="value-row">
+                <input id="local_wide_sigma_deg" name="local_wide_sigma_deg" type="range" min="5" max="120" step="1" value="60">
+                <output id="local_wide_sigma_degValue">60</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Local inhibition</span>
+              <span class="value-row">
+                <input id="local_inhibition" name="local_inhibition" type="range" min="0" max="3" step="0.05" value="1">
+                <output id="local_inhibitionValue">1.00</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Lateral sigma</span>
+              <span class="value-row">
+                <input id="lateral_sigma" name="lateral_sigma" type="range" min="0.1" max="4" step="0.05" value="1">
+                <output id="lateral_sigmaValue">1.00</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Lateral wide sigma</span>
+              <span class="value-row">
+                <input id="lateral_wide_sigma" name="lateral_wide_sigma" type="range" min="0.1" max="6" step="0.05" value="1.5">
+                <output id="lateral_wide_sigmaValue">1.50</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Lateral inhibition</span>
+              <span class="value-row">
+                <input id="lateral_inhibition" name="lateral_inhibition" type="range" min="0" max="3" step="0.05" value="1">
+                <output id="lateral_inhibitionValue">1.00</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Lateral spread</span>
+              <span class="value-row">
+                <input id="lateral_spread_deg" name="lateral_spread_deg" type="range" min="0" max="90" step="1" value="0">
+                <output id="lateral_spread_degValue">0</output>
+              </span>
+            </label>
+          </details>
+
+          <details class="control-details planform-control">
+            <summary>Stability</summary>
+            <label class="field">
+              <span>q min</span>
+              <span class="value-row">
+                <input id="stability_q_min" name="stability_q_min" type="range" min="0" max="2" step="0.05" value="0.05">
+                <output id="stability_q_minValue">0.05</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>q max</span>
+              <span class="value-row">
+                <input id="stability_q_max" name="stability_q_max" type="range" min="0.2" max="8" step="0.05" value="3.5">
+                <output id="stability_q_maxValue">3.50</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>q samples</span>
+              <span class="value-row">
+                <input id="stability_samples" name="stability_samples" type="range" min="16" max="256" step="8" value="80">
+                <output id="stability_samplesValue">80</output>
+              </span>
+            </label>
+          </details>
+
+          <label class="field">
+            <span>Grid</span>
+            <select id="n" name="n">
+              <option value="32">32</option>
+              <option value="48">48</option>
+              <option value="64" selected>64</option>
+              <option value="80">80</option>
+              <option value="96">96</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Orientations</span>
+            <select id="m" name="m">
+              <option value="4">4</option>
+              <option value="8">8</option>
+              <option value="12" selected>12</option>
+              <option value="16">16</option>
+              <option value="24">24</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Solver</span>
+            <select id="solver" name="solver">
+              <option value="preview" selected>Preview</option>
+              <option value="accurate">Accurate</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Preview step</span>
+            <span class="value-row">
+              <input id="preview_step" name="preview_step" type="range" min="0.05" max="1" step="0.05" value="0.5">
+              <output id="preview_stepValue">0.50</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Alpha decay</span>
+            <span class="value-row">
+              <input id="alpha" name="alpha" type="range" min="0.1" max="4" step="0.1" value="1">
+              <output id="alphaValue">1.0</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Beta coupling</span>
+            <span class="value-row">
+              <input id="beta" name="beta" type="range" min="0.1" max="10" step="0.1" value="3">
+              <output id="betaValue">3.0</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Mu gain</span>
+            <span class="value-row">
+              <input id="mu" name="mu" type="range" min="1" max="40" step="0.5" value="17">
+              <output id="muValue">17.0</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Lateral radius</span>
+            <span class="value-row">
+              <input id="r0" name="r0" type="range" min="0.02" max="0.14" step="0.002" value="0.064">
+              <output id="r0Value">0.064</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Duration</span>
+            <span class="value-row">
+              <input id="t" name="t" type="range" min="5" max="140" step="5" value="60">
+              <output id="tValue">60</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Frames</span>
+            <span class="value-row">
+              <input id="frames" name="frames" type="range" min="8" max="240" step="8" value="120">
+              <output id="framesValue">120</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Seed</span>
+            <input id="seed" name="seed" type="number" min="0" max="4294967295" step="1" value="20260522">
+          </label>
+
+          <label class="check">
+            <input id="trim_warmup" name="trim_warmup" type="checkbox" checked>
+            <span>Trim warmup</span>
+          </label>
+
+          <div class="actions">
+            <button id="runButton" type="submit">Run model</button>
+            <button id="resetButton" class="secondary" type="button">Reset</button>
+          </div>
+        </form>
+
+        <section class="control-group" aria-label="Render controls">
+          <h2>Render</h2>
+
+          <label class="field">
+            <span>View</span>
+            <select id="view">
+              <option value="retinal">Retinal</option>
+              <option value="cortical">Cortical</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Colormap</span>
+            <select id="cmap" name="cmap" form="paramForm">
+              <option value="twilight" selected>Twilight</option>
+              <option value="viridis">Viridis</option>
+              <option value="magma">Magma</option>
+              <option value="inferno">Inferno</option>
+              <option value="turbo">Turbo</option>
+              <option value="gray">Gray</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Low cut</span>
+            <span class="value-row">
+              <input id="low_percentile" name="low_percentile" form="paramForm" type="range" min="0" max="20" step="0.5" value="1">
+              <output id="low_percentileValue">1.0</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>High cut</span>
+            <span class="value-row">
+              <input id="high_percentile" name="high_percentile" form="paramForm" type="range" min="80" max="100" step="0.5" value="99">
+              <output id="high_percentileValue">99.0</output>
+            </span>
+          </label>
+
+          <label class="check">
+            <input id="smooth" type="checkbox" checked>
+            <span>Smooth</span>
+          </label>
+
+          <label class="check">
+            <input id="contours" type="checkbox" checked>
+            <span>Contours</span>
+          </label>
+
+          <label class="field">
+            <span>Contour spacing</span>
+            <span class="value-row">
+              <input id="contour_stride" type="range" min="8" max="48" step="2" value="18">
+              <output id="contour_strideValue">18</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Contour length</span>
+            <span class="value-row">
+              <input id="contour_length" type="range" min="4" max="32" step="1" value="13">
+              <output id="contour_lengthValue">13</output>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Contour gate</span>
+            <span class="value-row">
+              <input id="contour_threshold" type="range" min="0" max="1" step="0.05" value="0.65">
+              <output id="contour_thresholdValue">0.65</output>
+            </span>
+          </label>
+        </section>
+
+        <section class="control-group" aria-label="Playback controls">
+          <h2>Playback</h2>
+          <button id="playToggle" type="button">Pause</button>
+
+          <label class="field">
+            <span>Frame</span>
+            <input id="frame" type="range" min="0" max="0" value="0">
+          </label>
+
+          <label class="field">
+            <span>FPS</span>
+            <span class="value-row">
+              <input id="fps" type="range" min="1" max="60" value="24">
+              <output id="fpsValue">24</output>
+            </span>
+          </label>
+        </section>
+
+        <section class="readout" aria-label="Run status">
+          <div id="status">Ready</div>
+          <div id="time">t = 0.00</div>
+          <div id="metrics">No metrics yet</div>
+          <div id="stability">No stability scan yet</div>
+        </section>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

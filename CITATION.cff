@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the original model paper and acknowledge the upstream V1-sim repository."
+title: "Bressloff V1 Form Constants Lab"
+type: software
+authors:
+  - family-names: Holzapfel
+    given-names: Till
+repository-code: "https://github.com/MesmerPrism/bressloff-v1-form-constants"
+url: "https://mesmerprism.com/projects/bressloff-v1-form-constants.html"
+license: MIT
+references:
+  - type: article
+    authors:
+      - family-names: Bressloff
+        given-names: Paul C.
+      - family-names: Cowan
+        given-names: Jack D.
+      - family-names: Golubitsky
+        given-names: Martin
+      - family-names: Thomas
+        given-names: Peter J.
+      - family-names: Wiener
+        given-names: Matthew C.
+    title: "What Geometric Visual Hallucinations Tell Us About the Visual Cortex"
+    journal: "Neural Computation"
+    year: 2002
+    volume: 14
+    issue: 3
+    start: 473
+    end: 491
+    doi: "10.1162/089976602317250861"
+  - type: software
+    authors:
+      - family-names: Karácsony
+        given-names: Márton
+    title: "V1-sim"
+    repository-code: "https://github.com/karacsm/V1-sim"
