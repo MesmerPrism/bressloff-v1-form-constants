@@ -10,7 +10,7 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 - Neural-field dynamics path derived from the original MIT-licensed
   `karacsm/V1-sim` notebook implementation.
 - Analytic cortical planforms for rings, rays, spirals, cobweb/square,
-  honeycomb, rhombic, and hex-pi families.
+  honeycomb, rhombic, hex-pi, and triangular odd-hex families.
 - Full angular retinal coverage for analytic planforms.
 - Double-map contour overlay using `phi_R = phi + theta_R`.
 - Orientation-resolved planform payloads:
@@ -38,22 +38,34 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
   choose the rendered planform family.
 - `Auto branch` now also adopts the critical parity selected by the stability
   scan.
-- First-class paper-oriented presets for figures 16, 17, 31, 32, 33, and 35,
+- First-class paper-oriented presets for figures 16, 17, and 31-36,
   exposed through the viewer, `/api/defaults`, CLI export, and calibration
-  report paths.
+  report paths. Figure 36a uses a triangular sine-combination basis represented
+  by per-mode phase offsets.
+- Non-contoured scalar planform mode for the Figure 29 and Figure 30 single-map
+  examples. This path renders activity directly instead of selecting the
+  strongest orientation channel.
+- Roll subpanel presets for Figures 31-34 and 2002 convenience aliases for
+  Figure 5 cortical planforms, Figure 6 visual-field planforms, and the Figure 7
+  lattice-tunnel simulation target.
 - Optional orientation-channel payload export with
   `frame,row,col,orientation` ordering.
-- `calibrate` command that writes a JSON side-by-side report comparing each
-  named preset's expected family with the rendered planform, same-lattice branch
-  selection, and global score winner.
+- `calibrate` command that writes a v4 JSON side-by-side report comparing all 24
+  named presets against rendered contour mode, parity, rendered planform,
+  same-lattice branch selection, and global score winner.
+- Non-rendering stability reports for the Fig 37-40 coefficient/bifurcation
+  targets and the current rhombic-angle diagnostic.
+- Separate Rule 2011 scalar E/I flicker track under
+  `model_family = rule_flicker_ei`; it reuses the display surface but not the
+  Bressloff orientation-contour or branch-selection machinery.
 
 ## Approximate
 
 - The stability scan uses the Fourier/Bessel kernel family described in the
   paper, but still needs direct paper-figure calibration.
 - The scalar frame for planforms is currently the strongest sampled orientation
-  response at each cortical location, not a direct display of every orientation
-  channel.
+  response at each cortical location in contoured mode. Non-contoured mode uses
+  the scalar activity sum directly.
 - Branch selection now follows the cubic amplitude-equation coefficient structure,
   but the bifurcation distance and nonlinear sigmoid constants are normalized
   rather than fit to a biological parameter set.
@@ -63,6 +75,9 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
   comparison.
 - The hex-pi preset renders the requested phase variant, while the current
   quadratic-term sign selects the honeycomb phase partner.
+- The triangular odd-hex preset renders the requested branch, but the current
+  cubic selector reports the honeycomb/0-hexagonal branch because the source
+  stability discussion depends on higher-order terms.
 
 ## Still Missing
 
@@ -72,5 +87,8 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
   too large.
 - Dynamics-to-contour overlay from simulated orientation channels.
 - Public side-by-side figure comparison panels with generated animations and
-  original-paper figure links. Direct reproduction of paper figures needs
-  permission or a confirmed compatible license.
+  DOI/source links. Direct reproduction of paper figures needs permission or a
+  confirmed compatible license.
+
+The detailed public work plan is
+[`docs/BRESSLOFF_FUTURE_IMPLEMENTATION_PLAN.md`](../docs/BRESSLOFF_FUTURE_IMPLEMENTATION_PLAN.md).

@@ -26,16 +26,47 @@ about the visual cortex".
   read the amplitude-equation result inside the preset's lattice family. A
   separate global score is still exported as a diagnostic, but it is not used as
   the paper-figure branch answer.
-- Paper presets: the Rust model exposes starting points for the marginal-stability
-  examples and the double-map planform figures. These set the branch family,
+- Paper presets: the Rust model exposes 24 source-anchored starting points for
+  the marginal-stability examples, the single-map non-contoured figures, the
+  double-map planform figures, the 31-34 roll subpanels, and the 2002 Figure 5-7
+  convenience targets. These set the branch family, contour mode, source view,
   parity, lateral spread, and scan resolution; they are not final calibrated
   reproductions.
+- Paper preset registry: source metadata, expected target fields, and
+  calibration status now live in a single Rust registry used by parsing,
+  `/api/defaults`, CLI export, and calibration iteration. Rendering behavior
+  remains separate in the preset application code.
+- Contour mode: contoured planforms sample the orientation eigenfunction and draw
+  local contour glyphs through the double map. Non-contoured planforms render the
+  scalar wave-mode activity directly and skip contour overlays.
+- Odd triangular branch: the Fig 36 triangular preset uses a three-wave
+  hexagonal basis with a constant spatial phase offset so the cosine renderer can
+  represent the sine-combination planform listed in the source tables.
 - Orientation-channel export: when requested, payloads include a compressed
   `frame,row,col,orientation` tensor with the same angular channels used by the
   model or analytic planform.
-- Calibration reports: each named paper preset records expected parity/family
-  checks against the rendered planform, the same-lattice branch selector, and the
-  global score winner.
+- Calibration reports: each named paper preset records source key/page/figure
+  metadata and expected contour/parity/family checks against the rendered
+  planform, the same-lattice branch selector, and the global score winner.
+  Non-contoured single-map presets are checked against the rendered scalar
+  planform and contour mode; branch-selection output is still exported as a
+  diagnostic but is not treated as the figure target. The v4 report also includes
+  non-rendering stability checks for the Fig 37-40 coefficient/bifurcation
+  targets and the current rhombic-angle diagnostic.
+
+## Separate Rule 2011 Track
+
+Rule, Stoffregen, and Ermentrout 2011 is now exposed as
+`model_family = rule_flicker_ei` and `generator = rule_flicker`. This is a
+separate scalar E/I Wilson-Cowan field, not a Bressloff orientation-hypercolumn
+preset. It reuses the browser payload, scalar cortical/retinal display, and
+retinocortical mapping surface, but it does not use the Bressloff double-map
+orientation contours, paper preset registry, or cubic branch selector.
+
+The current Rule pass implements the smallest useful regimes: a high-frequency
+period-doubled stripe preset and a low-frequency one-to-one hexagonal preset,
+plus matching Figure 5 aliases. The report is qualitative and seeded; Floquet
+stability, phase diagrams, and exact period/amplitude calibration are deferred.
 
 ## Current Normalizations
 
@@ -54,11 +85,15 @@ about the visual cortex".
 - The hexagonal preset renders `hex_pi`, but the current sign convention for the
   even quadratic term selects its honeycomb phase partner. That is now tracked as
   a phase-selection calibration target rather than a family failure.
+- The odd triangular preset renders the requested Fig 36 branch, while the
+  current cubic branch selector still reports the honeycomb/0-hexagonal partner.
+  The source stability discussion says the odd hexagonal choice depends on
+  higher-order terms, so this remains a calibration target.
 
 ## Next Fidelity Targets
 
 - Calibrate named presets against digitized paper geometry for figures 16, 17,
-  and 31-36.
+  and 29-36.
 - Add a compact basis export so orientation-channel payloads can be smaller than
   the full tensor.
 - Add a calibrated `mu_c` readout from `alpha / (sigma1 G(q_c))` once the

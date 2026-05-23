@@ -4,6 +4,7 @@ const ctx = canvas.getContext("2d", { alpha: false });
 const els = {
   paramForm: document.getElementById("paramForm"),
   paperPreset: document.getElementById("paper_preset"),
+  rulePreset: document.getElementById("rule_preset"),
   runButton: document.getElementById("runButton"),
   resetButton: document.getElementById("resetButton"),
   playToggle: document.getElementById("playToggle"),
@@ -27,8 +28,10 @@ const els = {
 
 const DEFAULT_PARAMS = {
   paper_preset: "manual",
+  rule_preset: "manual",
   generator: "planform",
   pattern: "auto",
+  contour_mode: "contoured",
   parity: "even",
   n: 96,
   m: 24,
@@ -62,12 +65,30 @@ const DEFAULT_PARAMS = {
   stability_q_max: 3.5,
   stability_samples: 80,
   export_orientation_channels: false,
+  rule_tau_e_ms: 10,
+  rule_tau_i_ms: 20,
+  rule_aee: 10,
+  rule_aei: 12,
+  rule_aie: 8.5,
+  rule_aii: 3,
+  rule_theta_e: 2,
+  rule_theta_i: 3.5,
+  rule_sigma_e: 2,
+  rule_sigma_i: 5,
+  rule_stim_amplitude: 0.8,
+  rule_stim_period_ms: 55,
+  rule_stim_threshold: 0.8,
+  rule_stim_smoothing: 50,
+  rule_stim_i_fraction: 0,
+  rule_seed_pattern: "stripes",
+  rule_seed_strength: 0.04,
 };
 
 const PAPER_PRESETS = {
   fig16_odd: {
     generator: "planform",
     pattern: "auto",
+    contour_mode: "contoured",
     parity: "even",
     eigen_beta: 0.4,
     lateral_sigma: 1,
@@ -83,6 +104,7 @@ const PAPER_PRESETS = {
   fig17_even: {
     generator: "planform",
     pattern: "auto",
+    contour_mode: "contoured",
     parity: "even",
     eigen_beta: 0.4,
     lateral_sigma: 1,
@@ -95,29 +117,122 @@ const PAPER_PRESETS = {
     wave_count: 12,
     sharpness: 1.8,
   },
+  fig29_square_noncontoured: {
+    generator: "planform",
+    pattern: "cobweb",
+    contour_mode: "noncontoured",
+    parity: "even",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 90,
+    sharpness: 2.1,
+  },
+  fig29_roll_noncontoured: {
+    generator: "planform",
+    pattern: "rings",
+    contour_mode: "noncontoured",
+    parity: "even",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 0,
+    sharpness: 2.1,
+  },
+  fig30_rhombic_noncontoured: {
+    generator: "planform",
+    pattern: "rhombic",
+    contour_mode: "noncontoured",
+    parity: "even",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 45,
+    sharpness: 2.1,
+  },
+  fig30_hex_noncontoured: {
+    generator: "planform",
+    pattern: "honeycomb",
+    contour_mode: "noncontoured",
+    parity: "even",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+  },
   fig31_square_even: {
     generator: "planform",
     pattern: "cobweb",
+    contour_mode: "contoured",
     parity: "even",
     lateral_spread_deg: 60,
     wave_count: 12,
     pattern_angle: 90,
     sharpness: 2.1,
   },
+  fig31_square_even_roll: {
+    generator: "planform",
+    pattern: "rings",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 0,
+    sharpness: 2.1,
+  },
   fig32_square_odd: {
     generator: "planform",
     pattern: "cobweb",
+    contour_mode: "contoured",
     parity: "odd",
     lateral_spread_deg: 0,
     wave_count: 12,
     pattern_angle: 90,
     sharpness: 2.1,
   },
+  fig32_square_odd_roll: {
+    generator: "planform",
+    pattern: "rings",
+    contour_mode: "contoured",
+    parity: "odd",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 0,
+    sharpness: 2.1,
+  },
   fig33_rhombic_even: {
     generator: "planform",
     pattern: "rhombic",
+    contour_mode: "contoured",
     parity: "even",
     lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 45,
+    sharpness: 2.1,
+  },
+  fig34_rhombic_odd: {
+    generator: "planform",
+    pattern: "rhombic",
+    contour_mode: "contoured",
+    parity: "odd",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 45,
+    sharpness: 2.1,
+  },
+  fig33_rhombic_even_roll: {
+    generator: "planform",
+    pattern: "spiral",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 45,
+    sharpness: 2.1,
+  },
+  fig34_rhombic_odd_roll: {
+    generator: "planform",
+    pattern: "spiral",
+    contour_mode: "contoured",
+    parity: "odd",
+    lateral_spread_deg: 0,
     wave_count: 12,
     pattern_angle: 45,
     sharpness: 2.1,
@@ -125,18 +240,188 @@ const PAPER_PRESETS = {
   fig35_hex_even: {
     generator: "planform",
     pattern: "hex_pi",
+    contour_mode: "contoured",
     parity: "even",
     lateral_spread_deg: 60,
     wave_count: 12,
     pattern_angle: 60,
     sharpness: 2.1,
   },
+  fig35_hex_zero_even: {
+    generator: "planform",
+    pattern: "honeycomb",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+  },
+  fig36_triangle_odd: {
+    generator: "planform",
+    pattern: "triangle",
+    contour_mode: "contoured",
+    parity: "odd",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+  },
+  fig36_hex_zero_odd: {
+    generator: "planform",
+    pattern: "honeycomb",
+    contour_mode: "contoured",
+    parity: "odd",
+    lateral_spread_deg: 0,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+  },
+  fig5_roll_cortical: {
+    generator: "planform",
+    pattern: "rings",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 0,
+    sharpness: 2.1,
+    view: "cortical",
+  },
+  fig5_hex_cortical: {
+    generator: "planform",
+    pattern: "hex_pi",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+    view: "cortical",
+  },
+  fig5_honeycomb_cortical: {
+    generator: "planform",
+    pattern: "honeycomb",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 60,
+    sharpness: 2.1,
+    view: "cortical",
+  },
+  fig5_square_cortical: {
+    generator: "planform",
+    pattern: "cobweb",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 90,
+    sharpness: 2.1,
+    view: "cortical",
+  },
+  fig6_visual_field_planforms: {
+    generator: "planform",
+    pattern: "cobweb",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 12,
+    pattern_angle: 90,
+    sharpness: 2.1,
+    view: "retinal",
+  },
+  fig7_lattice_tunnel: {
+    generator: "planform",
+    pattern: "rings",
+    contour_mode: "contoured",
+    parity: "even",
+    lateral_spread_deg: 60,
+    wave_count: 14,
+    pattern_angle: 0,
+    sharpness: 2.3,
+    view: "retinal",
+  },
+};
+
+const RULE_PRESETS = {
+  rule_fig4_high_freq_stripes: {
+    generator: "rule_flicker",
+    rule_stim_period_ms: 55,
+    rule_stim_amplitude: 0.8,
+    rule_stim_threshold: 0.8,
+    rule_stim_smoothing: 50,
+    rule_stim_i_fraction: 0,
+    rule_seed_pattern: "stripes",
+    rule_seed_strength: 0.2,
+    rule_sigma_e: 2,
+    rule_sigma_i: 5,
+    n: 40,
+    m: 4,
+    frames: 144,
+    t: 440,
+    view: "retinal",
+  },
+  rule_fig4_low_freq_hexagons: {
+    generator: "rule_flicker",
+    rule_stim_period_ms: 120,
+    rule_stim_amplitude: 1.0,
+    rule_stim_threshold: 0.8,
+    rule_stim_smoothing: 50,
+    rule_stim_i_fraction: 0,
+    rule_seed_pattern: "hexagonal",
+    rule_seed_strength: 0.2,
+    rule_sigma_e: 2,
+    rule_sigma_i: 5,
+    n: 40,
+    m: 4,
+    frames: 144,
+    t: 660,
+    view: "retinal",
+  },
+  rule_fig5_period_doubled_stripes: {
+    generator: "rule_flicker",
+    rule_stim_period_ms: 55,
+    rule_stim_amplitude: 0.8,
+    rule_stim_threshold: 0.8,
+    rule_stim_smoothing: 50,
+    rule_stim_i_fraction: 0,
+    rule_seed_pattern: "stripes",
+    rule_seed_strength: 0.2,
+    rule_sigma_e: 2,
+    rule_sigma_i: 5,
+    n: 40,
+    m: 4,
+    frames: 144,
+    t: 440,
+    view: "cortical",
+  },
+  rule_fig5_one_to_one_hexagons: {
+    generator: "rule_flicker",
+    rule_stim_period_ms: 120,
+    rule_stim_amplitude: 1.0,
+    rule_stim_threshold: 0.8,
+    rule_stim_smoothing: 50,
+    rule_stim_i_fraction: 0,
+    rule_seed_pattern: "hexagonal",
+    rule_seed_strength: 0.2,
+    rule_sigma_e: 2,
+    rule_sigma_i: 5,
+    n: 40,
+    m: 4,
+    frames: 144,
+    t: 660,
+    view: "cortical",
+  },
 };
 
 const PARAM_IDS = [
   "paper_preset",
+  "rule_preset",
   "generator",
   "pattern",
+  "contour_mode",
   "parity",
   "n",
   "m",
@@ -170,6 +455,23 @@ const PARAM_IDS = [
   "high_percentile",
   "trim_warmup",
   "export_orientation_channels",
+  "rule_tau_e_ms",
+  "rule_tau_i_ms",
+  "rule_aee",
+  "rule_aei",
+  "rule_aie",
+  "rule_aii",
+  "rule_theta_e",
+  "rule_theta_i",
+  "rule_sigma_e",
+  "rule_sigma_i",
+  "rule_stim_amplitude",
+  "rule_stim_period_ms",
+  "rule_stim_threshold",
+  "rule_stim_smoothing",
+  "rule_stim_i_fraction",
+  "rule_seed_pattern",
+  "rule_seed_strength",
 ];
 
 const FORMATTERS = {
@@ -198,6 +500,22 @@ const FORMATTERS = {
   stability_q_min: (value) => Number(value).toFixed(2),
   stability_q_max: (value) => Number(value).toFixed(2),
   stability_samples: (value) => Number(value).toFixed(0),
+  rule_tau_e_ms: (value) => Number(value).toFixed(0),
+  rule_tau_i_ms: (value) => Number(value).toFixed(0),
+  rule_aee: (value) => Number(value).toFixed(1),
+  rule_aei: (value) => Number(value).toFixed(1),
+  rule_aie: (value) => Number(value).toFixed(1),
+  rule_aii: (value) => Number(value).toFixed(1),
+  rule_theta_e: (value) => Number(value).toFixed(1),
+  rule_theta_i: (value) => Number(value).toFixed(1),
+  rule_sigma_e: (value) => Number(value).toFixed(1),
+  rule_sigma_i: (value) => Number(value).toFixed(1),
+  rule_stim_amplitude: (value) => Number(value).toFixed(2),
+  rule_stim_period_ms: (value) => Number(value).toFixed(0),
+  rule_stim_threshold: (value) => Number(value).toFixed(2),
+  rule_stim_smoothing: (value) => Number(value).toFixed(0),
+  rule_stim_i_fraction: (value) => Number(value).toFixed(2),
+  rule_seed_strength: (value) => Number(value).toFixed(2),
   contour_stride: (value) => Number(value).toFixed(0),
   contour_length: (value) => Number(value).toFixed(0),
   contour_threshold: (value) => Number(value).toFixed(2),
@@ -496,7 +814,11 @@ function drawGlyph(x, y, angle, strength, length) {
 
 function renderContourOverlay(index) {
   const meta = state.meta;
-  if (!els.contours.checked || meta?.params?.generator !== "planform") {
+  if (
+    !els.contours.checked ||
+    meta?.params?.generator !== "planform" ||
+    meta?.planform?.contour_mode === "noncontoured"
+  ) {
     return;
   }
 
@@ -592,6 +914,14 @@ function updateStats() {
   const generatorText = meta.params?.generator ? `, ${meta.params.generator}` : "";
   const patternText =
     meta.params?.generator === "planform" && meta.params?.pattern ? `, ${meta.params.pattern}` : "";
+  const ruleText =
+    meta.params?.generator === "rule_flicker" && meta.rule
+      ? `, ${meta.rule.spatial_family}/${meta.rule.response_mode}`
+      : "";
+  const contourText =
+    meta.params?.generator === "planform" && meta.params?.contour_mode
+      ? `, ${meta.params.contour_mode}`
+      : "";
   const effectiveParity = meta.planform?.parity || meta.params?.parity;
   const parityText =
     meta.params?.generator === "planform" && effectiveParity ? `, ${effectiveParity}` : "";
@@ -601,13 +931,16 @@ function updateStats() {
   const timingText = timing
     ? `build ${shortNumber(timing.matrix_build_sec, 1)}s, solve ${shortNumber(timing.solve_sec, 1)}s`
     : "precomputed";
-  els.stats.textContent = `${meta.width}x${meta.height}, ${meta.orientation_count} orientations, ${meta.frame_count} frames${trimText}${backendText}${generatorText}${patternText}${parityText}${solverText}${cacheText}, ${state.measuredFps.toFixed(1)} fps render, ${timingText}`;
+  els.stats.textContent = `${meta.width}x${meta.height}, ${meta.orientation_count} orientations, ${meta.frame_count} frames${trimText}${backendText}${generatorText}${patternText}${ruleText}${contourText}${parityText}${solverText}${cacheText}, ${state.measuredFps.toFixed(1)} fps render, ${timingText}`;
 
   if (meta.metrics) {
     els.metrics.textContent = `std ${shortNumber(meta.metrics.final_std, 3)}, cycles ${shortNumber(meta.metrics.dominant_cycles, 1)}, delta ${shortNumber(meta.metrics.temporal_delta, 4)}`;
   }
 
-  if (meta.planform?.stability) {
+  if (meta.rule) {
+    const rule = meta.rule;
+    els.stability.textContent = `Rule ${shortNumber(rule.stimulus_frequency_hz, 2)} Hz, ${rule.spatial_family}, ${rule.response_mode}, D ${shortNumber(rule.pattern_strength, 4)}, rT ${shortNumber(rule.temporal_corr_t, 2)}, r2T ${shortNumber(rule.temporal_corr_2t, 2)}`;
+  } else if (meta.planform?.stability) {
     const stability = meta.planform.stability;
     const branch = meta.planform.branch_selection;
     const candidate = branch?.candidates?.[0];
@@ -625,15 +958,23 @@ function updateStats() {
     els.stability.textContent = "No stability scan";
   }
 
-  if (meta.calibration) {
+  if (meta.rule?.preset) {
+    const failed = meta.rule.checks
+      .filter((check) => !check.passed)
+      .map((check) => `${check.name}: ${check.actual}`)
+      .join("; ");
+    const suffix = failed ? `, review ${failed}` : "";
+    els.calibration.textContent = `${meta.rule.preset.paper_figure}: ${meta.rule.status}, ${meta.rule.spatial_family}, ${meta.rule.response_mode}${suffix}`;
+  } else if (meta.calibration) {
     const failed = meta.calibration.checks
       .filter((check) => !check.passed)
       .map((check) => `${check.name}: ${check.actual}`)
       .join("; ");
     const suffix = failed ? `, review ${failed}` : "";
-    els.calibration.textContent = `${meta.calibration.preset.paper_figure}: ${meta.calibration.status}, rendered ${meta.calibration.rendered_pattern}, ${meta.calibration.target_lattice} branch ${meta.calibration.selected_family}${suffix}`;
+    const mode = meta.calibration.rendered_contour_mode || meta.params?.contour_mode || "contoured";
+    els.calibration.textContent = `${meta.calibration.preset.paper_figure}: ${meta.calibration.status}, ${mode} rendered ${meta.calibration.rendered_pattern}, ${meta.calibration.target_lattice} branch ${meta.calibration.selected_family}${suffix}`;
   } else {
-    els.calibration.textContent = "No paper preset selected";
+    els.calibration.textContent = "No Bressloff or Rule preset selected";
   }
 
   if (meta.orientation_channels) {
@@ -680,9 +1021,20 @@ function bindOutputs() {
 }
 
 function updateGeneratorVisibility() {
-  const isPlanform = document.getElementById("generator")?.value === "planform";
+  const generator = document.getElementById("generator")?.value;
+  const isPlanform = generator === "planform";
+  const isRule = generator === "rule_flicker";
   document.querySelectorAll(".planform-control").forEach((element) => {
+    element.hidden = !isPlanform;
     element.classList.toggle("is-muted", !isPlanform);
+  });
+  document.querySelectorAll(".rule-control").forEach((element) => {
+    element.hidden = !isRule;
+    element.classList.toggle("is-muted", !isRule);
+  });
+  document.querySelectorAll(".bressloff-control").forEach((element) => {
+    element.hidden = isRule;
+    element.classList.toggle("is-muted", isRule);
   });
 }
 
@@ -803,6 +1155,12 @@ function applyDefaultControls() {
   if (els.paperPreset) {
     els.paperPreset.value = "manual";
   }
+  if (els.rulePreset) {
+    els.rulePreset.value = "manual";
+  }
+  if (els.view) {
+    els.view.value = "retinal";
+  }
 }
 
 function applyPaperPreset(name) {
@@ -810,7 +1168,28 @@ function applyPaperPreset(name) {
   if (!preset) {
     return false;
   }
-  applyParams({ ...DEFAULT_PARAMS, ...preset, paper_preset: name });
+  applyParams({ ...DEFAULT_PARAMS, ...preset, paper_preset: name, rule_preset: "manual" });
+  if (els.rulePreset) {
+    els.rulePreset.value = "manual";
+  }
+  if (preset.view && els.view) {
+    els.view.value = preset.view;
+  }
+  return true;
+}
+
+function applyRulePreset(name) {
+  const preset = RULE_PRESETS[name];
+  if (!preset) {
+    return false;
+  }
+  applyParams({ ...DEFAULT_PARAMS, ...preset, paper_preset: "manual", rule_preset: name });
+  if (els.paperPreset) {
+    els.paperPreset.value = "manual";
+  }
+  if (preset.view && els.view) {
+    els.view.value = preset.view;
+  }
   return true;
 }
 
@@ -853,6 +1232,11 @@ async function init() {
   document.getElementById("generator")?.addEventListener("change", updateGeneratorVisibility);
   els.paperPreset?.addEventListener("change", () => {
     if (applyPaperPreset(els.paperPreset.value)) {
+      runModel();
+    }
+  });
+  els.rulePreset?.addEventListener("change", () => {
+    if (applyRulePreset(els.rulePreset.value)) {
       runModel();
     }
   });

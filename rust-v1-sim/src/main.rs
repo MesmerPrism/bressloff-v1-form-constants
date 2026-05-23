@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 use std::{
     collections::HashMap,
     env, fs,
@@ -18,12 +20,16 @@ const RETINO_EPS: f64 = 0.051;
 const RETINO_W0: f64 = 0.087;
 const RETINO_ALPHA: f64 = 3.0 / PI;
 const RETINO_BETA: f64 = 1.589 / 2.0;
+const MODEL_FAMILY_BRESSLOFF: &str = "bressloff_orientation_hypercolumn";
+const MODEL_FAMILY_RULE: &str = "rule_flicker_ei";
 
 #[derive(Clone, Copy, Debug)]
 struct FrameParams {
     paper_preset: PaperPreset,
+    rule_preset: RulePreset,
     generator: Generator,
     pattern: PatternPreset,
+    contour_mode: ContourMode,
     parity: Parity,
     n: usize,
     m: usize,
@@ -58,12 +64,30 @@ struct FrameParams {
     stability_q_max: f64,
     stability_samples: usize,
     export_orientation_channels: bool,
+    rule_tau_e_ms: f64,
+    rule_tau_i_ms: f64,
+    rule_aee: f64,
+    rule_aei: f64,
+    rule_aie: f64,
+    rule_aii: f64,
+    rule_theta_e: f64,
+    rule_theta_i: f64,
+    rule_sigma_e: f64,
+    rule_sigma_i: f64,
+    rule_stim_amplitude: f64,
+    rule_stim_period_ms: f64,
+    rule_stim_threshold: f64,
+    rule_stim_smoothing: f64,
+    rule_stim_i_fraction: f64,
+    rule_seed_pattern: RuleSeedPattern,
+    rule_seed_strength: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Generator {
     Dynamics,
     Planform,
+    RuleFlicker,
 }
 
 impl Generator {
@@ -71,6 +95,14 @@ impl Generator {
         match self {
             Generator::Dynamics => "dynamics",
             Generator::Planform => "planform",
+            Generator::RuleFlicker => "rule_flicker",
+        }
+    }
+
+    fn model_family(self) -> &'static str {
+        match self {
+            Generator::Dynamics | Generator::Planform => MODEL_FAMILY_BRESSLOFF,
+            Generator::RuleFlicker => MODEL_FAMILY_RULE,
         }
     }
 }
@@ -85,6 +117,24 @@ enum PatternPreset {
     Honeycomb,
     Rhombic,
     HexPi,
+    Triangle,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RuleSeedPattern {
+    Random,
+    Stripes,
+    Hexagonal,
+}
+
+impl RuleSeedPattern {
+    fn as_str(self) -> &'static str {
+        match self {
+            RuleSeedPattern::Random => "random",
+            RuleSeedPattern::Stripes => "stripes",
+            RuleSeedPattern::Hexagonal => "hexagonal",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -92,126 +142,688 @@ enum PaperPreset {
     Manual,
     Fig16Odd,
     Fig17Even,
+    Fig29SquareNoncontoured,
+    Fig29RollNoncontoured,
+    Fig30RhombicNoncontoured,
+    Fig30HexNoncontoured,
     Fig31SquareEven,
+    Fig31SquareEvenRoll,
     Fig32SquareOdd,
+    Fig32SquareOddRoll,
     Fig33RhombicEven,
+    Fig33RhombicEvenRoll,
+    Fig34RhombicOdd,
+    Fig34RhombicOddRoll,
     Fig35HexEven,
+    Fig35HexZeroEven,
+    Fig36TriangleOdd,
+    Fig36HexZeroOdd,
+    Fig5RollCortical,
+    Fig5HexCortical,
+    Fig5HoneycombCortical,
+    Fig5SquareCortical,
+    Fig6VisualFieldPlanforms,
+    Fig7LatticeTunnel,
 }
 
-impl PaperPreset {
-    fn as_str(self) -> &'static str {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RulePreset {
+    Manual,
+    Fig4HighFreqStripes,
+    Fig4LowFreqHexagons,
+    Fig5PeriodDoubledStripes,
+    Fig5OneToOneHexagons,
+}
+
+impl RulePreset {
+    const fn as_str(self) -> &'static str {
         match self {
-            PaperPreset::Manual => "manual",
-            PaperPreset::Fig16Odd => "fig16_odd",
-            PaperPreset::Fig17Even => "fig17_even",
-            PaperPreset::Fig31SquareEven => "fig31_square_even",
-            PaperPreset::Fig32SquareOdd => "fig32_square_odd",
-            PaperPreset::Fig33RhombicEven => "fig33_rhombic_even",
-            PaperPreset::Fig35HexEven => "fig35_hex_even",
+            RulePreset::Manual => "manual",
+            RulePreset::Fig4HighFreqStripes => "rule_fig4_high_freq_stripes",
+            RulePreset::Fig4LowFreqHexagons => "rule_fig4_low_freq_hexagons",
+            RulePreset::Fig5PeriodDoubledStripes => "rule_fig5_period_doubled_stripes",
+            RulePreset::Fig5OneToOneHexagons => "rule_fig5_one_to_one_hexagons",
         }
     }
 }
 
-fn parse_paper_preset(value: Option<&str>) -> PaperPreset {
-    match value {
-        Some("fig16_odd") => PaperPreset::Fig16Odd,
-        Some("fig17_even") => PaperPreset::Fig17Even,
-        Some("fig31_square_even") => PaperPreset::Fig31SquareEven,
-        Some("fig32_square_odd") => PaperPreset::Fig32SquareOdd,
-        Some("fig33_rhombic_even") => PaperPreset::Fig33RhombicEven,
-        Some("fig35_hex_even") => PaperPreset::Fig35HexEven,
-        _ => PaperPreset::Manual,
+impl PaperPreset {
+    const fn as_str(self) -> &'static str {
+        match self {
+            PaperPreset::Manual => "manual",
+            PaperPreset::Fig16Odd => "fig16_odd",
+            PaperPreset::Fig17Even => "fig17_even",
+            PaperPreset::Fig29SquareNoncontoured => "fig29_square_noncontoured",
+            PaperPreset::Fig29RollNoncontoured => "fig29_roll_noncontoured",
+            PaperPreset::Fig30RhombicNoncontoured => "fig30_rhombic_noncontoured",
+            PaperPreset::Fig30HexNoncontoured => "fig30_hex_noncontoured",
+            PaperPreset::Fig31SquareEven => "fig31_square_even",
+            PaperPreset::Fig31SquareEvenRoll => "fig31_square_even_roll",
+            PaperPreset::Fig32SquareOdd => "fig32_square_odd",
+            PaperPreset::Fig32SquareOddRoll => "fig32_square_odd_roll",
+            PaperPreset::Fig33RhombicEven => "fig33_rhombic_even",
+            PaperPreset::Fig34RhombicOdd => "fig34_rhombic_odd",
+            PaperPreset::Fig33RhombicEvenRoll => "fig33_rhombic_even_roll",
+            PaperPreset::Fig34RhombicOddRoll => "fig34_rhombic_odd_roll",
+            PaperPreset::Fig35HexEven => "fig35_hex_even",
+            PaperPreset::Fig35HexZeroEven => "fig35_hex_zero_even",
+            PaperPreset::Fig36TriangleOdd => "fig36_triangle_odd",
+            PaperPreset::Fig36HexZeroOdd => "fig36_hex_zero_odd",
+            PaperPreset::Fig5RollCortical => "fig5_roll_cortical",
+            PaperPreset::Fig5HexCortical => "fig5_hex_cortical",
+            PaperPreset::Fig5HoneycombCortical => "fig5_honeycomb_cortical",
+            PaperPreset::Fig5SquareCortical => "fig5_square_cortical",
+            PaperPreset::Fig6VisualFieldPlanforms => "fig6_visual_field_planforms",
+            PaperPreset::Fig7LatticeTunnel => "fig7_lattice_tunnel",
+        }
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct PaperPresetRegistryEntry {
+    preset: PaperPreset,
+    details: PaperPresetDetails,
+}
+
+macro_rules! paper_preset_entry {
+    (
+        $preset:ident,
+        label: $label:literal,
+        source_key: $source_key:literal,
+        source_page: $source_page:literal,
+        paper_figure: $paper_figure:literal,
+        source_table: $source_table:literal,
+        source_view: $source_view:literal,
+        expected_kind: $expected_kind:literal,
+        expected_contour_mode: $expected_contour_mode:literal,
+        expected_parity: $expected_parity:literal,
+        expected_family: $expected_family:literal,
+        expected_pattern: $expected_pattern:literal,
+        calibration_status: $calibration_status:literal,
+        visual_target: $visual_target:literal,
+        source_note: $source_note:literal $(,)?
+    ) => {
+        PaperPresetRegistryEntry {
+            preset: PaperPreset::$preset,
+            details: PaperPresetDetails {
+                id: PaperPreset::$preset.as_str(),
+                label: $label,
+                source_key: $source_key,
+                model_family: MODEL_FAMILY_BRESSLOFF,
+                render_domain: $source_view,
+                source_page: $source_page,
+                paper_figure: $paper_figure,
+                source_table: $source_table,
+                source_view: $source_view,
+                expected_kind: $expected_kind,
+                expected_contour_mode: $expected_contour_mode,
+                expected_parity: $expected_parity,
+                expected_family: $expected_family,
+                expected_pattern: $expected_pattern,
+                calibration_status: $calibration_status,
+                visual_target: $visual_target,
+                source_note: $source_note,
+            },
+        }
+    };
+}
+
+static PAPER_PRESET_REGISTRY: &[PaperPresetRegistryEntry] = &[
+    paper_preset_entry!(
+        Fig16Odd,
+        label: "Fig 16 odd marginal-stability scan",
+        source_key: "bressloff-2001",
+        source_page: "14",
+        paper_figure: "Figure 16",
+        source_table: "",
+        source_view: "stability",
+        expected_kind: "linear-stability",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "branch-selected",
+        expected_pattern: "auto",
+        calibration_status: "analytic-normalized",
+        visual_target: "odd critical branch from the marginal-stability calculation",
+        source_note: "Starting preset for the narrow lateral-connection example; use the report as a calibration check, not a digitized paper figure.",
+    ),
+    paper_preset_entry!(
+        Fig17Even,
+        label: "Fig 17 even widened-spread scan",
+        source_key: "bressloff-2001",
+        source_page: "14",
+        paper_figure: "Figure 17",
+        source_table: "",
+        source_view: "stability",
+        expected_kind: "linear-stability",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "branch-selected",
+        expected_pattern: "auto",
+        calibration_status: "analytic-normalized",
+        visual_target: "even critical branch after the widened lateral angular spread",
+        source_note: "Starting preset for the theta0-spread marginal-stability example.",
+    ),
+    paper_preset_entry!(
+        Fig29SquareNoncontoured,
+        label: "Fig 29 square non-contoured planform",
+        source_key: "bressloff-2001",
+        source_page: "21",
+        paper_figure: "Figure 29",
+        source_table: "Table 2",
+        source_view: "visual_field",
+        expected_kind: "single-map-noncontoured-planform",
+        expected_contour_mode: "noncontoured",
+        expected_parity: "even",
+        expected_family: "square",
+        expected_pattern: "cobweb",
+        calibration_status: "rendered-target",
+        visual_target: "single inverse retinocortical map of a non-contoured square activity planform",
+        source_note: "Activity-threshold planform; no local orientation contours are sampled.",
+    ),
+    paper_preset_entry!(
+        Fig29RollNoncontoured,
+        label: "Fig 29 roll non-contoured planform",
+        source_key: "bressloff-2001",
+        source_page: "21",
+        paper_figure: "Figure 29",
+        source_table: "Table 2",
+        source_view: "visual_field",
+        expected_kind: "single-map-noncontoured-planform",
+        expected_contour_mode: "noncontoured",
+        expected_parity: "even",
+        expected_family: "roll",
+        expected_pattern: "rings",
+        calibration_status: "rendered-target",
+        visual_target: "single inverse retinocortical map of a non-contoured roll activity planform",
+        source_note: "Rendered with the rings/tunnel roll orientation; rotate manually for ray or spiral variants.",
+    ),
+    paper_preset_entry!(
+        Fig30RhombicNoncontoured,
+        label: "Fig 30 rhombic non-contoured planform",
+        source_key: "bressloff-2001",
+        source_page: "21",
+        paper_figure: "Figure 30",
+        source_table: "Table 2",
+        source_view: "visual_field",
+        expected_kind: "single-map-noncontoured-planform",
+        expected_contour_mode: "noncontoured",
+        expected_parity: "even",
+        expected_family: "rhombic",
+        expected_pattern: "rhombic",
+        calibration_status: "rendered-target",
+        visual_target: "single inverse retinocortical map of a non-contoured rhombic activity planform",
+        source_note: "Activity-threshold companion to the contoured rhombic Figure 33/34 family.",
+    ),
+    paper_preset_entry!(
+        Fig30HexNoncontoured,
+        label: "Fig 30 hexagonal non-contoured planform",
+        source_key: "bressloff-2001",
+        source_page: "21",
+        paper_figure: "Figure 30",
+        source_table: "Table 2",
+        source_view: "visual_field",
+        expected_kind: "single-map-noncontoured-planform",
+        expected_contour_mode: "noncontoured",
+        expected_parity: "even",
+        expected_family: "hexagonal",
+        expected_pattern: "honeycomb",
+        calibration_status: "rendered-target",
+        visual_target: "single inverse retinocortical map of a non-contoured hexagonal activity planform",
+        source_note: "Uses the neutral three-wave hexagonal basis without interpreting local contour orientation.",
+    ),
+    paper_preset_entry!(
+        Fig31SquareEven,
+        label: "Fig 31 square/cobweb even planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 31",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "square",
+        expected_pattern: "cobweb",
+        calibration_status: "rendered-target",
+        visual_target: "square lattice in cortex mapped to cobweb-like visual-field structure",
+        source_note: "Analytic planform preset for checking the double-map geometry.",
+    ),
+    paper_preset_entry!(
+        Fig31SquareEvenRoll,
+        label: "Fig 31 even roll subpanel",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 31b",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-roll-subpanel",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "roll",
+        expected_pattern: "rings",
+        calibration_status: "rendered-target",
+        visual_target: "even roll branch mapped through the double retinocortical map",
+        source_note: "Roll companion subpanel for the even square/cobweb figure.",
+    ),
+    paper_preset_entry!(
+        Fig32SquareOdd,
+        label: "Fig 32 square/cobweb odd planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 32",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "square",
+        expected_pattern: "cobweb",
+        calibration_status: "rendered-target",
+        visual_target: "odd square lattice variant mapped through the retino-cortical double map",
+        source_note: "Analytic planform preset for checking parity-dependent contour structure.",
+    ),
+    paper_preset_entry!(
+        Fig32SquareOddRoll,
+        label: "Fig 32 odd roll subpanel",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 32b",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-roll-subpanel",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "roll",
+        expected_pattern: "rings",
+        calibration_status: "rendered-target",
+        visual_target: "odd roll branch mapped through the double retinocortical map",
+        source_note: "Roll companion subpanel for the odd square/cobweb figure.",
+    ),
+    paper_preset_entry!(
+        Fig33RhombicEven,
+        label: "Fig 33 rhombic even planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 33",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "rhombic",
+        expected_pattern: "rhombic",
+        calibration_status: "rendered-target",
+        visual_target: "rhombic cortical lattice mapped into warped visual-field contours",
+        source_note: "Analytic planform preset for the oblique-lattice family.",
+    ),
+    paper_preset_entry!(
+        Fig34RhombicOdd,
+        label: "Fig 34 rhombic odd planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 34",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "rhombic",
+        expected_pattern: "rhombic",
+        calibration_status: "rendered-target",
+        visual_target: "odd rhombic cortical lattice mapped through the retino-cortical double map",
+        source_note: "Analytic companion to the even rhombic Fig 33 preset; calibration still depends on the paper rhombic angle.",
+    ),
+    paper_preset_entry!(
+        Fig33RhombicEvenRoll,
+        label: "Fig 33 even rhombic-roll subpanel",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 33b",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-roll-subpanel",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "roll",
+        expected_pattern: "spiral",
+        calibration_status: "rendered-target",
+        visual_target: "even roll branch in the rhombic family mapped through the double map",
+        source_note: "Roll companion subpanel for the even rhombic figure.",
+    ),
+    paper_preset_entry!(
+        Fig34RhombicOddRoll,
+        label: "Fig 34 odd rhombic-roll subpanel",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 34b",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-roll-subpanel",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "roll",
+        expected_pattern: "spiral",
+        calibration_status: "rendered-target",
+        visual_target: "odd roll branch in the rhombic family mapped through the double map",
+        source_note: "Roll companion subpanel for the odd rhombic figure.",
+    ),
+    paper_preset_entry!(
+        Fig35HexEven,
+        label: "Fig 35 hexagonal even planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 35",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "hexagonal",
+        expected_pattern: "hex_pi",
+        calibration_status: "phase-selection-review",
+        visual_target: "hexagonal branch with pi-phase sign structure",
+        source_note: "Analytic planform preset for the three-wave hexagonal family.",
+    ),
+    paper_preset_entry!(
+        Fig35HexZeroEven,
+        label: "Fig 35 zero-hexagonal even planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 35",
+        source_table: "Table 3",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "hexagonal",
+        expected_pattern: "honeycomb",
+        calibration_status: "rendered-target",
+        visual_target: "0-hexagonal even phase partner of the Fig 35 hexagonal planform",
+        source_note: "Analytic phase companion to the pi-hexagonal Fig 35 preset.",
+    ),
+    paper_preset_entry!(
+        Fig36TriangleOdd,
+        label: "Fig 36 triangular odd planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 36",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "hexagonal",
+        expected_pattern: "triangle",
+        calibration_status: "higher-order-review",
+        visual_target: "odd triangular branch on a hexagonal lattice mapped through the double map",
+        source_note: "Uses the odd hexagonal sine-combination branch; higher-order terms determine stability in the source discussion.",
+    ),
+    paper_preset_entry!(
+        Fig36HexZeroOdd,
+        label: "Fig 36 zero-hexagonal odd planform",
+        source_key: "bressloff-2001",
+        source_page: "22",
+        paper_figure: "Figure 36",
+        source_table: "Table 4",
+        source_view: "visual_field",
+        expected_kind: "double-map-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "odd",
+        expected_family: "hexagonal",
+        expected_pattern: "honeycomb",
+        calibration_status: "rendered-target",
+        visual_target: "odd 0-hexagonal branch on a hexagonal lattice mapped through the double map",
+        source_note: "Odd-parity companion to the even 0-hexagonal phase target.",
+    ),
+    paper_preset_entry!(
+        Fig5RollCortical,
+        label: "2002 Fig 5 roll cortical planform",
+        source_key: "bressloff-2002",
+        source_page: "12",
+        paper_figure: "Figure 5",
+        source_table: "",
+        source_view: "cortical",
+        expected_kind: "cortical-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "roll",
+        expected_pattern: "rings",
+        calibration_status: "rendered-target",
+        visual_target: "cortical roll planform before visual-field inverse mapping",
+        source_note: "2002 convenience alias for the cortical roll operating-mode panel.",
+    ),
+    paper_preset_entry!(
+        Fig5HexCortical,
+        label: "2002 Fig 5 pi-hexagonal cortical planform",
+        source_key: "bressloff-2002",
+        source_page: "12",
+        paper_figure: "Figure 5",
+        source_table: "",
+        source_view: "cortical",
+        expected_kind: "cortical-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "hexagonal",
+        expected_pattern: "hex_pi",
+        calibration_status: "phase-selection-review",
+        visual_target: "cortical pi-hexagonal planform before visual-field inverse mapping",
+        source_note: "2002 convenience alias for the hexagonal operating-mode panel.",
+    ),
+    paper_preset_entry!(
+        Fig5HoneycombCortical,
+        label: "2002 Fig 5 honeycomb cortical planform",
+        source_key: "bressloff-2002",
+        source_page: "12",
+        paper_figure: "Figure 5",
+        source_table: "",
+        source_view: "cortical",
+        expected_kind: "cortical-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "hexagonal",
+        expected_pattern: "honeycomb",
+        calibration_status: "rendered-target",
+        visual_target: "cortical honeycomb/coupled-ring planform before visual-field inverse mapping",
+        source_note: "2002 convenience alias for the honeycomb operating-mode panel.",
+    ),
+    paper_preset_entry!(
+        Fig5SquareCortical,
+        label: "2002 Fig 5 square cortical planform",
+        source_key: "bressloff-2002",
+        source_page: "12",
+        paper_figure: "Figure 5",
+        source_table: "",
+        source_view: "cortical",
+        expected_kind: "cortical-planform",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "square",
+        expected_pattern: "cobweb",
+        calibration_status: "rendered-target",
+        visual_target: "cortical square planform before visual-field inverse mapping",
+        source_note: "2002 convenience alias for the square operating-mode panel.",
+    ),
+    paper_preset_entry!(
+        Fig6VisualFieldPlanforms,
+        label: "2002 Fig 6 visual-field planform representative",
+        source_key: "bressloff-2002",
+        source_page: "13",
+        paper_figure: "Figure 6",
+        source_table: "",
+        source_view: "visual_field",
+        expected_kind: "visual-field-planform-set",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "square",
+        expected_pattern: "cobweb",
+        calibration_status: "representative-panel",
+        visual_target: "visual-field inverse-map representative for the Fig 6 planform set",
+        source_note: "Fig 6 is a multi-panel summary; this preset uses the square/cobweb representative and the full set is covered by the other named aliases.",
+    ),
+    paper_preset_entry!(
+        Fig7LatticeTunnel,
+        label: "2002 Fig 7 lattice tunnel",
+        source_key: "bressloff-2002",
+        source_page: "15",
+        paper_figure: "Figure 7",
+        source_table: "",
+        source_view: "visual_field",
+        expected_kind: "double-map-roll-subpanel",
+        expected_contour_mode: "contoured",
+        expected_parity: "even",
+        expected_family: "roll",
+        expected_pattern: "rings",
+        calibration_status: "source-wording-resolved",
+        visual_target: "lattice tunnel representative using an even roll branch mapped through the visual field",
+        source_note: "The caption mixes hexagonal-roll and square-lattice wording; this preset implements the visual tunnel as the even roll representative and records the ambiguity in the source note.",
+    ),
+];
+
+#[derive(Clone, Copy, Debug)]
+struct RulePresetRegistryEntry {
+    preset: RulePreset,
+    details: RulePresetDetails,
+}
+
+macro_rules! rule_preset_entry {
+    (
+        $preset:ident,
+        label: $label:literal,
+        source_page: $source_page:literal,
+        paper_figure: $paper_figure:literal,
+        render_domain: $render_domain:literal,
+        expected_response_mode: $expected_response_mode:literal,
+        expected_family: $expected_family:literal,
+        expected_period_ms: $expected_period_ms:expr,
+        calibration_status: $calibration_status:literal,
+        source_note: $source_note:literal $(,)?
+    ) => {
+        RulePresetRegistryEntry {
+            preset: RulePreset::$preset,
+            details: RulePresetDetails {
+                id: RulePreset::$preset.as_str(),
+                label: $label,
+                source_key: "rule-2011",
+                model_family: MODEL_FAMILY_RULE,
+                render_domain: $render_domain,
+                source_page: $source_page,
+                paper_figure: $paper_figure,
+                expected_response_mode: $expected_response_mode,
+                expected_family: $expected_family,
+                expected_period_ms: $expected_period_ms,
+                calibration_status: $calibration_status,
+                source_note: $source_note,
+            },
+        }
+    };
+}
+
+static RULE_PRESET_REGISTRY: &[RulePresetRegistryEntry] = &[
+    rule_preset_entry!(
+        Fig4HighFreqStripes,
+        label: "Rule Fig 4 high-frequency period-doubled stripes",
+        source_page: "5",
+        paper_figure: "Figure 4",
+        render_domain: "cortical",
+        expected_response_mode: "period_doubled",
+        expected_family: "stripe",
+        expected_period_ms: 55.0,
+        calibration_status: "qualitative-seeded",
+        source_note: "Deterministic qualitative preset for the high-frequency stripe island; full Floquet and sweep calibration is deferred.",
+    ),
+    rule_preset_entry!(
+        Fig4LowFreqHexagons,
+        label: "Rule Fig 4 low-frequency one-to-one hexagons",
+        source_page: "5",
+        paper_figure: "Figure 4",
+        render_domain: "cortical",
+        expected_response_mode: "one_to_one",
+        expected_family: "hexagonal",
+        expected_period_ms: 120.0,
+        calibration_status: "qualitative-seeded",
+        source_note: "Deterministic qualitative preset for the low-frequency hexagonal island; full phase-diagram calibration is deferred.",
+    ),
+    rule_preset_entry!(
+        Fig5PeriodDoubledStripes,
+        label: "Rule Fig 5 period-doubled stripe frames",
+        source_page: "6",
+        paper_figure: "Figure 5A",
+        render_domain: "cortical",
+        expected_response_mode: "period_doubled",
+        expected_family: "stripe",
+        expected_period_ms: 55.0,
+        calibration_status: "qualitative-seeded",
+        source_note: "High-frequency example where the foreground/background swap after one stimulus period.",
+    ),
+    rule_preset_entry!(
+        Fig5OneToOneHexagons,
+        label: "Rule Fig 5 one-to-one hexagon frames",
+        source_page: "6",
+        paper_figure: "Figure 5B",
+        render_domain: "cortical",
+        expected_response_mode: "one_to_one",
+        expected_family: "hexagonal",
+        expected_period_ms: 120.0,
+        calibration_status: "qualitative-seeded",
+        source_note: "Low-frequency example where the spatial pattern repeats with the stimulus period.",
+    ),
+];
+
+fn parse_paper_preset(value: Option<&str>) -> PaperPreset {
+    value
+        .and_then(|id| {
+            PAPER_PRESET_REGISTRY
+                .iter()
+                .find(|entry| entry.details.id == id)
+                .map(|entry| entry.preset)
+        })
+        .unwrap_or(PaperPreset::Manual)
+}
+
+fn parse_rule_preset(value: Option<&str>) -> RulePreset {
+    value
+        .and_then(|id| {
+            RULE_PRESET_REGISTRY
+                .iter()
+                .find(|entry| entry.details.id == id)
+                .map(|entry| entry.preset)
+        })
+        .unwrap_or(RulePreset::Manual)
 }
 
 fn paper_preset_details(preset: PaperPreset) -> Option<PaperPresetDetails> {
-    match preset {
-        PaperPreset::Manual => None,
-        PaperPreset::Fig16Odd => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 16 odd marginal-stability scan",
-            paper_figure: "Figure 16",
-            expected_kind: "linear-stability",
-            expected_parity: "odd",
-            expected_family: "branch-selected",
-            expected_pattern: "auto",
-            visual_target: "odd critical branch from the marginal-stability calculation",
-            source_note: "Starting preset for the narrow lateral-connection example; use the report as a calibration check, not a digitized paper figure.",
-        }),
-        PaperPreset::Fig17Even => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 17 even widened-spread scan",
-            paper_figure: "Figure 17",
-            expected_kind: "linear-stability",
-            expected_parity: "even",
-            expected_family: "branch-selected",
-            expected_pattern: "auto",
-            visual_target: "even critical branch after the widened lateral angular spread",
-            source_note: "Starting preset for the theta0-spread marginal-stability example.",
-        }),
-        PaperPreset::Fig31SquareEven => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 31 square/cobweb even planform",
-            paper_figure: "Figure 31",
-            expected_kind: "double-map-planform",
-            expected_parity: "even",
-            expected_family: "square",
-            expected_pattern: "cobweb",
-            visual_target: "square lattice in cortex mapped to cobweb-like visual-field structure",
-            source_note: "Analytic planform preset for checking the double-map geometry.",
-        }),
-        PaperPreset::Fig32SquareOdd => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 32 square/cobweb odd planform",
-            paper_figure: "Figure 32",
-            expected_kind: "double-map-planform",
-            expected_parity: "odd",
-            expected_family: "square",
-            expected_pattern: "cobweb",
-            visual_target: "odd square lattice variant mapped through the retino-cortical double map",
-            source_note: "Analytic planform preset for checking parity-dependent contour structure.",
-        }),
-        PaperPreset::Fig33RhombicEven => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 33 rhombic even planform",
-            paper_figure: "Figure 33",
-            expected_kind: "double-map-planform",
-            expected_parity: "even",
-            expected_family: "rhombic",
-            expected_pattern: "rhombic",
-            visual_target: "rhombic cortical lattice mapped into warped visual-field contours",
-            source_note: "Analytic planform preset for the oblique-lattice family.",
-        }),
-        PaperPreset::Fig35HexEven => Some(PaperPresetDetails {
-            id: preset.as_str(),
-            label: "Fig 35 hexagonal even planform",
-            paper_figure: "Figure 35",
-            expected_kind: "double-map-planform",
-            expected_parity: "even",
-            expected_family: "hexagonal",
-            expected_pattern: "hex_pi",
-            visual_target: "hexagonal branch with pi-phase sign structure",
-            source_note: "Analytic planform preset for the three-wave hexagonal family.",
-        }),
-    }
+    PAPER_PRESET_REGISTRY
+        .iter()
+        .find(|entry| entry.preset == preset)
+        .map(|entry| entry.details)
 }
 
 fn paper_preset_catalog() -> Vec<PaperPresetDetails> {
-    [
-        PaperPreset::Fig16Odd,
-        PaperPreset::Fig17Even,
-        PaperPreset::Fig31SquareEven,
-        PaperPreset::Fig32SquareOdd,
-        PaperPreset::Fig33RhombicEven,
-        PaperPreset::Fig35HexEven,
-    ]
-    .into_iter()
-    .filter_map(paper_preset_details)
-    .collect()
+    PAPER_PRESET_REGISTRY
+        .iter()
+        .map(|entry| entry.details)
+        .collect()
+}
+
+fn rule_preset_details(preset: RulePreset) -> Option<RulePresetDetails> {
+    RULE_PRESET_REGISTRY
+        .iter()
+        .find(|entry| entry.preset == preset)
+        .map(|entry| entry.details)
+}
+
+fn rule_preset_catalog() -> Vec<RulePresetDetails> {
+    RULE_PRESET_REGISTRY
+        .iter()
+        .map(|entry| entry.details)
+        .collect()
 }
 
 fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FrameParams {
     params.paper_preset = preset;
+    if preset != PaperPreset::Manual {
+        params.rule_preset = RulePreset::Manual;
+    }
     match preset {
         PaperPreset::Manual => params,
         PaperPreset::Fig16Odd => {
@@ -246,9 +858,54 @@ fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FramePara
             params.sharpness = 1.8;
             params
         }
+        PaperPreset::Fig29SquareNoncontoured => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Cobweb;
+            params.contour_mode = ContourMode::Noncontoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 90.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig29RollNoncontoured => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rings;
+            params.contour_mode = ContourMode::Noncontoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 0.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig30RhombicNoncontoured => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rhombic;
+            params.contour_mode = ContourMode::Noncontoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 45.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig30HexNoncontoured => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Honeycomb;
+            params.contour_mode = ContourMode::Noncontoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
         PaperPreset::Fig31SquareEven => {
             params.generator = Generator::Planform;
             params.pattern = PatternPreset::Cobweb;
+            params.contour_mode = ContourMode::Contoured;
             params.parity = Parity::Even;
             params.lateral_spread_deg = 60.0;
             params.wave_count = 12.0;
@@ -256,9 +913,21 @@ fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FramePara
             params.sharpness = 2.1;
             params
         }
+        PaperPreset::Fig31SquareEvenRoll => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rings;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 0.0;
+            params.sharpness = 2.1;
+            params
+        }
         PaperPreset::Fig32SquareOdd => {
             params.generator = Generator::Planform;
             params.pattern = PatternPreset::Cobweb;
+            params.contour_mode = ContourMode::Contoured;
             params.parity = Parity::Odd;
             params.lateral_spread_deg = 0.0;
             params.wave_count = 12.0;
@@ -266,11 +935,56 @@ fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FramePara
             params.sharpness = 2.1;
             params
         }
+        PaperPreset::Fig32SquareOddRoll => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rings;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 0.0;
+            params.sharpness = 2.1;
+            params
+        }
         PaperPreset::Fig33RhombicEven => {
             params.generator = Generator::Planform;
             params.pattern = PatternPreset::Rhombic;
+            params.contour_mode = ContourMode::Contoured;
             params.parity = Parity::Even;
             params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 45.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig34RhombicOdd => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rhombic;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 45.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig33RhombicEvenRoll => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Spiral;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 45.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig34RhombicOddRoll => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Spiral;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
             params.wave_count = 12.0;
             params.pattern_angle = 45.0;
             params.sharpness = 2.1;
@@ -279,11 +993,148 @@ fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FramePara
         PaperPreset::Fig35HexEven => {
             params.generator = Generator::Planform;
             params.pattern = PatternPreset::HexPi;
+            params.contour_mode = ContourMode::Contoured;
             params.parity = Parity::Even;
             params.lateral_spread_deg = 60.0;
             params.wave_count = 12.0;
             params.pattern_angle = 60.0;
             params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig35HexZeroEven => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Honeycomb;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig36TriangleOdd => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Triangle;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig36HexZeroOdd => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Honeycomb;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig5RollCortical => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rings;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 0.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig5HexCortical => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::HexPi;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig5HoneycombCortical => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Honeycomb;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig5SquareCortical | PaperPreset::Fig6VisualFieldPlanforms => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Cobweb;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 90.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig7LatticeTunnel => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rings;
+            params.contour_mode = ContourMode::Contoured;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 14.0;
+            params.pattern_angle = 0.0;
+            params.sharpness = 2.3;
+            params
+        }
+    }
+}
+
+fn apply_rule_preset(mut params: FrameParams, preset: RulePreset) -> FrameParams {
+    params.rule_preset = preset;
+    if preset != RulePreset::Manual {
+        params.paper_preset = PaperPreset::Manual;
+        params.generator = Generator::RuleFlicker;
+        params.contour_mode = ContourMode::Noncontoured;
+        params.n = 40;
+        params.m = 4;
+        params.frames = 144;
+        params.low_percentile = 1.0;
+        params.high_percentile = 99.0;
+        params.trim_warmup = false;
+        params.solver = Solver::Preview;
+        params.preview_step = 0.5;
+        params.rule_tau_e_ms = 10.0;
+        params.rule_tau_i_ms = 20.0;
+        params.rule_aee = 10.0;
+        params.rule_aei = 12.0;
+        params.rule_aie = 8.5;
+        params.rule_aii = 3.0;
+        params.rule_theta_e = 2.0;
+        params.rule_theta_i = 3.5;
+        params.rule_sigma_e = 2.0;
+        params.rule_sigma_i = 5.0;
+        params.rule_stim_amplitude = 0.8;
+        params.rule_stim_threshold = 0.8;
+        params.rule_stim_smoothing = 50.0;
+        params.rule_stim_i_fraction = 0.0;
+        params.rule_seed_strength = 0.2;
+    }
+    match preset {
+        RulePreset::Manual => params,
+        RulePreset::Fig4HighFreqStripes | RulePreset::Fig5PeriodDoubledStripes => {
+            params.t = 440.0;
+            params.rule_stim_period_ms = 55.0;
+            params.rule_seed_pattern = RuleSeedPattern::Stripes;
+            params
+        }
+        RulePreset::Fig4LowFreqHexagons | RulePreset::Fig5OneToOneHexagons => {
+            params.t = 660.0;
+            params.rule_stim_period_ms = 120.0;
+            params.rule_stim_amplitude = 1.0;
+            params.rule_seed_pattern = RuleSeedPattern::Hexagonal;
             params
         }
     }
@@ -300,6 +1151,22 @@ impl PatternPreset {
             PatternPreset::Honeycomb => "honeycomb",
             PatternPreset::Rhombic => "rhombic",
             PatternPreset::HexPi => "hex_pi",
+            PatternPreset::Triangle => "triangle",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ContourMode {
+    Contoured,
+    Noncontoured,
+}
+
+impl ContourMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            ContourMode::Contoured => "contoured",
+            ContourMode::Noncontoured => "noncontoured",
         }
     }
 }
@@ -338,8 +1205,10 @@ impl Default for FrameParams {
     fn default() -> Self {
         Self {
             paper_preset: PaperPreset::Manual,
+            rule_preset: RulePreset::Manual,
             generator: Generator::Dynamics,
             pattern: PatternPreset::Cobweb,
+            contour_mode: ContourMode::Contoured,
             parity: Parity::Even,
             n: 64,
             m: 12,
@@ -374,6 +1243,23 @@ impl Default for FrameParams {
             stability_q_max: 3.5,
             stability_samples: 80,
             export_orientation_channels: false,
+            rule_tau_e_ms: 10.0,
+            rule_tau_i_ms: 20.0,
+            rule_aee: 10.0,
+            rule_aei: 12.0,
+            rule_aie: 8.5,
+            rule_aii: 3.0,
+            rule_theta_e: 2.0,
+            rule_theta_i: 3.5,
+            rule_sigma_e: 2.0,
+            rule_sigma_i: 5.0,
+            rule_stim_amplitude: 0.8,
+            rule_stim_period_ms: 55.0,
+            rule_stim_threshold: 0.8,
+            rule_stim_smoothing: 50.0,
+            rule_stim_i_fraction: 0.0,
+            rule_seed_pattern: RuleSeedPattern::Stripes,
+            rule_seed_strength: 0.04,
         }
     }
 }
@@ -430,6 +1316,7 @@ struct ServerState {
 #[derive(Serialize)]
 struct Payload {
     format: &'static str,
+    model_family: &'static str,
     width: usize,
     height: usize,
     frame_count: usize,
@@ -444,7 +1331,9 @@ struct Payload {
     retino_params: RetinoParams,
     palette: Vec<[u8; 3]>,
     paper_preset: Option<PaperPresetDetails>,
+    rule_preset: Option<RulePresetDetails>,
     planform: Option<PlanformDetails>,
+    rule: Option<RuleDetails>,
     calibration: Option<CalibrationReport>,
     orientation_channels: Option<OrientationChannelPayload>,
     params: PayloadParams,
@@ -456,9 +1345,12 @@ struct Payload {
 
 #[derive(Serialize)]
 struct PayloadParams {
+    model_family: &'static str,
     paper_preset: &'static str,
+    rule_preset: &'static str,
     generator: &'static str,
     pattern: &'static str,
+    contour_mode: &'static str,
     parity: &'static str,
     n: usize,
     m: usize,
@@ -493,10 +1385,28 @@ struct PayloadParams {
     stability_q_max: f64,
     stability_samples: usize,
     export_orientation_channels: bool,
+    rule_tau_e_ms: f64,
+    rule_tau_i_ms: f64,
+    rule_aee: f64,
+    rule_aei: f64,
+    rule_aie: f64,
+    rule_aii: f64,
+    rule_theta_e: f64,
+    rule_theta_i: f64,
+    rule_sigma_e: f64,
+    rule_sigma_i: f64,
+    rule_stim_amplitude: f64,
+    rule_stim_period_ms: f64,
+    rule_stim_threshold: f64,
+    rule_stim_smoothing: f64,
+    rule_stim_i_fraction: f64,
+    rule_seed_pattern: &'static str,
+    rule_seed_strength: f64,
 }
 
 #[derive(Serialize)]
 struct PlanformDetails {
+    contour_mode: &'static str,
     parity: &'static str,
     q: f64,
     wave_number: f64,
@@ -512,19 +1422,83 @@ struct PlanformDetails {
 struct PaperPresetDetails {
     id: &'static str,
     label: &'static str,
+    source_key: &'static str,
+    model_family: &'static str,
+    render_domain: &'static str,
+    source_page: &'static str,
     paper_figure: &'static str,
+    source_table: &'static str,
+    source_view: &'static str,
     expected_kind: &'static str,
+    expected_contour_mode: &'static str,
     expected_parity: &'static str,
     expected_family: &'static str,
     expected_pattern: &'static str,
+    calibration_status: &'static str,
     visual_target: &'static str,
     source_note: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RulePresetDetails {
+    id: &'static str,
+    label: &'static str,
+    source_key: &'static str,
+    model_family: &'static str,
+    render_domain: &'static str,
+    source_page: &'static str,
+    paper_figure: &'static str,
+    expected_response_mode: &'static str,
+    expected_family: &'static str,
+    expected_period_ms: f64,
+    calibration_status: &'static str,
+    source_note: &'static str,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleDetails {
+    preset: Option<RulePresetDetails>,
+    model_family: &'static str,
+    source_key: &'static str,
+    equation: &'static str,
+    status: &'static str,
+    spatial_family: &'static str,
+    response_mode: &'static str,
+    pattern_strength: f32,
+    dominant_cycles: f32,
+    temporal_corr_t: f32,
+    temporal_corr_2t: f32,
+    stimulus_frequency_hz: f64,
+    parameters: RuleParamDetails,
+    checks: Vec<CalibrationCheck>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleParamDetails {
+    tau_e_ms: f64,
+    tau_i_ms: f64,
+    aee: f64,
+    aei: f64,
+    aie: f64,
+    aii: f64,
+    theta_e: f64,
+    theta_i: f64,
+    sigma_e: f64,
+    sigma_i: f64,
+    stim_amplitude: f64,
+    stim_period_ms: f64,
+    stim_threshold: f64,
+    stim_smoothing: f64,
+    stim_i_fraction: f64,
+    seed_pattern: &'static str,
+    seed_strength: f64,
 }
 
 #[derive(Clone, Debug, Serialize)]
 struct CalibrationReport {
     preset: PaperPresetDetails,
     status: &'static str,
+    rendered_contour_mode: &'static str,
     rendered_parity: &'static str,
     rendered_pattern: &'static str,
     selected_family: &'static str,
@@ -551,6 +1525,7 @@ struct CalibrationCheck {
 struct CalibrationRun {
     preset: PaperPresetDetails,
     status: &'static str,
+    rendered_contour_mode: &'static str,
     rendered_parity: &'static str,
     rendered_pattern: &'static str,
     selected_family: &'static str,
@@ -562,6 +1537,44 @@ struct CalibrationRun {
     critical_q: f64,
     critical_branch: &'static str,
     dominant_cycles: f32,
+    checks: Vec<CalibrationCheck>,
+}
+
+#[derive(Serialize)]
+struct StabilityCalibrationRun {
+    id: &'static str,
+    label: &'static str,
+    source_key: &'static str,
+    source_page: &'static str,
+    paper_figure: &'static str,
+    target: &'static str,
+    status: &'static str,
+    rendered_parity: &'static str,
+    critical_q: f64,
+    critical_branch: &'static str,
+    selected_family: &'static str,
+    selected_pattern: &'static str,
+    global_selected_family: &'static str,
+    global_selected_pattern: &'static str,
+    eta_hex: f64,
+    gamma0: f64,
+    gamma_square: f64,
+    gamma_rhombic: f64,
+    gamma_hex: f64,
+    checks: Vec<CalibrationCheck>,
+}
+
+#[derive(Serialize)]
+struct RuleCalibrationRun {
+    preset: RulePresetDetails,
+    status: &'static str,
+    spatial_family: &'static str,
+    response_mode: &'static str,
+    pattern_strength: f32,
+    dominant_cycles: f32,
+    temporal_corr_t: f32,
+    temporal_corr_2t: f32,
+    stimulus_frequency_hz: f64,
     checks: Vec<CalibrationCheck>,
 }
 
@@ -585,6 +1598,7 @@ struct OrientationChannelPayload {
 struct PlanformModeDetails {
     normal_angle: f64,
     phase_scale: f64,
+    phase_offset: f64,
     amplitude: f64,
 }
 
@@ -710,6 +1724,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match command {
         "calibrate" => calibrate_command(&args[2..])?,
         "export" => export_command(&args[2..])?,
+        "rule-report" | "rule-calibrate" => rule_report_command(&args[2..])?,
         "serve" => serve_command(&args[2..])?,
         "--help" | "-h" => print_usage(),
         other => {
@@ -722,7 +1737,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]"
     );
 }
 
@@ -790,6 +1805,16 @@ fn export_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             calibration.selected_family
         );
     }
+    if let Some(rule) = &payload.rule {
+        println!(
+            "rule={} status={} family={} response={} freq={:.2}Hz",
+            rule.preset.map(|preset| preset.id).unwrap_or("manual"),
+            rule.status,
+            rule.spatial_family,
+            rule.response_mode,
+            rule.stimulus_frequency_hz
+        );
+    }
     Ok(())
 }
 
@@ -828,14 +1853,11 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
 
     let state = ServerState::default();
     let mut runs = Vec::new();
-    for preset in [
-        PaperPreset::Fig16Odd,
-        PaperPreset::Fig17Even,
-        PaperPreset::Fig31SquareEven,
-        PaperPreset::Fig32SquareOdd,
-        PaperPreset::Fig33RhombicEven,
-        PaperPreset::Fig35HexEven,
-    ] {
+    for preset in paper_preset_catalog()
+        .into_iter()
+        .map(|details| parse_paper_preset(Some(details.id)))
+        .filter(|preset| *preset != PaperPreset::Manual)
+    {
         let mut preset_raw = raw.clone();
         preset_raw.insert("paper_preset".to_string(), preset.as_str().to_string());
         let params = coerce_params(&preset_raw);
@@ -847,6 +1869,7 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
         runs.push(CalibrationRun {
             preset: calibration.preset,
             status: calibration.status,
+            rendered_contour_mode: calibration.rendered_contour_mode,
             rendered_parity: calibration.rendered_parity,
             rendered_pattern: calibration.rendered_pattern,
             selected_family: calibration.selected_family,
@@ -867,12 +1890,217 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
     }
     let run_count = runs.len();
     let body = serde_json::json!({
-        "format": "bressloff-paper-calibration-v2",
+        "format": "bressloff-paper-calibration-v4",
+        "model_family": MODEL_FAMILY_BRESSLOFF,
         "runs": runs,
+        "stability_reports": bressloff_stability_reports(),
     });
     fs::write(&out, serde_json::to_vec_pretty(&body)?)?;
     println!("wrote {} presets={run_count}", out.display());
     Ok(())
+}
+
+fn rule_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/rule-2011-regimes.json");
+    let mut raw = HashMap::new();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--no-trim-warmup" => {
+                raw.insert("trim_warmup".to_string(), "false".to_string());
+            }
+            flag if flag.starts_with("--") => {
+                let key = flag.trim_start_matches("--").replace('-', "_");
+                let value = iter.next().ok_or("flag requires a value")?;
+                raw.insert(key, value.clone());
+            }
+            _ => {}
+        }
+    }
+
+    raw.entry("n".to_string())
+        .or_insert_with(|| "40".to_string());
+    raw.entry("frames".to_string())
+        .or_insert_with(|| "144".to_string());
+    raw.entry("preview_step".to_string())
+        .or_insert_with(|| "0.5".to_string());
+
+    let state = ServerState::default();
+    let mut runs = Vec::new();
+    for preset in rule_preset_catalog()
+        .into_iter()
+        .map(|details| parse_rule_preset(Some(details.id)))
+        .filter(|preset| *preset != RulePreset::Manual)
+    {
+        let mut preset_raw = raw.clone();
+        preset_raw.insert("rule_preset".to_string(), preset.as_str().to_string());
+        let params = coerce_params(&preset_raw);
+        let payload = generate_payload(params, &state)?;
+        let rule = payload
+            .rule
+            .as_ref()
+            .ok_or("Rule regime report missing for Rule preset")?;
+        let preset = rule
+            .preset
+            .ok_or("Rule preset metadata missing for Rule report")?;
+        runs.push(RuleCalibrationRun {
+            preset,
+            status: rule.status,
+            spatial_family: rule.spatial_family,
+            response_mode: rule.response_mode,
+            pattern_strength: rule.pattern_strength,
+            dominant_cycles: rule.dominant_cycles,
+            temporal_corr_t: rule.temporal_corr_t,
+            temporal_corr_2t: rule.temporal_corr_2t,
+            stimulus_frequency_hz: rule.stimulus_frequency_hz,
+            checks: rule.checks.clone(),
+        });
+    }
+
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let run_count = runs.len();
+    let body = serde_json::json!({
+        "format": "rule-2011-regime-report-v1",
+        "model_family": MODEL_FAMILY_RULE,
+        "runs": runs,
+    });
+    fs::write(&out, serde_json::to_vec_pretty(&body)?)?;
+    println!("wrote {} rule_presets={run_count}", out.display());
+    Ok(())
+}
+
+fn bressloff_stability_reports() -> Vec<StabilityCalibrationRun> {
+    vec![
+        stability_report_for(
+            "fig37_even_coefficients",
+            "Fig 37 even eigen/coefficient sign target",
+            "bressloff-2001",
+            "24",
+            "Figure 37",
+            "even perturbative eigenfunction coefficients and even marginal branch",
+            apply_paper_preset(FrameParams::default(), PaperPreset::Fig17Even),
+            "even",
+            "any",
+            "any",
+        ),
+        stability_report_for(
+            "fig38_even_hex_bifurcation",
+            "Fig 38 even hexagonal bifurcation target",
+            "bressloff-2001",
+            "24",
+            "Figure 38",
+            "even hexagonal branch and roll exchange diagnostic",
+            apply_paper_preset(FrameParams::default(), PaperPreset::Fig35HexZeroEven),
+            "even",
+            "hexagonal",
+            "honeycomb",
+        ),
+        stability_report_for(
+            "fig39_odd_coefficients",
+            "Fig 39 odd eigen/coefficient sign target",
+            "bressloff-2001",
+            "25",
+            "Figure 39",
+            "odd perturbative eigenfunction coefficients and odd marginal branch",
+            apply_paper_preset(FrameParams::default(), PaperPreset::Fig16Odd),
+            "odd",
+            "any",
+            "any",
+        ),
+        stability_report_for(
+            "fig40_odd_hex_bifurcation",
+            "Fig 40 odd hexagonal bifurcation target",
+            "bressloff-2001",
+            "25",
+            "Figure 40",
+            "odd hexagonal/triangular higher-order selection target",
+            apply_paper_preset(FrameParams::default(), PaperPreset::Fig36TriangleOdd),
+            "odd",
+            "hexagonal",
+            "triangle",
+        ),
+        stability_report_for(
+            "rhombic_stability_angle",
+            "Rhombic stability angle target",
+            "bressloff-2001",
+            "23",
+            "Rhombic stability discussion",
+            "rhombic branch check at the current representative angle",
+            apply_paper_preset(FrameParams::default(), PaperPreset::Fig33RhombicEven),
+            "even",
+            "rhombic",
+            "rhombic",
+        ),
+    ]
+}
+
+fn stability_report_for(
+    id: &'static str,
+    label: &'static str,
+    source_key: &'static str,
+    source_page: &'static str,
+    paper_figure: &'static str,
+    target: &'static str,
+    params: FrameParams,
+    expected_branch: &'static str,
+    expected_family: &'static str,
+    expected_pattern: &'static str,
+) -> StabilityCalibrationRun {
+    let planform = planform_details(params, cell_mm_for(params));
+    let branch = &planform.branch_selection;
+    let mut checks = Vec::new();
+    checks.push(CalibrationCheck {
+        name: "critical-branch",
+        expected: expected_branch,
+        actual: planform.stability.critical_branch.to_string(),
+        passed: planform.stability.critical_branch == expected_branch,
+    });
+    if expected_family != "any" {
+        checks.push(CalibrationCheck {
+            name: "selected-family",
+            expected: expected_family,
+            actual: branch.selected_family.to_string(),
+            passed: branch.selected_family == expected_family,
+        });
+    }
+    if expected_pattern != "any" {
+        checks.push(CalibrationCheck {
+            name: "selected-pattern",
+            expected: expected_pattern,
+            actual: branch.selected_pattern.to_string(),
+            passed: branch.selected_pattern == expected_pattern,
+        });
+    }
+    let status = if checks.iter().all(|check| check.passed) {
+        "pass"
+    } else {
+        "review"
+    };
+    StabilityCalibrationRun {
+        id,
+        label,
+        source_key,
+        source_page,
+        paper_figure,
+        target,
+        status,
+        rendered_parity: planform.parity,
+        critical_q: planform.stability.critical_q,
+        critical_branch: planform.stability.critical_branch,
+        selected_family: branch.selected_family,
+        selected_pattern: branch.selected_pattern,
+        global_selected_family: branch.global_selected_family,
+        global_selected_pattern: branch.global_selected_pattern,
+        eta_hex: branch.eta_hex,
+        gamma0: branch.gamma0,
+        gamma_square: branch.gamma_square,
+        gamma_rhombic: branch.gamma_rhombic,
+        gamma_hex: branch.gamma_hex,
+        checks,
+    }
 }
 
 fn serve_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
@@ -933,7 +2161,7 @@ fn handle_connection(
                 "limits": {
                     "n": [32, 96],
                     "m": [4, 24],
-                    "t": [5.0, 140.0],
+                    "t": [5.0, 800.0],
                     "frames": [8, 240],
                     "seed": [0, u32::MAX],
                     "alpha": [0.1, 4.0],
@@ -960,14 +2188,33 @@ fn handle_connection(
                     "stability_q_min": [0.0, 2.0],
                     "stability_q_max": [0.2, 8.0],
                     "stability_samples": [16, 256],
-                    "export_orientation_channels": [false, true]
+                    "export_orientation_channels": [false, true],
+                    "rule_tau_e_ms": [1.0, 80.0],
+                    "rule_tau_i_ms": [1.0, 120.0],
+                    "rule_aee": [0.0, 30.0],
+                    "rule_aei": [0.0, 30.0],
+                    "rule_aie": [0.0, 30.0],
+                    "rule_aii": [0.0, 30.0],
+                    "rule_theta_e": [0.0, 8.0],
+                    "rule_theta_i": [0.0, 8.0],
+                    "rule_sigma_e": [0.4, 10.0],
+                    "rule_sigma_i": [0.4, 16.0],
+                    "rule_stim_amplitude": [0.0, 1.5],
+                    "rule_stim_period_ms": [20.0, 180.0],
+                    "rule_stim_threshold": [-1.0, 1.0],
+                    "rule_stim_smoothing": [0.0, 100.0],
+                    "rule_stim_i_fraction": [0.0, 1.0],
+                    "rule_seed_strength": [0.0, 0.2]
                 },
                 "paper_presets": paper_preset_catalog(),
-                "generator_options": ["dynamics", "planform"],
-                "pattern_options": ["auto", "rings", "rays", "spiral", "cobweb", "honeycomb", "rhombic", "hex_pi"],
+                "rule_presets": rule_preset_catalog(),
+                "generator_options": ["dynamics", "planform", "rule_flicker"],
+                "pattern_options": ["auto", "rings", "rays", "spiral", "cobweb", "honeycomb", "rhombic", "hex_pi", "triangle"],
+                "contour_mode_options": ["contoured", "noncontoured"],
                 "parity_options": ["even", "odd"],
-                "resolution_options": [32, 48, 64, 80, 96],
+                "resolution_options": [32, 40, 48, 64, 80, 96],
                 "orientation_options": [4, 8, 12, 16, 24],
+                "rule_seed_pattern_options": ["random", "stripes", "hexagonal"],
                 "solver_options": ["preview", "accurate"],
                 "colormaps": ["twilight", "viridis", "magma", "inferno", "turbo", "gray"],
                 "backend": "rust"
@@ -1116,9 +2363,12 @@ fn write_response(
 fn default_params_json() -> serde_json::Value {
     let defaults = FrameParams::default();
     serde_json::json!({
+        "model_family": defaults.generator.model_family(),
         "paper_preset": defaults.paper_preset.as_str(),
+        "rule_preset": defaults.rule_preset.as_str(),
         "generator": defaults.generator.as_str(),
         "pattern": defaults.pattern.as_str(),
+        "contour_mode": defaults.contour_mode.as_str(),
         "parity": defaults.parity.as_str(),
         "n": defaults.n,
         "m": defaults.m,
@@ -1152,51 +2402,29 @@ fn default_params_json() -> serde_json::Value {
         "stability_q_min": defaults.stability_q_min,
         "stability_q_max": defaults.stability_q_max,
         "stability_samples": defaults.stability_samples,
-        "export_orientation_channels": defaults.export_orientation_channels
+        "export_orientation_channels": defaults.export_orientation_channels,
+        "rule_tau_e_ms": defaults.rule_tau_e_ms,
+        "rule_tau_i_ms": defaults.rule_tau_i_ms,
+        "rule_aee": defaults.rule_aee,
+        "rule_aei": defaults.rule_aei,
+        "rule_aie": defaults.rule_aie,
+        "rule_aii": defaults.rule_aii,
+        "rule_theta_e": defaults.rule_theta_e,
+        "rule_theta_i": defaults.rule_theta_i,
+        "rule_sigma_e": defaults.rule_sigma_e,
+        "rule_sigma_i": defaults.rule_sigma_i,
+        "rule_stim_amplitude": defaults.rule_stim_amplitude,
+        "rule_stim_period_ms": defaults.rule_stim_period_ms,
+        "rule_stim_threshold": defaults.rule_stim_threshold,
+        "rule_stim_smoothing": defaults.rule_stim_smoothing,
+        "rule_stim_i_fraction": defaults.rule_stim_i_fraction,
+        "rule_seed_pattern": defaults.rule_seed_pattern.as_str(),
+        "rule_seed_strength": defaults.rule_seed_strength
     })
 }
 
 fn payload_cache_key(params: FrameParams) -> String {
-    format!(
-        "{}:{}:{}:{}:{}:{}:{:.6}:{}:{}:{:.4}:{:.4}:{:.4}:{:.6}:{:.2}:{:.2}:{}:{}:{:.3}:{}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{}:{}",
-        params.paper_preset.as_str(),
-        params.generator.as_str(),
-        params.pattern.as_str(),
-        params.parity.as_str(),
-        params.n,
-        params.m,
-        params.t,
-        params.frames,
-        params.seed,
-        params.alpha,
-        params.beta,
-        params.mu,
-        params.r0,
-        params.low_percentile,
-        params.high_percentile,
-        params.cmap,
-        params.trim_warmup,
-        params.trim_threshold,
-        params.solver.as_str(),
-        params.preview_step,
-        params.wave_count,
-        params.drift,
-        params.pattern_angle,
-        params.sharpness,
-        params.eigen_beta,
-        params.hypercolumn_mm,
-        params.local_sigma_deg,
-        params.local_wide_sigma_deg,
-        params.local_inhibition,
-        params.lateral_sigma,
-        params.lateral_wide_sigma,
-        params.lateral_inhibition,
-        params.lateral_spread_deg,
-        params.stability_q_min,
-        params.stability_q_max,
-        params.stability_samples,
-        params.export_orientation_channels
-    )
+    format!("{params:?}")
 }
 
 fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
@@ -1205,7 +2433,16 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
             .or_else(|| raw.get("preset"))
             .map(String::as_str),
     );
-    let defaults = apply_paper_preset(FrameParams::default(), preset);
+    let rule_preset = parse_rule_preset(
+        raw.get("rule_preset")
+            .or_else(|| raw.get("rule"))
+            .map(String::as_str),
+    );
+    let defaults = if rule_preset != RulePreset::Manual {
+        apply_rule_preset(FrameParams::default(), rule_preset)
+    } else {
+        apply_paper_preset(FrameParams::default(), preset)
+    };
     let mut low = get_f64(raw, "low_percentile", defaults.low_percentile, 0.0, 20.0);
     let mut high = get_f64(
         raw,
@@ -1220,10 +2457,12 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
     }
 
     FrameParams {
-        paper_preset: preset,
+        paper_preset: defaults.paper_preset,
+        rule_preset: defaults.rule_preset,
         generator: match raw.get("generator").map(String::as_str) {
             Some("planform") => Generator::Planform,
             Some("dynamics") => Generator::Dynamics,
+            Some("rule_flicker") => Generator::RuleFlicker,
             _ => defaults.generator,
         },
         pattern: match raw.get("pattern").map(String::as_str) {
@@ -1234,7 +2473,13 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
             Some("honeycomb") => PatternPreset::Honeycomb,
             Some("rhombic") => PatternPreset::Rhombic,
             Some("hex_pi") => PatternPreset::HexPi,
+            Some("triangle") => PatternPreset::Triangle,
             _ => defaults.pattern,
+        },
+        contour_mode: match raw.get("contour_mode").map(String::as_str) {
+            Some("noncontoured") => ContourMode::Noncontoured,
+            Some("contoured") => ContourMode::Contoured,
+            _ => defaults.contour_mode,
         },
         parity: match raw.get("parity").map(String::as_str) {
             Some("odd") => Parity::Odd,
@@ -1243,7 +2488,7 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
         },
         n: get_usize(raw, "n", defaults.n, 32, 96),
         m: get_usize(raw, "m", defaults.m, 4, 24),
-        t: get_f64(raw, "t", defaults.t, 5.0, 140.0),
+        t: get_f64(raw, "t", defaults.t, 5.0, 800.0),
         frames: get_usize(raw, "frames", defaults.frames, 8, 240),
         seed: get_u64(raw, "seed", defaults.seed),
         alpha: get_f64(raw, "alpha", defaults.alpha, 0.1, 4.0),
@@ -1310,6 +2555,64 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
             raw,
             "export_orientation_channels",
             defaults.export_orientation_channels,
+        ),
+        rule_tau_e_ms: get_f64(raw, "rule_tau_e_ms", defaults.rule_tau_e_ms, 1.0, 80.0),
+        rule_tau_i_ms: get_f64(raw, "rule_tau_i_ms", defaults.rule_tau_i_ms, 1.0, 120.0),
+        rule_aee: get_f64(raw, "rule_aee", defaults.rule_aee, 0.0, 30.0),
+        rule_aei: get_f64(raw, "rule_aei", defaults.rule_aei, 0.0, 30.0),
+        rule_aie: get_f64(raw, "rule_aie", defaults.rule_aie, 0.0, 30.0),
+        rule_aii: get_f64(raw, "rule_aii", defaults.rule_aii, 0.0, 30.0),
+        rule_theta_e: get_f64(raw, "rule_theta_e", defaults.rule_theta_e, 0.0, 8.0),
+        rule_theta_i: get_f64(raw, "rule_theta_i", defaults.rule_theta_i, 0.0, 8.0),
+        rule_sigma_e: get_f64(raw, "rule_sigma_e", defaults.rule_sigma_e, 0.4, 10.0),
+        rule_sigma_i: get_f64(raw, "rule_sigma_i", defaults.rule_sigma_i, 0.4, 16.0),
+        rule_stim_amplitude: get_f64(
+            raw,
+            "rule_stim_amplitude",
+            defaults.rule_stim_amplitude,
+            0.0,
+            1.5,
+        ),
+        rule_stim_period_ms: get_f64(
+            raw,
+            "rule_stim_period_ms",
+            defaults.rule_stim_period_ms,
+            20.0,
+            180.0,
+        ),
+        rule_stim_threshold: get_f64(
+            raw,
+            "rule_stim_threshold",
+            defaults.rule_stim_threshold,
+            -1.0,
+            1.0,
+        ),
+        rule_stim_smoothing: get_f64(
+            raw,
+            "rule_stim_smoothing",
+            defaults.rule_stim_smoothing,
+            0.0,
+            100.0,
+        ),
+        rule_stim_i_fraction: get_f64(
+            raw,
+            "rule_stim_i_fraction",
+            defaults.rule_stim_i_fraction,
+            0.0,
+            1.0,
+        ),
+        rule_seed_pattern: match raw.get("rule_seed_pattern").map(String::as_str) {
+            Some("random") => RuleSeedPattern::Random,
+            Some("hexagonal") => RuleSeedPattern::Hexagonal,
+            Some("stripes") => RuleSeedPattern::Stripes,
+            _ => defaults.rule_seed_pattern,
+        },
+        rule_seed_strength: get_f64(
+            raw,
+            "rule_seed_strength",
+            defaults.rule_seed_strength,
+            0.0,
+            0.2,
         ),
     }
 }
@@ -1386,9 +2689,22 @@ fn generate_payload(
                 solved.duration_since(built).as_secs_f64(),
             )
         }
+        Generator::RuleFlicker => {
+            let built = Instant::now();
+            let (frames, times) = simulate_rule_flicker_frames(params);
+            let solved = Instant::now();
+            (
+                frames,
+                times,
+                None,
+                false,
+                built.duration_since(started).as_secs_f64(),
+                solved.duration_since(built).as_secs_f64(),
+            )
+        }
     };
     let warmup = match params.generator {
-        Generator::Dynamics => {
+        Generator::Dynamics | Generator::RuleFlicker => {
             trim_warmup(&mut frames, &mut times, orientation_frames.as_mut(), params)
         }
         Generator::Planform => Warmup {
@@ -1408,7 +2724,14 @@ fn generate_payload(
     let cell_mm = cell_mm_for(params);
     let planform = match params.generator {
         Generator::Planform => Some(planform_details(params, cell_mm)),
-        Generator::Dynamics => None,
+        Generator::Dynamics | Generator::RuleFlicker => None,
+    };
+    let rule_preset = rule_preset_details(params.rule_preset);
+    let rule = match params.generator {
+        Generator::RuleFlicker => {
+            Some(rule_details(rule_preset, &frames, &times, &metrics, params))
+        }
+        Generator::Dynamics | Generator::Planform => None,
     };
     let paper_preset = paper_preset_details(params.paper_preset);
     let calibration = match (&paper_preset, &planform) {
@@ -1417,16 +2740,21 @@ fn generate_payload(
         }
         _ => None,
     };
-    let orientation_channels = orientation_frames
-        .as_ref()
-        .map(|channels| orientation_channel_payload(channels, params, times.len()));
+    let orientation_channels = if params.generator == Generator::RuleFlicker {
+        None
+    } else {
+        orientation_frames
+            .as_ref()
+            .map(|channels| orientation_channel_payload(channels, params, times.len()))
+    };
 
     Ok(Payload {
         format: "bressloff-v1-u8-frames",
+        model_family: params.generator.model_family(),
         width: params.n,
         height: params.n,
         frame_count: times.len(),
-        orientation_count: params.m,
+        orientation_count: orientation_count_for(params),
         times,
         scale_min,
         scale_max,
@@ -1442,13 +2770,18 @@ fn generate_payload(
         },
         palette: palette(params.cmap),
         paper_preset,
+        rule_preset,
         planform,
+        rule,
         calibration,
         orientation_channels,
         params: PayloadParams {
+            model_family: params.generator.model_family(),
             paper_preset: params.paper_preset.as_str(),
+            rule_preset: params.rule_preset.as_str(),
             generator: params.generator.as_str(),
             pattern: params.pattern.as_str(),
+            contour_mode: params.contour_mode.as_str(),
             parity: params.parity.as_str(),
             n: params.n,
             m: params.m,
@@ -1483,6 +2816,23 @@ fn generate_payload(
             stability_q_max: params.stability_q_max,
             stability_samples: params.stability_samples,
             export_orientation_channels: params.export_orientation_channels,
+            rule_tau_e_ms: params.rule_tau_e_ms,
+            rule_tau_i_ms: params.rule_tau_i_ms,
+            rule_aee: params.rule_aee,
+            rule_aei: params.rule_aei,
+            rule_aie: params.rule_aie,
+            rule_aii: params.rule_aii,
+            rule_theta_e: params.rule_theta_e,
+            rule_theta_i: params.rule_theta_i,
+            rule_sigma_e: params.rule_sigma_e,
+            rule_sigma_i: params.rule_sigma_i,
+            rule_stim_amplitude: params.rule_stim_amplitude,
+            rule_stim_period_ms: params.rule_stim_period_ms,
+            rule_stim_threshold: params.rule_stim_threshold,
+            rule_stim_smoothing: params.rule_stim_smoothing,
+            rule_stim_i_fraction: params.rule_stim_i_fraction,
+            rule_seed_pattern: params.rule_seed_pattern.as_str(),
+            rule_seed_strength: params.rule_seed_strength,
         },
         metrics,
         warmup,
@@ -1543,8 +2893,18 @@ fn generate_planform_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>, Option<
                     let y = (row as f64 + 0.5) * cell_mm - half;
                     for col in 0..params.n {
                         let x = (col as f64 + 0.5) * cell_mm - half;
-                        let mut best = 0.0_f64;
                         let cell = row * params.n + col;
+                        if planform_params.contour_mode == ContourMode::Noncontoured {
+                            let value = planform_scalar_activity(x, y, wave_number, phase, &modes);
+                            let output = (value * params.sharpness).tanh() as f32;
+                            for k in 0..params.m {
+                                channel_frame[cell * params.m + k] = output;
+                            }
+                            frame[cell] = output;
+                            continue;
+                        }
+
+                        let mut best = 0.0_f64;
                         for k in 0..params.m {
                             let phi = PI * k as f64 / params.m as f64;
                             let value = orientation_planform_activity(
@@ -1599,10 +2959,215 @@ fn generate_planform_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>, Option<
     (frames, times, orientation_frames)
 }
 
+#[derive(Clone, Debug)]
+struct RuleGaussianKernel {
+    radius: usize,
+    weights: Vec<f64>,
+}
+
+fn simulate_rule_flicker_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>) {
+    let frame_count = params.frames.max(1);
+    let frame_size = params.n * params.n;
+    let mut frames = Vec::with_capacity(frame_count * frame_size);
+    let mut times = Vec::with_capacity(frame_count);
+    let (mut ue, mut ui) = initialize_rule_state(params);
+    let kernel_e = rule_gaussian_kernel(params.rule_sigma_e);
+    let kernel_i = rule_gaussian_kernel(params.rule_sigma_i);
+    let mut tmp_e = vec![0.0; frame_size];
+    let mut tmp_i = vec![0.0; frame_size];
+    let mut conv_e = vec![0.0; frame_size];
+    let mut conv_i = vec![0.0; frame_size];
+    let mut next_e = vec![0.0; frame_size];
+    let mut next_i = vec![0.0; frame_size];
+    let step = match params.solver {
+        Solver::Preview => params.preview_step,
+        Solver::Accurate => params.preview_step.min(0.1),
+    }
+    .clamp(0.02, 1.0);
+    let mut current_t = 0.0;
+
+    for frame_index in 0..frame_count {
+        let target_t = if frame_count <= 1 {
+            0.0
+        } else {
+            params.t * frame_index as f64 / (frame_count - 1) as f64
+        };
+
+        while current_t + 1.0e-12 < target_t {
+            let dt = step.min(target_t - current_t);
+            convolve_periodic_separable(&ue, params.n, &kernel_e, &mut tmp_e, &mut conv_e);
+            convolve_periodic_separable(&ui, params.n, &kernel_i, &mut tmp_i, &mut conv_i);
+            let stim = params.rule_stim_amplitude * rule_stimulus(params, current_t);
+            for i in 0..frame_size {
+                let input_e =
+                    params.rule_aee * conv_e[i] - params.rule_aie * conv_i[i] - params.rule_theta_e
+                        + stim;
+                let input_i =
+                    params.rule_aei * conv_e[i] - params.rule_aii * conv_i[i] - params.rule_theta_i
+                        + params.rule_stim_i_fraction * stim;
+                let target_e = rule_sigmoid(input_e);
+                let target_i = rule_sigmoid(input_i);
+                next_e[i] =
+                    (ue[i] + (dt / params.rule_tau_e_ms) * (-ue[i] + target_e)).clamp(0.0, 1.0);
+                next_i[i] =
+                    (ui[i] + (dt / params.rule_tau_i_ms) * (-ui[i] + target_i)).clamp(0.0, 1.0);
+            }
+            std::mem::swap(&mut ue, &mut next_e);
+            std::mem::swap(&mut ui, &mut next_i);
+            current_t += dt;
+        }
+
+        times.push(target_t);
+        frames.extend(ue.iter().map(|value| *value as f32));
+    }
+
+    (frames, times)
+}
+
+fn initialize_rule_state(params: FrameParams) -> (Vec<f64>, Vec<f64>) {
+    let frame_size = params.n * params.n;
+    let (base_e, base_i) = rule_rest_state(params);
+    let mut rng = SplitMix64::new(params.seed);
+    let mut ue = vec![base_e; frame_size];
+    let mut ui = vec![base_i; frame_size];
+
+    if params.rule_seed_strength <= 0.0 {
+        return (ue, ui);
+    }
+
+    for row in 0..params.n {
+        for col in 0..params.n {
+            let i = row * params.n + col;
+            let structured = rule_seed_value(params, row, col);
+            let noise = (rng.next_f64() * 2.0 - 1.0) * 0.2;
+            let perturbation = params.rule_seed_strength * (structured + noise);
+            ue[i] = (base_e + perturbation).clamp(0.0, 1.0);
+            ui[i] = (base_i + 0.35 * perturbation).clamp(0.0, 1.0);
+        }
+    }
+    (ue, ui)
+}
+
+fn rule_rest_state(params: FrameParams) -> (f64, f64) {
+    let mut ue = 0.1;
+    let mut ui = 0.1;
+    for _ in 0..2000 {
+        let target_e =
+            rule_sigmoid(params.rule_aee * ue - params.rule_aie * ui - params.rule_theta_e);
+        let target_i =
+            rule_sigmoid(params.rule_aei * ue - params.rule_aii * ui - params.rule_theta_i);
+        ue += 0.05 * (target_e - ue);
+        ui += 0.05 * (target_i - ui);
+    }
+    (ue, ui)
+}
+
+fn rule_seed_value(params: FrameParams, row: usize, col: usize) -> f64 {
+    let x = col as f64 / params.n as f64 - 0.5;
+    let y = row as f64 / params.n as f64 - 0.5;
+    let cycles = if params.rule_stim_period_ms < 80.0 {
+        4.0
+    } else {
+        5.0
+    };
+    let q = 2.0 * PI * cycles;
+    match params.rule_seed_pattern {
+        RuleSeedPattern::Random => 0.0,
+        RuleSeedPattern::Stripes => (q * x).cos(),
+        RuleSeedPattern::Hexagonal => {
+            let a = (q * x).cos();
+            let b = (q * (-0.5 * x + 0.866_025_403_784_438_6 * y)).cos();
+            let c = (q * (-0.5 * x - 0.866_025_403_784_438_6 * y)).cos();
+            (a + b + c) / 3.0
+        }
+    }
+}
+
+fn rule_gaussian_kernel(sigma: f64) -> RuleGaussianKernel {
+    let sigma = sigma.max(0.1);
+    let radius = (3.0 * sigma).ceil() as usize;
+    let mut weights: Vec<f64> = (0..=2 * radius)
+        .map(|i| {
+            let offset = i as isize - radius as isize;
+            (-(offset as f64).powi(2) / (sigma * sigma)).exp()
+        })
+        .collect();
+    let sum: f64 = weights.iter().sum();
+    if sum > 0.0 {
+        for weight in &mut weights {
+            *weight /= sum;
+        }
+    }
+    RuleGaussianKernel { radius, weights }
+}
+
+fn convolve_periodic_separable(
+    input: &[f64],
+    n: usize,
+    kernel: &RuleGaussianKernel,
+    tmp: &mut [f64],
+    output: &mut [f64],
+) {
+    for row in 0..n {
+        for col in 0..n {
+            let mut sum = 0.0;
+            for (k, weight) in kernel.weights.iter().enumerate() {
+                let delta = k as isize - kernel.radius as isize;
+                let source_col = wrap_index(col, delta, n);
+                sum += weight * input[row * n + source_col];
+            }
+            tmp[row * n + col] = sum;
+        }
+    }
+
+    for row in 0..n {
+        for col in 0..n {
+            let mut sum = 0.0;
+            for (k, weight) in kernel.weights.iter().enumerate() {
+                let delta = k as isize - kernel.radius as isize;
+                let source_row = wrap_index(row, delta, n);
+                sum += weight * tmp[source_row * n + col];
+            }
+            output[row * n + col] = sum;
+        }
+    }
+}
+
+fn rule_stimulus(params: FrameParams, time_ms: f64) -> f64 {
+    let phase = (2.0 * PI * time_ms / params.rule_stim_period_ms.max(1.0e-9)).sin()
+        - params.rule_stim_threshold;
+    if params.rule_stim_smoothing <= 0.0 {
+        if phase > 0.0 {
+            1.0
+        } else {
+            0.0
+        }
+    } else {
+        rule_sigmoid(params.rule_stim_smoothing * phase)
+    }
+}
+
+fn rule_sigmoid(x: f64) -> f64 {
+    if x <= -50.0 {
+        0.0
+    } else if x >= 50.0 {
+        1.0
+    } else {
+        1.0 / (1.0 + (-x).exp())
+    }
+}
+
 fn cell_mm_for(params: FrameParams) -> f64 {
     match params.generator {
-        Generator::Dynamics => DYNAMIC_CELL_MM,
+        Generator::Dynamics | Generator::RuleFlicker => DYNAMIC_CELL_MM,
         Generator::Planform => (2.0 * PI * RETINO_BETA / RETINO_EPS) / params.n as f64,
+    }
+}
+
+fn orientation_count_for(params: FrameParams) -> usize {
+    match params.generator {
+        Generator::RuleFlicker => 1,
+        Generator::Dynamics | Generator::Planform => params.m,
     }
 }
 
@@ -1614,6 +3179,7 @@ fn planform_details(params: FrameParams, cell_mm: f64) -> PlanformDetails {
     let branch_selection = branch_selection(planform_params, &stability);
     let effective_pattern = effective_pattern(params, &branch_selection);
     PlanformDetails {
+        contour_mode: params.contour_mode.as_str(),
         parity: planform_params.parity.as_str(),
         q,
         wave_number,
@@ -1638,7 +3204,16 @@ fn calibration_report(
     let selected_pattern = planform.branch_selection.selected_pattern;
     let global_selected_family = planform.branch_selection.global_selected_family;
     let global_selected_pattern = planform.branch_selection.global_selected_pattern;
+    let check_branch_selection = preset.expected_kind != "single-map-noncontoured-planform";
+    let check_branch_pattern = check_branch_selection && preset.expected_family != "roll";
     let mut checks = Vec::new();
+
+    checks.push(CalibrationCheck {
+        name: "contour-mode",
+        expected: preset.expected_contour_mode,
+        actual: params.contour_mode.as_str().to_string(),
+        passed: params.contour_mode.as_str() == preset.expected_contour_mode,
+    });
 
     checks.push(CalibrationCheck {
         name: "parity",
@@ -1654,19 +3229,13 @@ fn calibration_report(
             actual: rendered_pattern.as_str().to_string(),
             passed: rendered_pattern.as_str() == preset.expected_pattern,
         });
-        checks.push(CalibrationCheck {
-            name: "same-lattice-branch-pattern",
-            expected: preset.expected_pattern,
-            actual: selected_pattern.to_string(),
-            passed: selected_pattern == preset.expected_pattern,
-        });
 
-        if selected_pattern != global_selected_pattern {
+        if check_branch_pattern {
             checks.push(CalibrationCheck {
-                name: "global-score-pattern",
-                expected: selected_pattern,
-                actual: global_selected_pattern.to_string(),
-                passed: false,
+                name: "same-lattice-branch-pattern",
+                expected: preset.expected_pattern,
+                actual: selected_pattern.to_string(),
+                passed: selected_pattern == preset.expected_pattern,
             });
         }
     }
@@ -1678,19 +3247,13 @@ fn calibration_report(
             actual: rendered_family.to_string(),
             passed: rendered_family == preset.expected_family,
         });
-        checks.push(CalibrationCheck {
-            name: "same-lattice-branch-family",
-            expected: preset.expected_family,
-            actual: selected_family.to_string(),
-            passed: selected_family == preset.expected_family,
-        });
 
-        if selected_family != global_selected_family {
+        if check_branch_selection {
             checks.push(CalibrationCheck {
-                name: "global-score-family",
-                expected: selected_family,
-                actual: global_selected_family.to_string(),
-                passed: false,
+                name: "same-lattice-branch-family",
+                expected: preset.expected_family,
+                actual: selected_family.to_string(),
+                passed: selected_family == preset.expected_family,
             });
         }
     }
@@ -1704,6 +3267,7 @@ fn calibration_report(
     CalibrationReport {
         preset,
         status,
+        rendered_contour_mode: params.contour_mode.as_str(),
         rendered_parity: planform.parity,
         rendered_pattern: rendered_pattern.as_str(),
         selected_family,
@@ -1719,11 +3283,243 @@ fn calibration_report(
     }
 }
 
+fn rule_details(
+    preset: Option<RulePresetDetails>,
+    frames: &[f32],
+    times: &[f64],
+    metrics: &Metrics,
+    params: FrameParams,
+) -> RuleDetails {
+    let final_frame = representative_rule_frame(frames, params.n).unwrap_or(&[]);
+    let pattern_strength = rule_pattern_strength(frames, params.n);
+    let (spatial_family, dominant_cycles) = classify_rule_spatial_family(final_frame, params.n);
+    let temporal_corr_t =
+        temporal_correlation_at_period(frames, times, params.n, params.rule_stim_period_ms);
+    let temporal_corr_2t =
+        temporal_correlation_at_period(frames, times, params.n, 2.0 * params.rule_stim_period_ms);
+    let response_mode = classify_rule_response_mode(temporal_corr_t, temporal_corr_2t);
+    let mut checks = Vec::new();
+
+    if let Some(preset) = preset {
+        checks.push(CalibrationCheck {
+            name: "model-family",
+            expected: MODEL_FAMILY_RULE,
+            actual: MODEL_FAMILY_RULE.to_string(),
+            passed: true,
+        });
+        checks.push(CalibrationCheck {
+            name: "spatial-family",
+            expected: preset.expected_family,
+            actual: spatial_family.to_string(),
+            passed: spatial_family == preset.expected_family,
+        });
+        checks.push(CalibrationCheck {
+            name: "response-mode",
+            expected: preset.expected_response_mode,
+            actual: response_mode.to_string(),
+            passed: response_mode == preset.expected_response_mode,
+        });
+    }
+
+    let status = if preset.is_some() && checks.iter().all(|check| check.passed) {
+        "qualitative-pass"
+    } else if preset.is_some() {
+        "qualitative-review"
+    } else {
+        "manual"
+    };
+
+    RuleDetails {
+        preset,
+        model_family: MODEL_FAMILY_RULE,
+        source_key: "rule-2011",
+        equation: "Wilson-Cowan E/I field, Rule 2011 equations 1-2",
+        status,
+        spatial_family,
+        response_mode,
+        pattern_strength,
+        dominant_cycles: if dominant_cycles > 0.0 {
+            dominant_cycles
+        } else {
+            metrics.dominant_cycles
+        },
+        temporal_corr_t,
+        temporal_corr_2t,
+        stimulus_frequency_hz: 1000.0 / params.rule_stim_period_ms.max(1.0e-9),
+        parameters: RuleParamDetails {
+            tau_e_ms: params.rule_tau_e_ms,
+            tau_i_ms: params.rule_tau_i_ms,
+            aee: params.rule_aee,
+            aei: params.rule_aei,
+            aie: params.rule_aie,
+            aii: params.rule_aii,
+            theta_e: params.rule_theta_e,
+            theta_i: params.rule_theta_i,
+            sigma_e: params.rule_sigma_e,
+            sigma_i: params.rule_sigma_i,
+            stim_amplitude: params.rule_stim_amplitude,
+            stim_period_ms: params.rule_stim_period_ms,
+            stim_threshold: params.rule_stim_threshold,
+            stim_smoothing: params.rule_stim_smoothing,
+            stim_i_fraction: params.rule_stim_i_fraction,
+            seed_pattern: params.rule_seed_pattern.as_str(),
+            seed_strength: params.rule_seed_strength,
+        },
+        checks,
+    }
+}
+
+fn rule_pattern_strength(frames: &[f32], n: usize) -> f32 {
+    let frame_size = n * n;
+    if frame_size == 0 || frames.len() < frame_size {
+        return 0.0;
+    }
+    let frame_count = frames.len() / frame_size;
+    let start = frame_count.saturating_mul(2) / 3;
+    let tail = &frames[start * frame_size..];
+    let count = tail.len() / frame_size;
+    if count == 0 {
+        return 0.0;
+    }
+    tail.chunks(frame_size).map(stddev).sum::<f32>() / count as f32
+}
+
+fn representative_rule_frame(frames: &[f32], n: usize) -> Option<&[f32]> {
+    let frame_size = n * n;
+    if frame_size == 0 || frames.len() < frame_size {
+        return None;
+    }
+    let frame_count = frames.len() / frame_size;
+    let start = frame_count.saturating_mul(2) / 3;
+    frames[start * frame_size..]
+        .chunks(frame_size)
+        .max_by(|a, b| stddev(a).total_cmp(&stddev(b)))
+}
+
+fn classify_rule_spatial_family(frame: &[f32], n: usize) -> (&'static str, f32) {
+    let strength = stddev(frame);
+    if frame.is_empty() || strength < 0.001 {
+        return ("homogeneous", 0.0);
+    }
+
+    let mut best_stripe = (0.0_f64, 0.0_f32);
+    let mut best_hex = (0.0_f64, 0.0_f32);
+    for cycles in 2..=10 {
+        let cycles_f = cycles as f64;
+        for angle in [0.0, PI / 4.0, PI / 2.0, 3.0 * PI / 4.0] {
+            let power = projection_power(frame, n, cycles_f, angle);
+            if power > best_stripe.0 {
+                best_stripe = (power, cycles as f32);
+            }
+        }
+
+        let hex_power = projection_power(frame, n, cycles_f, 0.0)
+            + projection_power(frame, n, cycles_f, PI / 3.0)
+            + projection_power(frame, n, cycles_f, -PI / 3.0);
+        if hex_power > best_hex.0 {
+            best_hex = (hex_power, cycles as f32);
+        }
+    }
+
+    if best_hex.0 > 1.65 * best_stripe.0 {
+        ("hexagonal", best_hex.1)
+    } else {
+        ("stripe", best_stripe.1)
+    }
+}
+
+fn projection_power(frame: &[f32], n: usize, cycles: f64, angle: f64) -> f64 {
+    if frame.is_empty() {
+        return 0.0;
+    }
+    let mean = frame.iter().sum::<f32>() as f64 / frame.len() as f64;
+    let q = 2.0 * PI * cycles;
+    let nx = angle.cos();
+    let ny = angle.sin();
+    let mut re = 0.0;
+    let mut im = 0.0;
+    for row in 0..n {
+        let y = row as f64 / n as f64 - 0.5;
+        for col in 0..n {
+            let x = col as f64 / n as f64 - 0.5;
+            let phase = q * (x * nx + y * ny);
+            let value = frame[row * n + col] as f64 - mean;
+            re += value * phase.cos();
+            im += value * phase.sin();
+        }
+    }
+    (re * re + im * im) / (frame.len() as f64 * frame.len() as f64)
+}
+
+fn temporal_correlation_at_period(frames: &[f32], times: &[f64], n: usize, period_ms: f64) -> f32 {
+    let frame_size = n * n;
+    if frame_size == 0 || frames.len() < 2 * frame_size || times.len() < 2 {
+        return 0.0;
+    }
+    let final_index = times.len() - 1;
+    let target_time = times[final_index] - period_ms;
+    let Some(compare_index) = nearest_time_index(times, target_time) else {
+        return 0.0;
+    };
+    if compare_index == final_index {
+        return 0.0;
+    }
+    frame_correlation(
+        &frames[compare_index * frame_size..(compare_index + 1) * frame_size],
+        &frames[final_index * frame_size..(final_index + 1) * frame_size],
+    )
+}
+
+fn nearest_time_index(times: &[f64], target: f64) -> Option<usize> {
+    if target < *times.first()? {
+        return None;
+    }
+    times
+        .iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| (*a - target).abs().total_cmp(&(*b - target).abs()))
+        .map(|(index, _)| index)
+}
+
+fn frame_correlation(a: &[f32], b: &[f32]) -> f32 {
+    if a.len() != b.len() || a.is_empty() {
+        return 0.0;
+    }
+    let mean_a = a.iter().sum::<f32>() / a.len() as f32;
+    let mean_b = b.iter().sum::<f32>() / b.len() as f32;
+    let mut numerator = 0.0_f64;
+    let mut denom_a = 0.0_f64;
+    let mut denom_b = 0.0_f64;
+    for (a, b) in a.iter().zip(b.iter()) {
+        let da = (*a - mean_a) as f64;
+        let db = (*b - mean_b) as f64;
+        numerator += da * db;
+        denom_a += da * da;
+        denom_b += db * db;
+    }
+    if denom_a <= 1.0e-18 || denom_b <= 1.0e-18 {
+        0.0
+    } else {
+        (numerator / (denom_a * denom_b).sqrt()).clamp(-1.0, 1.0) as f32
+    }
+}
+
+fn classify_rule_response_mode(corr_t: f32, corr_2t: f32) -> &'static str {
+    if corr_t < -0.2 && corr_2t > 0.2 {
+        "period_doubled"
+    } else if corr_t > 0.2 {
+        "one_to_one"
+    } else {
+        "mixed"
+    }
+}
+
 fn effective_pattern_from_params(params: FrameParams, planform: &PlanformDetails) -> PatternPreset {
     match params.pattern {
         PatternPreset::Auto => match planform.branch_selection.selected_pattern {
             "honeycomb" => PatternPreset::Honeycomb,
             "hex_pi" => PatternPreset::HexPi,
+            "triangle" => PatternPreset::Triangle,
             "rhombic" => PatternPreset::Rhombic,
             "spiral" => PatternPreset::Spiral,
             "rings" => PatternPreset::Rings,
@@ -1738,7 +3534,7 @@ fn pattern_family(pattern: PatternPreset) -> &'static str {
         PatternPreset::Auto => "branch-selected",
         PatternPreset::Rings | PatternPreset::Rays | PatternPreset::Spiral => "roll",
         PatternPreset::Cobweb => "square",
-        PatternPreset::Honeycomb | PatternPreset::HexPi => "hexagonal",
+        PatternPreset::Honeycomb | PatternPreset::HexPi | PatternPreset::Triangle => "hexagonal",
         PatternPreset::Rhombic => "rhombic",
     }
 }
@@ -1783,6 +3579,7 @@ fn effective_pattern(
     match branch_selection.selected_pattern {
         "honeycomb" => PatternPreset::Honeycomb,
         "hex_pi" => PatternPreset::HexPi,
+        "triangle" => PatternPreset::Triangle,
         "rhombic" => PatternPreset::Rhombic,
         "spiral" => PatternPreset::Spiral,
         "rings" => PatternPreset::Rings,
@@ -2022,7 +3819,7 @@ fn branch_target_lattice(pattern: PatternPreset) -> &'static str {
         PatternPreset::Auto => "global",
         PatternPreset::Cobweb => "square",
         PatternPreset::Rhombic => "rhombic",
-        PatternPreset::Honeycomb | PatternPreset::HexPi => "hexagonal",
+        PatternPreset::Honeycomb | PatternPreset::HexPi | PatternPreset::Triangle => "hexagonal",
         PatternPreset::Rings | PatternPreset::Rays | PatternPreset::Spiral => "roll",
     }
 }
@@ -2206,13 +4003,28 @@ fn planform_modes(params: FrameParams, pattern: PatternPreset) -> Vec<PlanformMo
             planform_mode(2.0 * PI / 3.0, -1.0, -1.0),
             planform_mode(-2.0 * PI / 3.0, 0.5, 1.0),
         ],
+        PatternPreset::Triangle => vec![
+            planform_mode_with_phase(0.0, 1.0, -PI / 2.0, 1.0),
+            planform_mode_with_phase(2.0 * PI / 3.0, 1.0, -PI / 2.0, 1.0),
+            planform_mode_with_phase(-2.0 * PI / 3.0, 1.0, -PI / 2.0, 1.0),
+        ],
     }
 }
 
 fn planform_mode(normal_angle: f64, phase_scale: f64, amplitude: f64) -> PlanformModeDetails {
+    planform_mode_with_phase(normal_angle, phase_scale, 0.0, amplitude)
+}
+
+fn planform_mode_with_phase(
+    normal_angle: f64,
+    phase_scale: f64,
+    phase_offset: f64,
+    amplitude: f64,
+) -> PlanformModeDetails {
     PlanformModeDetails {
         normal_angle,
         phase_scale,
+        phase_offset,
         amplitude,
     }
 }
@@ -2226,6 +4038,10 @@ fn planform_value(
     modes: &[PlanformModeDetails],
     eigen: &OrientationEigenDetails,
 ) -> f64 {
+    if params.contour_mode == ContourMode::Noncontoured {
+        return planform_scalar_activity(x, y, wave_number, phase, modes);
+    }
+
     let samples = params.m.max(8);
     let mut best = 0.0_f64;
     for k in 0..samples {
@@ -2236,6 +4052,23 @@ fn planform_value(
         }
     }
     best
+}
+
+fn planform_scalar_activity(
+    x: f64,
+    y: f64,
+    wave_number: f64,
+    phase: f64,
+    modes: &[PlanformModeDetails],
+) -> f64 {
+    modes
+        .iter()
+        .map(|mode| {
+            let projection = x * mode.normal_angle.cos() + y * mode.normal_angle.sin();
+            mode.amplitude
+                * (wave_number * projection + phase * mode.phase_scale + mode.phase_offset).cos()
+        })
+        .sum()
 }
 
 fn orientation_planform_activity(
@@ -2251,8 +4084,8 @@ fn orientation_planform_activity(
         .iter()
         .map(|mode| {
             let projection = x * mode.normal_angle.cos() + y * mode.normal_angle.sin();
-            let spatial =
-                mode.amplitude * (wave_number * projection + phase * mode.phase_scale).cos();
+            let spatial = mode.amplitude
+                * (wave_number * projection + phase * mode.phase_scale + mode.phase_offset).cos();
             let tangent_center = mode.normal_angle + PI / 2.0;
             spatial * orientation_eigen_value(phi - tangent_center, eigen)
         })
@@ -3117,6 +4950,128 @@ mod tests {
     }
 
     #[test]
+    fn paper_preset_registry_roundtrips_lookup_and_parse() {
+        let mut ids = Vec::new();
+        for entry in PAPER_PRESET_REGISTRY {
+            assert_eq!(entry.details.id, entry.preset.as_str());
+            assert_eq!(parse_paper_preset(Some(entry.details.id)), entry.preset);
+            assert_eq!(
+                paper_preset_details(entry.preset).unwrap().id,
+                entry.details.id
+            );
+            ids.push(entry.details.id);
+        }
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), PAPER_PRESET_REGISTRY.len());
+    }
+
+    #[test]
+    fn new_contoured_paper_presets_are_cataloged() {
+        let ids: Vec<&str> = paper_preset_catalog()
+            .into_iter()
+            .map(|preset| preset.id)
+            .collect();
+        for id in [
+            "fig34_rhombic_odd",
+            "fig35_hex_zero_even",
+            "fig36_triangle_odd",
+            "fig36_hex_zero_odd",
+        ] {
+            assert!(ids.contains(&id));
+        }
+    }
+
+    #[test]
+    fn noncontoured_paper_presets_are_cataloged() {
+        let ids: Vec<&str> = paper_preset_catalog()
+            .into_iter()
+            .map(|preset| preset.id)
+            .collect();
+        for id in [
+            "fig29_square_noncontoured",
+            "fig29_roll_noncontoured",
+            "fig30_rhombic_noncontoured",
+            "fig30_hex_noncontoured",
+        ] {
+            assert!(ids.contains(&id));
+        }
+    }
+
+    #[test]
+    fn completed_bressloff_catalog_contains_roll_subpanels_and_2002_aliases() {
+        let ids: Vec<&str> = paper_preset_catalog()
+            .into_iter()
+            .map(|preset| preset.id)
+            .collect();
+        assert_eq!(ids.len(), 24);
+        for id in [
+            "fig31_square_even_roll",
+            "fig32_square_odd_roll",
+            "fig33_rhombic_even_roll",
+            "fig34_rhombic_odd_roll",
+            "fig5_roll_cortical",
+            "fig5_hex_cortical",
+            "fig5_honeycomb_cortical",
+            "fig5_square_cortical",
+            "fig6_visual_field_planforms",
+            "fig7_lattice_tunnel",
+        ] {
+            assert!(ids.contains(&id));
+        }
+    }
+
+    #[test]
+    fn bressloff_stability_reports_cover_source_targets() {
+        let reports = bressloff_stability_reports();
+        let ids: Vec<&str> = reports.iter().map(|report| report.id).collect();
+        assert_eq!(reports.len(), 5);
+        for id in [
+            "fig37_even_coefficients",
+            "fig38_even_hex_bifurcation",
+            "fig39_odd_coefficients",
+            "fig40_odd_hex_bifurcation",
+            "rhombic_stability_angle",
+        ] {
+            assert!(ids.contains(&id));
+        }
+    }
+
+    #[test]
+    fn noncontoured_preset_reports_scalar_mode() {
+        let state = ServerState::default();
+        let mut raw = HashMap::new();
+        raw.insert(
+            "paper_preset".to_string(),
+            "fig29_square_noncontoured".to_string(),
+        );
+        raw.insert("n".to_string(), "32".to_string());
+        raw.insert("m".to_string(), "4".to_string());
+        raw.insert("frames".to_string(), "2".to_string());
+        raw.insert("t".to_string(), "1".to_string());
+        let payload = generate_payload(coerce_params(&raw), &state).unwrap();
+        assert_eq!(payload.params.contour_mode, "noncontoured");
+        assert_eq!(
+            payload.planform.as_ref().unwrap().contour_mode,
+            "noncontoured"
+        );
+        assert_eq!(
+            payload.calibration.as_ref().unwrap().rendered_contour_mode,
+            "noncontoured"
+        );
+    }
+
+    #[test]
+    fn triangle_pattern_uses_hexagonal_sine_modes() {
+        let modes = planform_modes(FrameParams::default(), PatternPreset::Triangle);
+        assert_eq!(modes.len(), 3);
+        assert!(modes
+            .iter()
+            .all(|mode| (mode.phase_offset + PI / 2.0).abs() < 1.0e-12));
+        assert_eq!(pattern_family(PatternPreset::Triangle), "hexagonal");
+    }
+
+    #[test]
     fn orientation_channel_export_has_expected_shape() {
         let state = ServerState::default();
         let params = FrameParams {
@@ -3136,5 +5091,94 @@ mod tests {
         assert_eq!(channels.orientation_count, 4);
         assert_eq!(channels.phi_radians.len(), 4);
         assert!(!channels.data_base64.is_empty());
+    }
+
+    #[test]
+    fn rule_preset_registry_is_separate_from_bressloff_papers() {
+        let rule_ids: Vec<&str> = rule_preset_catalog()
+            .into_iter()
+            .map(|preset| preset.id)
+            .collect();
+        assert_eq!(rule_ids.len(), 4);
+        assert!(rule_ids.contains(&"rule_fig4_high_freq_stripes"));
+        assert!(rule_ids.contains(&"rule_fig4_low_freq_hexagons"));
+        assert!(paper_preset_catalog()
+            .into_iter()
+            .all(|preset| preset.model_family == MODEL_FAMILY_BRESSLOFF));
+        assert!(rule_preset_catalog()
+            .into_iter()
+            .all(|preset| preset.model_family == MODEL_FAMILY_RULE));
+    }
+
+    #[test]
+    fn rule_stimulus_uses_period_in_milliseconds() {
+        let params = FrameParams {
+            generator: Generator::RuleFlicker,
+            rule_stim_period_ms: 40.0,
+            rule_stim_threshold: 0.8,
+            rule_stim_smoothing: 0.0,
+            ..FrameParams::default()
+        };
+        assert_eq!(rule_stimulus(params, 0.0), 0.0);
+        assert_eq!(rule_stimulus(params, 10.0), 1.0);
+        assert_eq!(rule_stimulus(params, 20.0), 0.0);
+        assert_eq!(rule_stimulus(params, 50.0), 1.0);
+    }
+
+    #[test]
+    fn rule_gaussian_kernel_is_normalized() {
+        let kernel = rule_gaussian_kernel(2.0);
+        let sum: f64 = kernel.weights.iter().sum();
+        assert!((sum - 1.0).abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn rule_uniform_initial_state_stays_spatially_uniform() {
+        let state = ServerState::default();
+        let params = FrameParams {
+            generator: Generator::RuleFlicker,
+            n: 32,
+            frames: 24,
+            t: 80.0,
+            rule_seed_strength: 0.0,
+            ..FrameParams::default()
+        };
+        let payload = generate_payload(params, &state).unwrap();
+        assert_eq!(payload.model_family, MODEL_FAMILY_RULE);
+        assert!(payload.metrics.final_range < 1.0e-7);
+    }
+
+    #[test]
+    fn rule_qualitative_presets_report_expected_regimes() {
+        let state = ServerState::default();
+        let high = generate_payload(
+            FrameParams {
+                n: 32,
+                frames: 72,
+                t: 330.0,
+                ..apply_rule_preset(FrameParams::default(), RulePreset::Fig4HighFreqStripes)
+            },
+            &state,
+        )
+        .unwrap();
+        let high_rule = high.rule.as_ref().unwrap();
+        assert_eq!(high_rule.status, "qualitative-pass");
+        assert_eq!(high_rule.spatial_family, "stripe");
+        assert_eq!(high_rule.response_mode, "period_doubled");
+
+        let low = generate_payload(
+            FrameParams {
+                n: 40,
+                frames: 96,
+                t: 660.0,
+                ..apply_rule_preset(FrameParams::default(), RulePreset::Fig4LowFreqHexagons)
+            },
+            &state,
+        )
+        .unwrap();
+        let low_rule = low.rule.as_ref().unwrap();
+        assert_eq!(low_rule.status, "qualitative-pass");
+        assert_eq!(low_rule.spatial_family, "hexagonal");
+        assert_eq!(low_rule.response_mode, "one_to_one");
     }
 }

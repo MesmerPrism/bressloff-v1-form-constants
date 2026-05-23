@@ -12,3 +12,6 @@ viewer/v1-canvas-viewer-screenshot.png
 viewer/v1-planform-cobweb-screenshot.png
 
 reports/*orientation*.json
+
+# Local-only paper copies and other private research material.
+private/

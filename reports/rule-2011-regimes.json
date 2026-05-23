@@ -1,0 +1,182 @@
+{
+  "format": "rule-2011-regime-report-v1",
+  "model_family": "rule_flicker_ei",
+  "runs": [
+    {
+      "checks": [
+        {
+          "actual": "rule_flicker_ei",
+          "expected": "rule_flicker_ei",
+          "name": "model-family",
+          "passed": true
+        },
+        {
+          "actual": "stripe",
+          "expected": "stripe",
+          "name": "spatial-family",
+          "passed": true
+        },
+        {
+          "actual": "period_doubled",
+          "expected": "period_doubled",
+          "name": "response-mode",
+          "passed": true
+        }
+      ],
+      "dominant_cycles": 2.0,
+      "pattern_strength": 0.004559904336929321,
+      "preset": {
+        "calibration_status": "qualitative-seeded",
+        "expected_family": "stripe",
+        "expected_period_ms": 55.0,
+        "expected_response_mode": "period_doubled",
+        "id": "rule_fig4_high_freq_stripes",
+        "label": "Rule Fig 4 high-frequency period-doubled stripes",
+        "model_family": "rule_flicker_ei",
+        "paper_figure": "Figure 4",
+        "render_domain": "cortical",
+        "source_key": "rule-2011",
+        "source_note": "Deterministic qualitative preset for the high-frequency stripe island; full Floquet and sweep calibration is deferred.",
+        "source_page": "5"
+      },
+      "response_mode": "period_doubled",
+      "spatial_family": "stripe",
+      "status": "qualitative-pass",
+      "stimulus_frequency_hz": 18.181818181818183,
+      "temporal_corr_2t": 0.9812698364257812,
+      "temporal_corr_t": -0.9886322617530823
+    },
+    {
+      "checks": [
+        {
+          "actual": "rule_flicker_ei",
+          "expected": "rule_flicker_ei",
+          "name": "model-family",
+          "passed": true
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "hexagonal",
+          "name": "spatial-family",
+          "passed": true
+        },
+        {
+          "actual": "one_to_one",
+          "expected": "one_to_one",
+          "name": "response-mode",
+          "passed": true
+        }
+      ],
+      "dominant_cycles": 3.0,
+      "pattern_strength": 0.00121001445222646,
+      "preset": {
+        "calibration_status": "qualitative-seeded",
+        "expected_family": "hexagonal",
+        "expected_period_ms": 120.0,
+        "expected_response_mode": "one_to_one",
+        "id": "rule_fig4_low_freq_hexagons",
+        "label": "Rule Fig 4 low-frequency one-to-one hexagons",
+        "model_family": "rule_flicker_ei",
+        "paper_figure": "Figure 4",
+        "render_domain": "cortical",
+        "source_key": "rule-2011",
+        "source_note": "Deterministic qualitative preset for the low-frequency hexagonal island; full phase-diagram calibration is deferred.",
+        "source_page": "5"
+      },
+      "response_mode": "one_to_one",
+      "spatial_family": "hexagonal",
+      "status": "qualitative-pass",
+      "stimulus_frequency_hz": 8.333333333333334,
+      "temporal_corr_2t": 0.8952963948249817,
+      "temporal_corr_t": 0.3021054267883301
+    },
+    {
+      "checks": [
+        {
+          "actual": "rule_flicker_ei",
+          "expected": "rule_flicker_ei",
+          "name": "model-family",
+          "passed": true
+        },
+        {
+          "actual": "stripe",
+          "expected": "stripe",
+          "name": "spatial-family",
+          "passed": true
+        },
+        {
+          "actual": "period_doubled",
+          "expected": "period_doubled",
+          "name": "response-mode",
+          "passed": true
+        }
+      ],
+      "dominant_cycles": 2.0,
+      "pattern_strength": 0.004559904336929321,
+      "preset": {
+        "calibration_status": "qualitative-seeded",
+        "expected_family": "stripe",
+        "expected_period_ms": 55.0,
+        "expected_response_mode": "period_doubled",
+        "id": "rule_fig5_period_doubled_stripes",
+        "label": "Rule Fig 5 period-doubled stripe frames",
+        "model_family": "rule_flicker_ei",
+        "paper_figure": "Figure 5A",
+        "render_domain": "cortical",
+        "source_key": "rule-2011",
+        "source_note": "High-frequency example where the foreground/background swap after one stimulus period.",
+        "source_page": "6"
+      },
+      "response_mode": "period_doubled",
+      "spatial_family": "stripe",
+      "status": "qualitative-pass",
+      "stimulus_frequency_hz": 18.181818181818183,
+      "temporal_corr_2t": 0.9812698364257812,
+      "temporal_corr_t": -0.9886322617530823
+    },
+    {
+      "checks": [
+        {
+          "actual": "rule_flicker_ei",
+          "expected": "rule_flicker_ei",
+          "name": "model-family",
+          "passed": true
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "hexagonal",
+          "name": "spatial-family",
+          "passed": true
+        },
+        {
+          "actual": "one_to_one",
+          "expected": "one_to_one",
+          "name": "response-mode",
+          "passed": true
+        }
+      ],
+      "dominant_cycles": 3.0,
+      "pattern_strength": 0.00121001445222646,
+      "preset": {
+        "calibration_status": "qualitative-seeded",
+        "expected_family": "hexagonal",
+        "expected_period_ms": 120.0,
+        "expected_response_mode": "one_to_one",
+        "id": "rule_fig5_one_to_one_hexagons",
+        "label": "Rule Fig 5 one-to-one hexagon frames",
+        "model_family": "rule_flicker_ei",
+        "paper_figure": "Figure 5B",
+        "render_domain": "cortical",
+        "source_key": "rule-2011",
+        "source_note": "Low-frequency example where the spatial pattern repeats with the stimulus period.",
+        "source_page": "6"
+      },
+      "response_mode": "one_to_one",
+      "spatial_family": "hexagonal",
+      "status": "qualitative-pass",
+      "stimulus_frequency_hz": 8.333333333333334,
+      "temporal_corr_2t": 0.8952963948249817,
+      "temporal_corr_t": 0.3021054267883301
+    }
+  ]
+}

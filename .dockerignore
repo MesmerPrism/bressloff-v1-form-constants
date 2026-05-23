@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.py[cod]
+.ipynb_checkpoints
+
+private
+rust-v1-sim/target
+reports/*orientation*.json
+viewer/*.log
+viewer/v1-canvas-viewer-screenshot.png
+viewer/v1-planform-cobweb-screenshot.png

@@ -16,7 +16,7 @@ calibration, not for claiming a calibrated flicker-frequency prediction.
 - Retino-cortical mapping from cortical activity to visual-field coordinates.
 - Neural-field dynamics based on equation 2.1 from Bressloff et al.
 - Direct analytic planforms for rings, rays, spirals, cobweb/square, rhombic,
-  honeycomb, and hexagonal branches.
+  honeycomb, pi-hexagonal, and triangular hexagonal branches.
 - Orientation contour overlays using the Bressloff double-map relation
   `phi_R = phi + theta_R`.
 - Kernel controls for local and lateral interaction widths and inhibition.
@@ -24,11 +24,15 @@ calibration, not for claiming a calibrated flicker-frequency prediction.
   branch readout.
 - Cubic amplitude-equation branch readout for roll, square/cobweb, rhombic, and
   hexagonal families.
-- First-class paper-oriented presets for the figure 16/17 stability examples and
-  the figure 31/32/33/35 double-map planform families.
+- First-class paper-oriented presets for the figure 16/17 stability examples,
+  the figure 29/30 single-map non-contoured examples, the figure 31-36
+  double-map contoured planform families including roll subpanels, and the 2002
+  figure 5-7 convenience examples.
 - Optional orientation-channel export payloads for planform or dynamics runs.
-- JSON calibration reports that compare each named preset's expected family with
-  the rendered/selected branch.
+- JSON calibration reports that compare each named preset's expected target with
+  the rendered planform, same-lattice branch readout, and source metadata.
+- A separate Rule-Stoffregen-Ermentrout 2011 scalar E/I flicker generator with
+  qualitative high-frequency stripe and low-frequency hexagonal presets.
 
 ## What It Does Not Claim
 
@@ -85,6 +89,12 @@ Generate a side-by-side JSON calibration report for the named paper presets:
 .\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
 ```
 
+Generate the first Rule 2011 qualitative regime report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-report --out reports\rule-2011-regimes.json
+```
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is
@@ -100,17 +110,29 @@ Use `Generator -> Dynamics` to run the neural-field solver path. Warmup trimming
 is enabled by default for playback so the low-contrast onset transient does not
 consume half the animation.
 
-Use `Paper preset` to load a named Bressloff figure starting point. The
-calibration readout reports whether the current parity, rendered planform, and
-branch selector agree with the preset's expected family. Enable `Export
-orientation channels` only when you need the heavier `[frame,row,col,orientation]`
-payload for downstream analysis.
+Use `Generator -> Rule flicker E/I` for the Rule, Stoffregen, and Ermentrout
+2011 scalar E/I model family. Rule presets are separate from the Bressloff paper
+preset list and start with qualitative seeded regimes: high-frequency
+period-doubled stripes and low-frequency one-to-one hexagons. These reuse the
+viewer and retinocortical display surface, but not Bressloff orientation
+contour glyphs or amplitude-equation branch selection.
+
+Use `Bressloff preset` to load a named Bressloff figure starting point. The catalog
+currently covers 24 targets: figure 16/17 stability cases, figure 29/30
+non-contoured single-map planforms, figure 31-36 contoured double-map planforms
+including roll subpanels, and 2002 figure 5-7 aliases. Use `Planform mode ->
+Non-contoured` for scalar activity-threshold images where contour orientation is
+not part of the paper target. The calibration readout reports whether the
+current parity, contour mode, rendered planform, and branch selector agree with
+the preset's expected target. Enable `Export orientation channels` only when you
+need the heavier `[frame,row,col,orientation]` payload for downstream analysis.
 
 ## Project Layout
 
 ```text
 rust-v1-sim/          Rust server, payload generator, and model implementation
 viewer/               Browser viewer, controls, and model notes
+docs/                 Public implementation roadmaps and future work plans
 tools/                Legacy Python helpers for exporting/serving frames
 v1_model.py           Python model code retained from the exploratory path
 v1_frames.py          Python payload exporter retained for comparison
@@ -125,6 +147,14 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
   fidelity checklist.
 - [`viewer/PAPER_FIGURE_COMPARISON.md`](viewer/PAPER_FIGURE_COMPARISON.md)
   tracks the named paper figure presets and public comparison rules.
+- [`docs/BRESSLOFF_FUTURE_IMPLEMENTATION_PLAN.md`](docs/BRESSLOFF_FUTURE_IMPLEMENTATION_PLAN.md)
+  turns the remaining Bressloff calibration gaps into concrete implementation
+  workstreams.
+- [`docs/RULE_2011_IMPLEMENTATION_STATUS.md`](docs/RULE_2011_IMPLEMENTATION_STATUS.md)
+  tracks the separate Rule flicker E/I implementation and deferred Floquet/sweep
+  work.
+- [`docs/WEB_HOSTING_PLAN.md`](docs/WEB_HOSTING_PLAN.md) describes the
+  server-backed container deployment path for a public interactive version.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.
 
 ## Public Article

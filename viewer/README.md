@@ -21,14 +21,24 @@ payloads use the fixed-step preview solver and trim the low-contrast warmup
 transient before playback. Switch `Generator` to `Planform` to render analytic
 Bressloff-style cortical rolls and lattice planforms directly through the
 retino-cortical map. These pattern presets are useful for checking rings, rays,
-spirals, cobweb-like square planforms, and honeycomb/rhombic lattices without
-waiting for the dynamic neural field to select them.
+spirals, cobweb-like square planforms, honeycomb/rhombic lattices, and the
+triangular odd-hex branch without waiting for the dynamic neural field to select
+them.
+
+Switch `Generator` to `Rule flicker E/I` to run the separate Rule 2011 scalar
+excitatory/inhibitory field. The Rule preset selector is independent from the
+Bressloff preset selector. Its first qualitative examples are high-frequency
+period-doubled stripes and low-frequency one-to-one hexagons. Rule payloads are
+scalar activity fields; the Bressloff contour overlay is not part of that model
+family.
 
 The render controls include a `Contours` overlay for planform payloads. It draws
 local line elements from the analytic cortical planform and applies the
 Bressloff double-map orientation relation `phi_R = phi + theta_R`, so rings,
 rays, spirals, and cobweb presets are no longer shown only as scalar color
-fields.
+fields. `Planform mode -> Non-contoured` bypasses that orientation sampling and
+renders scalar activity directly for the single-map Figure 29 and Figure 30
+targets.
 
 Planform payloads carry the wave-mode list and a perturbative
 orientation-eigenfunction approximation based on the paper's even/odd branches.
@@ -42,10 +52,15 @@ the orientation-eigenfunction and stability approximations. The `Stability`
 disclosure controls the `q` scan. The readout reports the current critical `q`,
 branch, growth, and amplitude-equation branch selection. `Pattern -> Auto
 branch` uses that selection to choose between roll/spiral, square/cobweb,
-rhombic, and honeycomb families.
+rhombic, honeycomb, and related hexagonal families.
 
-`Paper preset` loads named starting points for the paper's stability and
-double-map figures. The Rust payload carries the preset metadata and a
+`Bressloff preset` loads named starting points for the paper's stability, single-map,
+and double-map figures. The current catalog covers Figure 29/30 non-contoured
+planforms, Figure 31-36 contoured planforms, the roll subpanels for Figures
+31-34, and 2002 Figure 5-7 convenience examples. The Figure 5 presets switch the
+viewer to the cortical view because those examples are source cortical
+planforms; Figure 6 and Figure 7 use the visual-field view.
+The Rust payload carries the preset metadata and a
 calibration report, so the readout can distinguish the rendered planform from
 the same-lattice branch selected by the amplitude-equation approximation. The
 payload also keeps the global cross-lattice score winner as a diagnostic field;
@@ -68,6 +83,12 @@ Run the paper-preset calibration suite:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
+```
+
+Run the Rule qualitative regime report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-report --out reports\rule-2011-regimes.json
 ```
 
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for

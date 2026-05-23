@@ -11,6 +11,10 @@
   --accent-2: #7fb7a6;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -117,7 +121,8 @@ canvas {
   font-size: 14px;
 }
 
-.field.is-muted {
+.field.is-muted,
+.control-details.is-muted {
   opacity: 0.55;
 }
 

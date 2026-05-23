@@ -23,15 +23,44 @@
           <h2>Model</h2>
 
           <label class="field">
-            <span>Paper preset</span>
+            <span>Bressloff preset</span>
             <select id="paper_preset" name="paper_preset">
               <option value="manual" selected>Manual</option>
               <option value="fig16_odd">Fig 16 odd scan</option>
               <option value="fig17_even">Fig 17 even spread</option>
+              <option value="fig29_square_noncontoured">Fig 29 square non-contoured</option>
+              <option value="fig29_roll_noncontoured">Fig 29 roll non-contoured</option>
+              <option value="fig30_rhombic_noncontoured">Fig 30 rhombic non-contoured</option>
+              <option value="fig30_hex_noncontoured">Fig 30 hex non-contoured</option>
               <option value="fig31_square_even">Fig 31 square even</option>
+              <option value="fig31_square_even_roll">Fig 31 even roll</option>
               <option value="fig32_square_odd">Fig 32 square odd</option>
+              <option value="fig32_square_odd_roll">Fig 32 odd roll</option>
               <option value="fig33_rhombic_even">Fig 33 rhombic even</option>
+              <option value="fig34_rhombic_odd">Fig 34 rhombic odd</option>
+              <option value="fig33_rhombic_even_roll">Fig 33 even roll</option>
+              <option value="fig34_rhombic_odd_roll">Fig 34 odd roll</option>
               <option value="fig35_hex_even">Fig 35 hex even</option>
+              <option value="fig35_hex_zero_even">Fig 35 hex zero even</option>
+              <option value="fig36_triangle_odd">Fig 36 triangle odd</option>
+              <option value="fig36_hex_zero_odd">Fig 36 hex zero odd</option>
+              <option value="fig5_roll_cortical">2002 Fig 5 roll cortical</option>
+              <option value="fig5_hex_cortical">2002 Fig 5 hex cortical</option>
+              <option value="fig5_honeycomb_cortical">2002 Fig 5 honeycomb cortical</option>
+              <option value="fig5_square_cortical">2002 Fig 5 square cortical</option>
+              <option value="fig6_visual_field_planforms">2002 Fig 6 visual field</option>
+              <option value="fig7_lattice_tunnel">2002 Fig 7 lattice tunnel</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Rule preset</span>
+            <select id="rule_preset" name="rule_preset">
+              <option value="manual" selected>Manual</option>
+              <option value="rule_fig4_high_freq_stripes">Fig 4 high-frequency stripes</option>
+              <option value="rule_fig4_low_freq_hexagons">Fig 4 low-frequency hexagons</option>
+              <option value="rule_fig5_period_doubled_stripes">Fig 5 period-doubled stripes</option>
+              <option value="rule_fig5_one_to_one_hexagons">Fig 5 one-to-one hexagons</option>
             </select>
           </label>
 
@@ -40,6 +69,7 @@
             <select id="generator" name="generator">
               <option value="dynamics" selected>Dynamics</option>
               <option value="planform">Planform</option>
+              <option value="rule_flicker">Rule flicker E/I</option>
             </select>
           </label>
 
@@ -54,6 +84,15 @@
               <option value="honeycomb">Honeycomb</option>
               <option value="rhombic">Rhombic lattice</option>
               <option value="hex_pi">Hex π</option>
+              <option value="triangle">Triangle</option>
+            </select>
+          </label>
+
+          <label class="field planform-control">
+            <span>Planform mode</span>
+            <select id="contour_mode" name="contour_mode">
+              <option value="contoured" selected>Contoured</option>
+              <option value="noncontoured">Non-contoured</option>
             </select>
           </label>
 
@@ -191,10 +230,139 @@
             </label>
           </details>
 
+          <details class="control-details rule-control">
+            <summary>Rule flicker</summary>
+            <label class="field">
+              <span>Stim period</span>
+              <span class="value-row">
+                <input id="rule_stim_period_ms" name="rule_stim_period_ms" type="range" min="20" max="180" step="5" value="55">
+                <output id="rule_stim_period_msValue">55</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Stim amplitude</span>
+              <span class="value-row">
+                <input id="rule_stim_amplitude" name="rule_stim_amplitude" type="range" min="0" max="1.5" step="0.05" value="0.8">
+                <output id="rule_stim_amplitudeValue">0.80</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Stim threshold</span>
+              <span class="value-row">
+                <input id="rule_stim_threshold" name="rule_stim_threshold" type="range" min="-1" max="1" step="0.05" value="0.8">
+                <output id="rule_stim_thresholdValue">0.80</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Stim smoothing</span>
+              <span class="value-row">
+                <input id="rule_stim_smoothing" name="rule_stim_smoothing" type="range" min="0" max="100" step="5" value="50">
+                <output id="rule_stim_smoothingValue">50</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Feed-forward I</span>
+              <span class="value-row">
+                <input id="rule_stim_i_fraction" name="rule_stim_i_fraction" type="range" min="0" max="1" step="0.05" value="0">
+                <output id="rule_stim_i_fractionValue">0.00</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Seed pattern</span>
+              <select id="rule_seed_pattern" name="rule_seed_pattern">
+                <option value="random">Random</option>
+                <option value="stripes" selected>Stripes</option>
+                <option value="hexagonal">Hexagonal</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Seed strength</span>
+              <span class="value-row">
+                <input id="rule_seed_strength" name="rule_seed_strength" type="range" min="0" max="0.2" step="0.01" value="0.04">
+                <output id="rule_seed_strengthValue">0.04</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Exc sigma</span>
+              <span class="value-row">
+                <input id="rule_sigma_e" name="rule_sigma_e" type="range" min="0.4" max="10" step="0.1" value="2">
+                <output id="rule_sigma_eValue">2.0</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Inh sigma</span>
+              <span class="value-row">
+                <input id="rule_sigma_i" name="rule_sigma_i" type="range" min="0.4" max="16" step="0.1" value="5">
+                <output id="rule_sigma_iValue">5.0</output>
+              </span>
+            </label>
+          </details>
+
+          <details class="control-details rule-control">
+            <summary>Rule E/I parameters</summary>
+            <label class="field">
+              <span>Tau E</span>
+              <span class="value-row">
+                <input id="rule_tau_e_ms" name="rule_tau_e_ms" type="range" min="1" max="80" step="1" value="10">
+                <output id="rule_tau_e_msValue">10</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Tau I</span>
+              <span class="value-row">
+                <input id="rule_tau_i_ms" name="rule_tau_i_ms" type="range" min="1" max="120" step="1" value="20">
+                <output id="rule_tau_i_msValue">20</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>aEE</span>
+              <span class="value-row">
+                <input id="rule_aee" name="rule_aee" type="range" min="0" max="30" step="0.1" value="10">
+                <output id="rule_aeeValue">10.0</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>aEI</span>
+              <span class="value-row">
+                <input id="rule_aei" name="rule_aei" type="range" min="0" max="30" step="0.1" value="12">
+                <output id="rule_aeiValue">12.0</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>aIE</span>
+              <span class="value-row">
+                <input id="rule_aie" name="rule_aie" type="range" min="0" max="30" step="0.1" value="8.5">
+                <output id="rule_aieValue">8.5</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>aII</span>
+              <span class="value-row">
+                <input id="rule_aii" name="rule_aii" type="range" min="0" max="30" step="0.1" value="3">
+                <output id="rule_aiiValue">3.0</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Theta E</span>
+              <span class="value-row">
+                <input id="rule_theta_e" name="rule_theta_e" type="range" min="0" max="8" step="0.1" value="2">
+                <output id="rule_theta_eValue">2.0</output>
+              </span>
+            </label>
+            <label class="field">
+              <span>Theta I</span>
+              <span class="value-row">
+                <input id="rule_theta_i" name="rule_theta_i" type="range" min="0" max="8" step="0.1" value="3.5">
+                <output id="rule_theta_iValue">3.5</output>
+              </span>
+            </label>
+          </details>
+
           <label class="field">
             <span>Grid</span>
             <select id="n" name="n">
               <option value="32">32</option>
+              <option value="40">40</option>
               <option value="48">48</option>
               <option value="64" selected>64</option>
               <option value="80">80</option>
@@ -202,7 +370,7 @@
             </select>
           </label>
 
-          <label class="field">
+          <label class="field bressloff-control">
             <span>Orientations</span>
             <select id="m" name="m">
               <option value="4">4</option>
@@ -229,7 +397,7 @@
             </span>
           </label>
 
-          <label class="field">
+          <label class="field bressloff-control">
             <span>Alpha decay</span>
             <span class="value-row">
               <input id="alpha" name="alpha" type="range" min="0.1" max="4" step="0.1" value="1">
@@ -237,7 +405,7 @@
             </span>
           </label>
 
-          <label class="field">
+          <label class="field bressloff-control">
             <span>Beta coupling</span>
             <span class="value-row">
               <input id="beta" name="beta" type="range" min="0.1" max="10" step="0.1" value="3">
@@ -245,7 +413,7 @@
             </span>
           </label>
 
-          <label class="field">
+          <label class="field bressloff-control">
             <span>Mu gain</span>
             <span class="value-row">
               <input id="mu" name="mu" type="range" min="1" max="40" step="0.5" value="17">
@@ -253,7 +421,7 @@
             </span>
           </label>
 
-          <label class="field">
+          <label class="field bressloff-control">
             <span>Lateral radius</span>
             <span class="value-row">
               <input id="r0" name="r0" type="range" min="0.02" max="0.14" step="0.002" value="0.064">
@@ -264,7 +432,7 @@
           <label class="field">
             <span>Duration</span>
             <span class="value-row">
-              <input id="t" name="t" type="range" min="5" max="140" step="5" value="60">
+              <input id="t" name="t" type="range" min="5" max="800" step="5" value="60">
               <output id="tValue">60</output>
             </span>
           </label>
@@ -287,7 +455,7 @@
             <span>Trim warmup</span>
           </label>
 
-          <label class="check">
+          <label class="check bressloff-control">
             <input id="export_orientation_channels" name="export_orientation_channels" type="checkbox">
             <span>Export orientation channels</span>
           </label>
@@ -395,7 +563,7 @@
           <div id="time">t = 0.00</div>
           <div id="metrics">No metrics yet</div>
           <div id="stability">No stability scan yet</div>
-          <div id="calibration">No paper preset selected</div>
+          <div id="calibration">No Bressloff or Rule preset selected</div>
           <div id="orientationExport">Orientation channels not exported</div>
         </section>
       </aside>

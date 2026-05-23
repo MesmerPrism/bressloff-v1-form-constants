@@ -15,11 +15,39 @@ can become large. Example:
 .\rust-v1-sim\target\release\bressloff-v1.exe export --paper-preset fig31_square_even --export-orientations --out reports\fig31-square-even-orientation.json
 ```
 
-The calibration report distinguishes three levels:
+The current calibration file uses `format: bressloff-paper-calibration-v4`.
+It distinguishes these levels:
 
+- `rendered_contour_mode`: whether the preset was rendered as contoured
+  orientation activity or non-contoured scalar activity.
 - `rendered_pattern`: the explicit planform drawn by the preset.
 - `selected_family` / `selected_pattern`: the same-lattice amplitude-equation
   branch choice for that preset.
 - `global_selected_family` / `global_selected_pattern`: a diagnostic cross-lattice
   score winner. This is useful for debugging but should not be read as the paper
   figure's branch-selection result.
+- `stability_reports`: non-rendering checks for the Fig 37-40 coefficient and
+  bifurcation targets plus the current rhombic-angle diagnostic.
+
+For single-map non-contoured figure presets, calibration checks the scalar
+rendered target and contour mode. Branch-selection fields are still exported for
+diagnostics, but they are not treated as the visual figure target.
+
+Review statuses in this report mean the explicit rendered target is available
+but some branch-selection diagnostic still needs calibration. The known cases are
+the square/cobweb branches, the `hex_pi` phase partner, and the odd triangular
+hexagonal branch whose source discussion depends on higher-order terms.
+
+The Bressloff calibration report carries
+`model_family: bressloff_orientation_hypercolumn` metadata.
+
+Rule 2011 uses a separate report command and format:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-report --out reports\rule-2011-regimes.json
+```
+
+The Rule report uses `format: rule-2011-regime-report-v1` and
+`model_family: rule_flicker_ei`. It checks qualitative seeded regimes for
+spatial family and temporal response mode; it is not a Floquet stability or full
+frequency/amplitude sweep report.
