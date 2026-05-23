@@ -21,6 +21,7 @@ const RETINO_BETA: f64 = 1.589 / 2.0;
 
 #[derive(Clone, Copy, Debug)]
 struct FrameParams {
+    paper_preset: PaperPreset,
     generator: Generator,
     pattern: PatternPreset,
     parity: Parity,
@@ -56,6 +57,7 @@ struct FrameParams {
     stability_q_min: f64,
     stability_q_max: f64,
     stability_samples: usize,
+    export_orientation_channels: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -83,6 +85,208 @@ enum PatternPreset {
     Honeycomb,
     Rhombic,
     HexPi,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PaperPreset {
+    Manual,
+    Fig16Odd,
+    Fig17Even,
+    Fig31SquareEven,
+    Fig32SquareOdd,
+    Fig33RhombicEven,
+    Fig35HexEven,
+}
+
+impl PaperPreset {
+    fn as_str(self) -> &'static str {
+        match self {
+            PaperPreset::Manual => "manual",
+            PaperPreset::Fig16Odd => "fig16_odd",
+            PaperPreset::Fig17Even => "fig17_even",
+            PaperPreset::Fig31SquareEven => "fig31_square_even",
+            PaperPreset::Fig32SquareOdd => "fig32_square_odd",
+            PaperPreset::Fig33RhombicEven => "fig33_rhombic_even",
+            PaperPreset::Fig35HexEven => "fig35_hex_even",
+        }
+    }
+}
+
+fn parse_paper_preset(value: Option<&str>) -> PaperPreset {
+    match value {
+        Some("fig16_odd") => PaperPreset::Fig16Odd,
+        Some("fig17_even") => PaperPreset::Fig17Even,
+        Some("fig31_square_even") => PaperPreset::Fig31SquareEven,
+        Some("fig32_square_odd") => PaperPreset::Fig32SquareOdd,
+        Some("fig33_rhombic_even") => PaperPreset::Fig33RhombicEven,
+        Some("fig35_hex_even") => PaperPreset::Fig35HexEven,
+        _ => PaperPreset::Manual,
+    }
+}
+
+fn paper_preset_details(preset: PaperPreset) -> Option<PaperPresetDetails> {
+    match preset {
+        PaperPreset::Manual => None,
+        PaperPreset::Fig16Odd => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 16 odd marginal-stability scan",
+            paper_figure: "Figure 16",
+            expected_kind: "linear-stability",
+            expected_parity: "odd",
+            expected_family: "branch-selected",
+            expected_pattern: "auto",
+            visual_target: "odd critical branch from the marginal-stability calculation",
+            source_note: "Starting preset for the narrow lateral-connection example; use the report as a calibration check, not a digitized paper figure.",
+        }),
+        PaperPreset::Fig17Even => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 17 even widened-spread scan",
+            paper_figure: "Figure 17",
+            expected_kind: "linear-stability",
+            expected_parity: "even",
+            expected_family: "branch-selected",
+            expected_pattern: "auto",
+            visual_target: "even critical branch after the widened lateral angular spread",
+            source_note: "Starting preset for the theta0-spread marginal-stability example.",
+        }),
+        PaperPreset::Fig31SquareEven => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 31 square/cobweb even planform",
+            paper_figure: "Figure 31",
+            expected_kind: "double-map-planform",
+            expected_parity: "even",
+            expected_family: "square",
+            expected_pattern: "cobweb",
+            visual_target: "square lattice in cortex mapped to cobweb-like visual-field structure",
+            source_note: "Analytic planform preset for checking the double-map geometry.",
+        }),
+        PaperPreset::Fig32SquareOdd => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 32 square/cobweb odd planform",
+            paper_figure: "Figure 32",
+            expected_kind: "double-map-planform",
+            expected_parity: "odd",
+            expected_family: "square",
+            expected_pattern: "cobweb",
+            visual_target: "odd square lattice variant mapped through the retino-cortical double map",
+            source_note: "Analytic planform preset for checking parity-dependent contour structure.",
+        }),
+        PaperPreset::Fig33RhombicEven => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 33 rhombic even planform",
+            paper_figure: "Figure 33",
+            expected_kind: "double-map-planform",
+            expected_parity: "even",
+            expected_family: "rhombic",
+            expected_pattern: "rhombic",
+            visual_target: "rhombic cortical lattice mapped into warped visual-field contours",
+            source_note: "Analytic planform preset for the oblique-lattice family.",
+        }),
+        PaperPreset::Fig35HexEven => Some(PaperPresetDetails {
+            id: preset.as_str(),
+            label: "Fig 35 hexagonal even planform",
+            paper_figure: "Figure 35",
+            expected_kind: "double-map-planform",
+            expected_parity: "even",
+            expected_family: "hexagonal",
+            expected_pattern: "hex_pi",
+            visual_target: "hexagonal branch with pi-phase sign structure",
+            source_note: "Analytic planform preset for the three-wave hexagonal family.",
+        }),
+    }
+}
+
+fn paper_preset_catalog() -> Vec<PaperPresetDetails> {
+    [
+        PaperPreset::Fig16Odd,
+        PaperPreset::Fig17Even,
+        PaperPreset::Fig31SquareEven,
+        PaperPreset::Fig32SquareOdd,
+        PaperPreset::Fig33RhombicEven,
+        PaperPreset::Fig35HexEven,
+    ]
+    .into_iter()
+    .filter_map(paper_preset_details)
+    .collect()
+}
+
+fn apply_paper_preset(mut params: FrameParams, preset: PaperPreset) -> FrameParams {
+    params.paper_preset = preset;
+    match preset {
+        PaperPreset::Manual => params,
+        PaperPreset::Fig16Odd => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Auto;
+            params.parity = Parity::Even;
+            params.eigen_beta = 0.4;
+            params.lateral_sigma = 1.0;
+            params.lateral_wide_sigma = 3.0;
+            params.lateral_inhibition = 1.0;
+            params.lateral_spread_deg = 0.0;
+            params.stability_q_min = 0.05;
+            params.stability_q_max = 3.5;
+            params.stability_samples = 128;
+            params.wave_count = 12.0;
+            params.sharpness = 1.8;
+            params
+        }
+        PaperPreset::Fig17Even => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Auto;
+            params.parity = Parity::Even;
+            params.eigen_beta = 0.4;
+            params.lateral_sigma = 1.0;
+            params.lateral_wide_sigma = 3.0;
+            params.lateral_inhibition = 1.0;
+            params.lateral_spread_deg = 60.0;
+            params.stability_q_min = 0.05;
+            params.stability_q_max = 3.5;
+            params.stability_samples = 128;
+            params.wave_count = 12.0;
+            params.sharpness = 1.8;
+            params
+        }
+        PaperPreset::Fig31SquareEven => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Cobweb;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 90.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig32SquareOdd => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Cobweb;
+            params.parity = Parity::Odd;
+            params.lateral_spread_deg = 0.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 90.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig33RhombicEven => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::Rhombic;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 45.0;
+            params.sharpness = 2.1;
+            params
+        }
+        PaperPreset::Fig35HexEven => {
+            params.generator = Generator::Planform;
+            params.pattern = PatternPreset::HexPi;
+            params.parity = Parity::Even;
+            params.lateral_spread_deg = 60.0;
+            params.wave_count = 12.0;
+            params.pattern_angle = 60.0;
+            params.sharpness = 2.1;
+            params
+        }
+    }
 }
 
 impl PatternPreset {
@@ -133,6 +337,7 @@ impl Solver {
 impl Default for FrameParams {
     fn default() -> Self {
         Self {
+            paper_preset: PaperPreset::Manual,
             generator: Generator::Dynamics,
             pattern: PatternPreset::Cobweb,
             parity: Parity::Even,
@@ -168,6 +373,7 @@ impl Default for FrameParams {
             stability_q_min: 0.05,
             stability_q_max: 3.5,
             stability_samples: 80,
+            export_orientation_channels: false,
         }
     }
 }
@@ -237,7 +443,10 @@ struct Payload {
     retino_bounds: RetinoBounds,
     retino_params: RetinoParams,
     palette: Vec<[u8; 3]>,
+    paper_preset: Option<PaperPresetDetails>,
     planform: Option<PlanformDetails>,
+    calibration: Option<CalibrationReport>,
+    orientation_channels: Option<OrientationChannelPayload>,
     params: PayloadParams,
     metrics: Metrics,
     warmup: Warmup,
@@ -247,6 +456,7 @@ struct Payload {
 
 #[derive(Serialize)]
 struct PayloadParams {
+    paper_preset: &'static str,
     generator: &'static str,
     pattern: &'static str,
     parity: &'static str,
@@ -282,6 +492,7 @@ struct PayloadParams {
     stability_q_min: f64,
     stability_q_max: f64,
     stability_samples: usize,
+    export_orientation_channels: bool,
 }
 
 #[derive(Serialize)]
@@ -295,6 +506,71 @@ struct PlanformDetails {
     stability: StabilityDetails,
     branch_selection: BranchSelectionDetails,
     kernel: KernelDetails,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct PaperPresetDetails {
+    id: &'static str,
+    label: &'static str,
+    paper_figure: &'static str,
+    expected_kind: &'static str,
+    expected_parity: &'static str,
+    expected_family: &'static str,
+    expected_pattern: &'static str,
+    visual_target: &'static str,
+    source_note: &'static str,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct CalibrationReport {
+    preset: PaperPresetDetails,
+    status: &'static str,
+    rendered_parity: &'static str,
+    rendered_pattern: &'static str,
+    selected_family: &'static str,
+    selected_pattern: &'static str,
+    critical_q: f64,
+    critical_branch: &'static str,
+    dominant_cycles: f32,
+    checks: Vec<CalibrationCheck>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct CalibrationCheck {
+    name: &'static str,
+    expected: &'static str,
+    actual: String,
+    passed: bool,
+}
+
+#[derive(Serialize)]
+struct CalibrationRun {
+    preset: PaperPresetDetails,
+    status: &'static str,
+    rendered_parity: &'static str,
+    rendered_pattern: &'static str,
+    selected_family: &'static str,
+    selected_pattern: &'static str,
+    critical_q: f64,
+    critical_branch: &'static str,
+    dominant_cycles: f32,
+    checks: Vec<CalibrationCheck>,
+}
+
+#[derive(Serialize)]
+struct OrientationChannelPayload {
+    format: &'static str,
+    order: &'static str,
+    width: usize,
+    height: usize,
+    frame_count: usize,
+    orientation_count: usize,
+    phi_radians: Vec<f64>,
+    scale_min: f64,
+    scale_max: f64,
+    raw_min: f32,
+    raw_max: f32,
+    data_base64: String,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -418,6 +694,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let command = args.get(1).map(String::as_str).unwrap_or("serve");
     match command {
+        "calibrate" => calibrate_command(&args[2..])?,
         "export" => export_command(&args[2..])?,
         "serve" => serve_command(&args[2..])?,
         "--help" | "-h" => print_usage(),
@@ -431,7 +708,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]"
     );
 }
 
@@ -442,6 +719,12 @@ fn export_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--export-orientations" | "--export-orientation-channels" => {
+                raw.insert(
+                    "export_orientation_channels".to_string(),
+                    "true".to_string(),
+                );
+            }
             "--no-trim-warmup" => {
                 raw.insert("trim_warmup".to_string(), "false".to_string());
             }
@@ -473,6 +756,104 @@ fn export_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         payload.timing.solve_sec,
         payload.warmup.dropped_frames
     );
+    if let Some(channels) = &payload.orientation_channels {
+        println!(
+            "orientation_channels={}x{}x{}x{} raw=[{:.4},{:.4}]",
+            channels.frame_count,
+            channels.width,
+            channels.height,
+            channels.orientation_count,
+            channels.raw_min,
+            channels.raw_max
+        );
+    }
+    if let Some(calibration) = &payload.calibration {
+        println!(
+            "calibration={} status={} rendered={} selected={}",
+            calibration.preset.id,
+            calibration.status,
+            calibration.rendered_pattern,
+            calibration.selected_family
+        );
+    }
+    Ok(())
+}
+
+fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/paper-calibration.json");
+    let mut raw = HashMap::new();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--export-orientations" | "--export-orientation-channels" => {
+                raw.insert(
+                    "export_orientation_channels".to_string(),
+                    "true".to_string(),
+                );
+            }
+            flag if flag.starts_with("--") => {
+                let key = flag.trim_start_matches("--").replace('-', "_");
+                let value = iter.next().ok_or("flag requires a value")?;
+                raw.insert(key, value.clone());
+            }
+            _ => {}
+        }
+    }
+
+    raw.entry("generator".to_string())
+        .or_insert_with(|| "planform".to_string());
+    raw.entry("n".to_string())
+        .or_insert_with(|| "96".to_string());
+    raw.entry("m".to_string())
+        .or_insert_with(|| "24".to_string());
+    raw.entry("frames".to_string())
+        .or_insert_with(|| "24".to_string());
+    raw.entry("t".to_string())
+        .or_insert_with(|| "18".to_string());
+
+    let state = ServerState::default();
+    let mut runs = Vec::new();
+    for preset in [
+        PaperPreset::Fig16Odd,
+        PaperPreset::Fig17Even,
+        PaperPreset::Fig31SquareEven,
+        PaperPreset::Fig32SquareOdd,
+        PaperPreset::Fig33RhombicEven,
+        PaperPreset::Fig35HexEven,
+    ] {
+        let mut preset_raw = raw.clone();
+        preset_raw.insert("paper_preset".to_string(), preset.as_str().to_string());
+        let params = coerce_params(&preset_raw);
+        let payload = generate_payload(params, &state)?;
+        let calibration = payload
+            .calibration
+            .as_ref()
+            .ok_or("calibration report missing for paper preset")?;
+        runs.push(CalibrationRun {
+            preset: calibration.preset,
+            status: calibration.status,
+            rendered_parity: calibration.rendered_parity,
+            rendered_pattern: calibration.rendered_pattern,
+            selected_family: calibration.selected_family,
+            selected_pattern: calibration.selected_pattern,
+            critical_q: calibration.critical_q,
+            critical_branch: calibration.critical_branch,
+            dominant_cycles: calibration.dominant_cycles,
+            checks: calibration.checks.clone(),
+        });
+    }
+
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let run_count = runs.len();
+    let body = serde_json::json!({
+        "format": "bressloff-paper-calibration-v1",
+        "runs": runs,
+    });
+    fs::write(&out, serde_json::to_vec_pretty(&body)?)?;
+    println!("wrote {} presets={run_count}", out.display());
     Ok(())
 }
 
@@ -560,8 +941,10 @@ fn handle_connection(
                     "lateral_spread_deg": [0.0, 90.0],
                     "stability_q_min": [0.0, 2.0],
                     "stability_q_max": [0.2, 8.0],
-                    "stability_samples": [16, 256]
+                    "stability_samples": [16, 256],
+                    "export_orientation_channels": [false, true]
                 },
+                "paper_presets": paper_preset_catalog(),
                 "generator_options": ["dynamics", "planform"],
                 "pattern_options": ["auto", "rings", "rays", "spiral", "cobweb", "honeycomb", "rhombic", "hex_pi"],
                 "parity_options": ["even", "odd"],
@@ -715,6 +1098,7 @@ fn write_response(
 fn default_params_json() -> serde_json::Value {
     let defaults = FrameParams::default();
     serde_json::json!({
+        "paper_preset": defaults.paper_preset.as_str(),
         "generator": defaults.generator.as_str(),
         "pattern": defaults.pattern.as_str(),
         "parity": defaults.parity.as_str(),
@@ -749,13 +1133,15 @@ fn default_params_json() -> serde_json::Value {
         "lateral_spread_deg": defaults.lateral_spread_deg,
         "stability_q_min": defaults.stability_q_min,
         "stability_q_max": defaults.stability_q_max,
-        "stability_samples": defaults.stability_samples
+        "stability_samples": defaults.stability_samples,
+        "export_orientation_channels": defaults.export_orientation_channels
     })
 }
 
 fn payload_cache_key(params: FrameParams) -> String {
     format!(
-        "{}:{}:{}:{}:{}:{:.6}:{}:{}:{:.4}:{:.4}:{:.4}:{:.6}:{:.2}:{:.2}:{}:{}:{:.3}:{}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{}",
+        "{}:{}:{}:{}:{}:{}:{:.6}:{}:{}:{:.4}:{:.4}:{:.4}:{:.6}:{:.2}:{:.2}:{}:{}:{:.3}:{}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{:.3}:{}:{}",
+        params.paper_preset.as_str(),
         params.generator.as_str(),
         params.pattern.as_str(),
         params.parity.as_str(),
@@ -790,12 +1176,18 @@ fn payload_cache_key(params: FrameParams) -> String {
         params.lateral_spread_deg,
         params.stability_q_min,
         params.stability_q_max,
-        params.stability_samples
+        params.stability_samples,
+        params.export_orientation_channels
     )
 }
 
 fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
-    let defaults = FrameParams::default();
+    let preset = parse_paper_preset(
+        raw.get("paper_preset")
+            .or_else(|| raw.get("preset"))
+            .map(String::as_str),
+    );
+    let defaults = apply_paper_preset(FrameParams::default(), preset);
     let mut low = get_f64(raw, "low_percentile", defaults.low_percentile, 0.0, 20.0);
     let mut high = get_f64(
         raw,
@@ -810,9 +1202,11 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
     }
 
     FrameParams {
+        paper_preset: preset,
         generator: match raw.get("generator").map(String::as_str) {
             Some("planform") => Generator::Planform,
-            _ => Generator::Dynamics,
+            Some("dynamics") => Generator::Dynamics,
+            _ => defaults.generator,
         },
         pattern: match raw.get("pattern").map(String::as_str) {
             Some("auto") => PatternPreset::Auto,
@@ -822,11 +1216,12 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
             Some("honeycomb") => PatternPreset::Honeycomb,
             Some("rhombic") => PatternPreset::Rhombic,
             Some("hex_pi") => PatternPreset::HexPi,
-            _ => PatternPreset::Cobweb,
+            _ => defaults.pattern,
         },
         parity: match raw.get("parity").map(String::as_str) {
             Some("odd") => Parity::Odd,
-            _ => Parity::Even,
+            Some("even") => Parity::Even,
+            _ => defaults.parity,
         },
         n: get_usize(raw, "n", defaults.n, 32, 96),
         m: get_usize(raw, "m", defaults.m, 4, 24),
@@ -893,6 +1288,11 @@ fn coerce_params(raw: &HashMap<String, String>) -> FrameParams {
             16,
             256,
         ),
+        export_orientation_channels: get_bool(
+            raw,
+            "export_orientation_channels",
+            defaults.export_orientation_channels,
+        ),
     }
 }
 
@@ -933,36 +1333,46 @@ fn generate_payload(
     state: &ServerState,
 ) -> Result<Payload, Box<dyn std::error::Error>> {
     let started = Instant::now();
-    let (mut frames, mut times, matrix_cache_hit, matrix_build_sec, solve_sec) =
-        match params.generator {
-            Generator::Dynamics => {
-                let (structure, cache_hit) = get_structure(params, state);
-                let built = Instant::now();
-                let (frames, times) = simulate_frames(params, &structure);
-                let solved = Instant::now();
-                (
-                    frames,
-                    times,
-                    cache_hit,
-                    built.duration_since(started).as_secs_f64(),
-                    solved.duration_since(built).as_secs_f64(),
-                )
-            }
-            Generator::Planform => {
-                let built = Instant::now();
-                let (frames, times) = generate_planform_frames(params);
-                let solved = Instant::now();
-                (
-                    frames,
-                    times,
-                    false,
-                    built.duration_since(started).as_secs_f64(),
-                    solved.duration_since(built).as_secs_f64(),
-                )
-            }
-        };
+    let (
+        mut frames,
+        mut times,
+        mut orientation_frames,
+        matrix_cache_hit,
+        matrix_build_sec,
+        solve_sec,
+    ) = match params.generator {
+        Generator::Dynamics => {
+            let (structure, cache_hit) = get_structure(params, state);
+            let built = Instant::now();
+            let (frames, times, orientation_frames) = simulate_frames(params, &structure);
+            let solved = Instant::now();
+            (
+                frames,
+                times,
+                orientation_frames,
+                cache_hit,
+                built.duration_since(started).as_secs_f64(),
+                solved.duration_since(built).as_secs_f64(),
+            )
+        }
+        Generator::Planform => {
+            let built = Instant::now();
+            let (frames, times, orientation_frames) = generate_planform_frames(params);
+            let solved = Instant::now();
+            (
+                frames,
+                times,
+                orientation_frames,
+                false,
+                built.duration_since(started).as_secs_f64(),
+                solved.duration_since(built).as_secs_f64(),
+            )
+        }
+    };
     let warmup = match params.generator {
-        Generator::Dynamics => trim_warmup(&mut frames, &mut times, params),
+        Generator::Dynamics => {
+            trim_warmup(&mut frames, &mut times, orientation_frames.as_mut(), params)
+        }
         Generator::Planform => Warmup {
             enabled: false,
             dropped_frames: 0,
@@ -982,6 +1392,16 @@ fn generate_payload(
         Generator::Planform => Some(planform_details(params, cell_mm)),
         Generator::Dynamics => None,
     };
+    let paper_preset = paper_preset_details(params.paper_preset);
+    let calibration = match (&paper_preset, &planform) {
+        (Some(preset), Some(planform)) => {
+            Some(calibration_report(*preset, planform, &metrics, params))
+        }
+        _ => None,
+    };
+    let orientation_channels = orientation_frames
+        .as_ref()
+        .map(|channels| orientation_channel_payload(channels, params, times.len()));
 
     Ok(Payload {
         format: "bressloff-v1-u8-frames",
@@ -1003,8 +1423,12 @@ fn generate_payload(
             beta: RETINO_BETA,
         },
         palette: palette(params.cmap),
+        paper_preset,
         planform,
+        calibration,
+        orientation_channels,
         params: PayloadParams {
+            paper_preset: params.paper_preset.as_str(),
             generator: params.generator.as_str(),
             pattern: params.pattern.as_str(),
             parity: params.parity.as_str(),
@@ -1040,6 +1464,7 @@ fn generate_payload(
             stability_q_min: params.stability_q_min,
             stability_q_max: params.stability_q_max,
             stability_samples: params.stability_samples,
+            export_orientation_channels: params.export_orientation_channels,
         },
         metrics,
         warmup,
@@ -1054,10 +1479,13 @@ fn generate_payload(
     })
 }
 
-fn generate_planform_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>) {
+fn generate_planform_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>, Option<Vec<f32>>) {
     let frame_count = params.frames.max(1);
     let frame_size = params.n * params.n;
     let mut frames = vec![0.0_f32; frame_count * frame_size];
+    let mut orientation_frames = params
+        .export_orientation_channels
+        .then(|| vec![0.0_f32; frame_count * frame_size * params.m]);
     let cell_mm = cell_mm_for(params);
     let extent = params.n as f64 * cell_mm;
     let half = extent / 2.0;
@@ -1080,29 +1508,77 @@ fn generate_planform_frames(params: FrameParams) -> (Vec<f32>, Vec<f64>) {
         })
         .collect();
 
-    frames
-        .par_chunks_mut(frame_size)
-        .enumerate()
-        .for_each(|(frame_index, frame)| {
-            let progress = if frame_count <= 1 {
-                0.0
-            } else {
-                frame_index as f64 / (frame_count - 1) as f64
-            };
-            let phase = 2.0 * PI * params.drift * progress;
+    match orientation_frames.as_mut() {
+        Some(channels) => frames
+            .par_chunks_mut(frame_size)
+            .zip(channels.par_chunks_mut(frame_size * params.m))
+            .enumerate()
+            .for_each(|(frame_index, (frame, channel_frame))| {
+                let progress = if frame_count <= 1 {
+                    0.0
+                } else {
+                    frame_index as f64 / (frame_count - 1) as f64
+                };
+                let phase = 2.0 * PI * params.drift * progress;
 
-            for row in 0..params.n {
-                let y = (row as f64 + 0.5) * cell_mm - half;
-                for col in 0..params.n {
-                    let x = (col as f64 + 0.5) * cell_mm - half;
-                    let value =
-                        planform_value(planform_params, x, y, wave_number, phase, &modes, &eigen);
-                    frame[row * params.n + col] = (value * params.sharpness).tanh() as f32;
+                for row in 0..params.n {
+                    let y = (row as f64 + 0.5) * cell_mm - half;
+                    for col in 0..params.n {
+                        let x = (col as f64 + 0.5) * cell_mm - half;
+                        let mut best = 0.0_f64;
+                        let cell = row * params.n + col;
+                        for k in 0..params.m {
+                            let phi = PI * k as f64 / params.m as f64;
+                            let value = orientation_planform_activity(
+                                x,
+                                y,
+                                phi,
+                                wave_number,
+                                phase,
+                                &modes,
+                                &eigen,
+                            );
+                            channel_frame[cell * params.m + k] =
+                                (value * params.sharpness).tanh() as f32;
+                            if value.abs() > best.abs() {
+                                best = value;
+                            }
+                        }
+                        frame[cell] = (best * params.sharpness).tanh() as f32;
+                    }
                 }
-            }
-        });
+            }),
+        None => frames
+            .par_chunks_mut(frame_size)
+            .enumerate()
+            .for_each(|(frame_index, frame)| {
+                let progress = if frame_count <= 1 {
+                    0.0
+                } else {
+                    frame_index as f64 / (frame_count - 1) as f64
+                };
+                let phase = 2.0 * PI * params.drift * progress;
 
-    (frames, times)
+                for row in 0..params.n {
+                    let y = (row as f64 + 0.5) * cell_mm - half;
+                    for col in 0..params.n {
+                        let x = (col as f64 + 0.5) * cell_mm - half;
+                        let value = planform_value(
+                            planform_params,
+                            x,
+                            y,
+                            wave_number,
+                            phase,
+                            &modes,
+                            &eigen,
+                        );
+                        frame[row * params.n + col] = (value * params.sharpness).tanh() as f32;
+                    }
+                }
+            }),
+    }
+
+    (frames, times, orientation_frames)
 }
 
 fn cell_mm_for(params: FrameParams) -> f64 {
@@ -1129,6 +1605,99 @@ fn planform_details(params: FrameParams, cell_mm: f64) -> PlanformDetails {
         stability,
         branch_selection,
         kernel: kernel_details(params),
+    }
+}
+
+fn calibration_report(
+    preset: PaperPresetDetails,
+    planform: &PlanformDetails,
+    metrics: &Metrics,
+    params: FrameParams,
+) -> CalibrationReport {
+    let rendered_pattern = effective_pattern_from_params(params, planform);
+    let rendered_family = pattern_family(rendered_pattern);
+    let selected_family = planform.branch_selection.selected_family;
+    let selected_pattern = planform.branch_selection.selected_pattern;
+    let mut checks = Vec::new();
+
+    checks.push(CalibrationCheck {
+        name: "parity",
+        expected: preset.expected_parity,
+        actual: planform.parity.to_string(),
+        passed: planform.parity == preset.expected_parity,
+    });
+
+    if preset.expected_pattern != "auto" {
+        checks.push(CalibrationCheck {
+            name: "rendered-pattern",
+            expected: preset.expected_pattern,
+            actual: rendered_pattern.as_str().to_string(),
+            passed: rendered_pattern.as_str() == preset.expected_pattern,
+        });
+        checks.push(CalibrationCheck {
+            name: "branch-selector-pattern",
+            expected: preset.expected_pattern,
+            actual: selected_pattern.to_string(),
+            passed: selected_pattern == preset.expected_pattern,
+        });
+    }
+
+    if preset.expected_family != "branch-selected" {
+        checks.push(CalibrationCheck {
+            name: "rendered-family",
+            expected: preset.expected_family,
+            actual: rendered_family.to_string(),
+            passed: rendered_family == preset.expected_family,
+        });
+        checks.push(CalibrationCheck {
+            name: "branch-selector-family",
+            expected: preset.expected_family,
+            actual: selected_family.to_string(),
+            passed: selected_family == preset.expected_family,
+        });
+    }
+
+    let status = if checks.iter().all(|check| check.passed) {
+        "pass"
+    } else {
+        "review"
+    };
+
+    CalibrationReport {
+        preset,
+        status,
+        rendered_parity: planform.parity,
+        rendered_pattern: rendered_pattern.as_str(),
+        selected_family,
+        selected_pattern,
+        critical_q: planform.stability.critical_q,
+        critical_branch: planform.stability.critical_branch,
+        dominant_cycles: metrics.dominant_cycles,
+        checks,
+    }
+}
+
+fn effective_pattern_from_params(params: FrameParams, planform: &PlanformDetails) -> PatternPreset {
+    match params.pattern {
+        PatternPreset::Auto => match planform.branch_selection.selected_pattern {
+            "honeycomb" => PatternPreset::Honeycomb,
+            "hex_pi" => PatternPreset::HexPi,
+            "rhombic" => PatternPreset::Rhombic,
+            "spiral" => PatternPreset::Spiral,
+            "rings" => PatternPreset::Rings,
+            _ => PatternPreset::Cobweb,
+        },
+        other => other,
+    }
+}
+
+fn pattern_family(pattern: PatternPreset) -> &'static str {
+    match pattern {
+        PatternPreset::Auto => "branch-selected",
+        PatternPreset::Rings | PatternPreset::Rays | PatternPreset::Spiral => "roll",
+        PatternPreset::Cobweb => "square",
+        PatternPreset::Honeycomb | PatternPreset::HexPi => "hexagonal",
+        PatternPreset::Rhombic => "rhombic",
     }
 }
 
@@ -1748,7 +2317,10 @@ impl Structure {
     }
 }
 
-fn simulate_frames(params: FrameParams, structure: &Structure) -> (Vec<f32>, Vec<f64>) {
+fn simulate_frames(
+    params: FrameParams,
+    structure: &Structure,
+) -> (Vec<f32>, Vec<f64>, Option<Vec<f32>>) {
     let total_dim = params.n * params.n * params.m;
     let mut rng = SplitMix64::new(params.seed);
     let mut state: Vec<f64> = (0..total_dim)
@@ -1756,6 +2328,9 @@ fn simulate_frames(params: FrameParams, structure: &Structure) -> (Vec<f32>, Vec
         .collect();
     let mut times = Vec::with_capacity(params.frames);
     let mut frames = Vec::with_capacity(params.frames * params.n * params.n);
+    let mut orientation_frames = params
+        .export_orientation_channels
+        .then(|| Vec::with_capacity(params.frames * total_dim));
     let mut sigmoid_buffer = vec![0.0; total_dim];
     let mut coupling_buffer = vec![0.0; total_dim];
     let step = match params.solver {
@@ -1789,9 +2364,12 @@ fn simulate_frames(params: FrameParams, structure: &Structure) -> (Vec<f32>, Vec
 
         times.push(target_t);
         append_scalar_frame(&state, params, &mut frames);
+        if let Some(channels) = orientation_frames.as_mut() {
+            channels.extend(state.iter().map(|value| *value as f32));
+        }
     }
 
-    (frames, times)
+    (frames, times, orientation_frames)
 }
 
 fn append_scalar_frame(state: &[f64], params: FrameParams, frames: &mut Vec<f32>) {
@@ -1907,7 +2485,12 @@ fn index(row: usize, col: usize, k: usize, n: usize, m: usize) -> usize {
     m * n * row + m * col + k
 }
 
-fn trim_warmup(frames: &mut Vec<f32>, times: &mut Vec<f64>, params: FrameParams) -> Warmup {
+fn trim_warmup(
+    frames: &mut Vec<f32>,
+    times: &mut Vec<f64>,
+    orientation_frames: Option<&mut Vec<f32>>,
+    params: FrameParams,
+) -> Warmup {
     if !params.trim_warmup || times.len() <= 3 {
         return Warmup {
             enabled: params.trim_warmup,
@@ -1933,6 +2516,9 @@ fn trim_warmup(frames: &mut Vec<f32>, times: &mut Vec<f64>, params: FrameParams)
 
     if start > 0 {
         frames.drain(0..start * frame_size);
+        if let Some(channels) = orientation_frames {
+            channels.drain(0..start * frame_size * params.m);
+        }
         times.drain(0..start);
     }
 
@@ -1978,6 +2564,31 @@ fn normalize_u8(frames: &[f32], low: f64, high: f64) -> Vec<u8> {
         .iter()
         .map(|value| (((*value as f64 - low) / denom) * 255.0).clamp(0.0, 255.0) as u8)
         .collect()
+}
+
+fn orientation_channel_payload(
+    channels: &[f32],
+    params: FrameParams,
+    frame_count: usize,
+) -> OrientationChannelPayload {
+    let (scale_min, scale_max) = percentile_range(channels, 0.5, 99.5);
+    let (raw_min, raw_max) = raw_range(channels);
+    OrientationChannelPayload {
+        format: "bressloff-v1-u8-orientation-channels",
+        order: "frame,row,col,orientation",
+        width: params.n,
+        height: params.n,
+        frame_count,
+        orientation_count: params.m,
+        phi_radians: (0..params.m)
+            .map(|k| PI * k as f64 / params.m as f64)
+            .collect(),
+        scale_min,
+        scale_max,
+        raw_min,
+        raw_max,
+        data_base64: general_purpose::STANDARD.encode(normalize_u8(channels, scale_min, scale_max)),
+    }
 }
 
 fn raw_range(frames: &[f32]) -> (f32, f32) {
@@ -2340,5 +2951,43 @@ mod tests {
         assert_eq!(planform.branch_selection.model, "cubic-amplitude-equation");
         assert!(!planform.branch_selection.candidates.is_empty());
         assert!(planform.branch_selection.gamma0.is_finite());
+    }
+
+    #[test]
+    fn paper_preset_generates_calibration_report() {
+        let state = ServerState::default();
+        let mut raw = HashMap::new();
+        raw.insert("paper_preset".to_string(), "fig31_square_even".to_string());
+        raw.insert("n".to_string(), "32".to_string());
+        raw.insert("m".to_string(), "4".to_string());
+        raw.insert("frames".to_string(), "2".to_string());
+        raw.insert("t".to_string(), "1".to_string());
+        let payload = generate_payload(coerce_params(&raw), &state).unwrap();
+        assert_eq!(payload.paper_preset.unwrap().id, "fig31_square_even");
+        let calibration = payload.calibration.as_ref().unwrap();
+        assert_eq!(calibration.rendered_pattern, "cobweb");
+        assert!(!calibration.checks.is_empty());
+    }
+
+    #[test]
+    fn orientation_channel_export_has_expected_shape() {
+        let state = ServerState::default();
+        let params = FrameParams {
+            generator: Generator::Planform,
+            n: 32,
+            m: 4,
+            frames: 3,
+            t: 1.0,
+            export_orientation_channels: true,
+            ..FrameParams::default()
+        };
+        let payload = generate_payload(params, &state).unwrap();
+        let channels = payload.orientation_channels.as_ref().unwrap();
+        assert_eq!(channels.frame_count, payload.frame_count);
+        assert_eq!(channels.width, 32);
+        assert_eq!(channels.height, 32);
+        assert_eq!(channels.orientation_count, 4);
+        assert_eq!(channels.phi_radians.len(), 4);
+        assert!(!channels.data_base64.is_empty());
     }
 }

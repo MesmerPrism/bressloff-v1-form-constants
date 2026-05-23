@@ -24,7 +24,11 @@ calibration, not for claiming a calibrated flicker-frequency prediction.
   branch readout.
 - Cubic amplitude-equation branch readout for roll, square/cobweb, rhombic, and
   hexagonal families.
-- Paper-oriented starting presets for several Bressloff figure families.
+- First-class paper-oriented presets for the figure 16/17 stability examples and
+  the figure 31/32/33/35 double-map planform families.
+- Optional orientation-channel export payloads for planform or dynamics runs.
+- JSON calibration reports that compare each named preset's expected family with
+  the rendered/selected branch.
 
 ## What It Does Not Claim
 
@@ -69,6 +73,18 @@ Export a static payload:
 .\rust-v1-sim\target\release\bressloff-v1.exe export --generator planform --pattern cobweb --n 96 --m 24 --frames 120 --t 18 --out viewer\frames.json
 ```
 
+Export one named paper preset with the full orientation-channel tensor:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe export --paper-preset fig31_square_even --export-orientations --out reports\fig31-square-even.json
+```
+
+Generate a side-by-side JSON calibration report for the named paper presets:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
+```
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is
@@ -83,6 +99,12 @@ used by Bressloff's widened lateral-connection example.
 Use `Generator -> Dynamics` to run the neural-field solver path. Warmup trimming
 is enabled by default for playback so the low-contrast onset transient does not
 consume half the animation.
+
+Use `Paper preset` to load a named Bressloff figure starting point. The
+calibration readout reports whether the current parity, rendered planform, and
+branch selector agree with the preset's expected family. Enable `Export
+orientation channels` only when you need the heavier `[frame,row,col,orientation]`
+payload for downstream analysis.
 
 ## Project Layout
 

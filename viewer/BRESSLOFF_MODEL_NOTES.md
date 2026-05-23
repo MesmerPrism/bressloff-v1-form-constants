@@ -22,10 +22,15 @@ about the visual cortex".
 - Cubic amplitude equations: `branch_selection_for` evaluates `Gamma3(theta)` and
   the even hexagonal `Gamma2` integral numerically from the current eigenfunction,
   then reports roll, square/cobweb, rhombic, and hexagonal branches.
-- Paper presets: the UI includes starting points for the marginal-stability
+- Paper presets: the Rust model exposes starting points for the marginal-stability
   examples and the double-map planform figures. These set the branch family,
   parity, lateral spread, and scan resolution; they are not final calibrated
   reproductions.
+- Orientation-channel export: when requested, payloads include a compressed
+  `frame,row,col,orientation` tensor with the same angular channels used by the
+  model or analytic planform.
+- Calibration reports: each named paper preset records expected parity/family
+  checks against the rendered planform and the current branch selector.
 
 ## Current Normalizations
 
@@ -40,8 +45,9 @@ about the visual cortex".
 
 ## Next Fidelity Targets
 
-- Calibrate named presets for paper figures 16, 17, and 31-36.
-- Add an orientation-channel payload or compact basis export so contour overlays
-  can be drawn from the same channels as simulated dynamics.
+- Calibrate named presets against digitized paper geometry for figures 16, 17,
+  and 31-36.
+- Add a compact basis export so orientation-channel payloads can be smaller than
+  the full tensor.
 - Add a calibrated `mu_c` readout from `alpha / (sigma1 G(q_c))` once the
   operating point of the sigmoid is made explicit.

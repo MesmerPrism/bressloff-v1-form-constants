@@ -44,10 +44,28 @@ branch, growth, and amplitude-equation branch selection. `Pattern -> Auto
 branch` uses that selection to choose between roll/spiral, square/cobweb,
 rhombic, and honeycomb families.
 
+`Paper preset` loads named starting points for the paper's stability and
+double-map figures. The Rust payload carries the preset metadata and a
+calibration report, so the readout can distinguish the rendered planform from
+the branch selected by the amplitude-equation approximation.
+
 Generate or refresh the frame payload:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe export --generator planform --pattern cobweb --n 64 --m 12 --frames 120 --t 60 --out viewer\frames.json
+```
+
+Include orientation channels when a downstream tool needs the full
+`frame,row,col,orientation` tensor:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe export --paper-preset fig31_square_even --export-orientations --out reports\fig31-square-even.json
+```
+
+Run the paper-preset calibration suite:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
 ```
 
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for

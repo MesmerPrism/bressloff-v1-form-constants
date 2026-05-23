@@ -36,7 +36,13 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
   choose the rendered planform family.
 - `Auto branch` now also adopts the critical parity selected by the stability
   scan.
-- Paper-oriented starting presets for figures 16, 17, 31, 32, 33, and 35.
+- First-class paper-oriented presets for figures 16, 17, 31, 32, 33, and 35,
+  exposed through the viewer, `/api/defaults`, CLI export, and calibration
+  report paths.
+- Optional orientation-channel payload export with
+  `frame,row,col,orientation` ordering.
+- `calibrate` command that writes a JSON side-by-side report comparing each
+  named preset's expected family with the rendered planform and branch selector.
 
 ## Approximate
 
@@ -51,8 +57,9 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 
 ## Still Missing
 
-- Calibration of the paper presets against exact figure geometry and parameter
-  values.
-- Orientation-channel payload export or an efficient compressed equivalent.
+- Calibration of the paper presets against exact digitized figure geometry and
+  parameter values.
+- Efficient compact-basis export for orientation channels when the full tensor is
+  too large.
 - Dynamics-to-contour overlay from simulated orientation channels.
 - Side-by-side figure comparison panels for named figures from the paper.

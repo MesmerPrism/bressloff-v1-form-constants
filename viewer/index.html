@@ -287,6 +287,11 @@
             <span>Trim warmup</span>
           </label>
 
+          <label class="check">
+            <input id="export_orientation_channels" name="export_orientation_channels" type="checkbox">
+            <span>Export orientation channels</span>
+          </label>
+
           <div class="actions">
             <button id="runButton" type="submit">Run model</button>
             <button id="resetButton" class="secondary" type="button">Reset</button>
@@ -390,6 +395,8 @@
           <div id="time">t = 0.00</div>
           <div id="metrics">No metrics yet</div>
           <div id="stability">No stability scan yet</div>
+          <div id="calibration">No paper preset selected</div>
+          <div id="orientationExport">Orientation channels not exported</div>
         </section>
       </aside>
     </section>

@@ -21,9 +21,12 @@ const els = {
   time: document.getElementById("time"),
   metrics: document.getElementById("metrics"),
   stability: document.getElementById("stability"),
+  calibration: document.getElementById("calibration"),
+  orientationExport: document.getElementById("orientationExport"),
 };
 
 const DEFAULT_PARAMS = {
+  paper_preset: "manual",
   generator: "planform",
   pattern: "auto",
   parity: "even",
@@ -58,6 +61,7 @@ const DEFAULT_PARAMS = {
   stability_q_min: 0.05,
   stability_q_max: 3.5,
   stability_samples: 80,
+  export_orientation_channels: false,
 };
 
 const PAPER_PRESETS = {
@@ -130,6 +134,7 @@ const PAPER_PRESETS = {
 };
 
 const PARAM_IDS = [
+  "paper_preset",
   "generator",
   "pattern",
   "parity",
@@ -164,6 +169,7 @@ const PARAM_IDS = [
   "low_percentile",
   "high_percentile",
   "trim_warmup",
+  "export_orientation_channels",
 ];
 
 const FORMATTERS = {
@@ -610,6 +616,24 @@ function updateStats() {
   } else {
     els.stability.textContent = "No stability scan";
   }
+
+  if (meta.calibration) {
+    const failed = meta.calibration.checks
+      .filter((check) => !check.passed)
+      .map((check) => `${check.name}: ${check.actual}`)
+      .join("; ");
+    const suffix = failed ? `, review ${failed}` : "";
+    els.calibration.textContent = `${meta.calibration.preset.paper_figure}: ${meta.calibration.status}, rendered ${meta.calibration.rendered_pattern}, branch ${meta.calibration.selected_family}${suffix}`;
+  } else {
+    els.calibration.textContent = "No paper preset selected";
+  }
+
+  if (meta.orientation_channels) {
+    const channels = meta.orientation_channels;
+    els.orientationExport.textContent = `Orientation channels exported: ${channels.frame_count} x ${channels.width} x ${channels.height} x ${channels.orientation_count}`;
+  } else {
+    els.orientationExport.textContent = "Orientation channels not exported";
+  }
 }
 
 function tick(now) {
@@ -660,6 +684,10 @@ function currentParams() {
   const trimWarmup = document.getElementById("trim_warmup");
   if (trimWarmup) {
     params.trim_warmup = trimWarmup.checked ? "true" : "false";
+  }
+  const orientationChannels = document.getElementById("export_orientation_channels");
+  if (orientationChannels) {
+    params.export_orientation_channels = orientationChannels.checked ? "true" : "false";
   }
   return params;
 }
@@ -774,7 +802,7 @@ function applyPaperPreset(name) {
   if (!preset) {
     return false;
   }
-  applyParams({ ...DEFAULT_PARAMS, ...preset });
+  applyParams({ ...DEFAULT_PARAMS, ...preset, paper_preset: name });
   return true;
 }
 

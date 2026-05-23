@@ -1,0 +1,275 @@
+{
+  "format": "bressloff-paper-calibration-v1",
+  "runs": [
+    {
+      "checks": [
+        {
+          "actual": "odd",
+          "expected": "odd",
+          "name": "parity",
+          "passed": true
+        }
+      ],
+      "critical_branch": "odd",
+      "critical_q": 1.0279527559055117,
+      "dominant_cycles": 40.79215621948242,
+      "preset": {
+        "expected_family": "branch-selected",
+        "expected_kind": "linear-stability",
+        "expected_parity": "odd",
+        "expected_pattern": "auto",
+        "id": "fig16_odd",
+        "label": "Fig 16 odd marginal-stability scan",
+        "paper_figure": "Figure 16",
+        "source_note": "Starting preset for the narrow lateral-connection example; use the report as a calibration check, not a digitized paper figure.",
+        "visual_target": "odd critical branch from the marginal-stability calculation"
+      },
+      "rendered_parity": "odd",
+      "rendered_pattern": "rhombic",
+      "selected_family": "rhombic",
+      "selected_pattern": "rhombic",
+      "status": "pass"
+    },
+    {
+      "checks": [
+        {
+          "actual": "even",
+          "expected": "even",
+          "name": "parity",
+          "passed": true
+        }
+      ],
+      "critical_branch": "even",
+      "critical_q": 1.000787401574803,
+      "dominant_cycles": 10.0,
+      "preset": {
+        "expected_family": "branch-selected",
+        "expected_kind": "linear-stability",
+        "expected_parity": "even",
+        "expected_pattern": "auto",
+        "id": "fig17_even",
+        "label": "Fig 17 even widened-spread scan",
+        "paper_figure": "Figure 17",
+        "source_note": "Starting preset for the theta0-spread marginal-stability example.",
+        "visual_target": "even critical branch after the widened lateral angular spread"
+      },
+      "rendered_parity": "even",
+      "rendered_pattern": "rhombic",
+      "selected_family": "rhombic",
+      "selected_pattern": "rhombic",
+      "status": "pass"
+    },
+    {
+      "checks": [
+        {
+          "actual": "even",
+          "expected": "even",
+          "name": "parity",
+          "passed": true
+        },
+        {
+          "actual": "cobweb",
+          "expected": "cobweb",
+          "name": "rendered-pattern",
+          "passed": true
+        },
+        {
+          "actual": "honeycomb",
+          "expected": "cobweb",
+          "name": "branch-selector-pattern",
+          "passed": false
+        },
+        {
+          "actual": "square",
+          "expected": "square",
+          "name": "rendered-family",
+          "passed": true
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "square",
+          "name": "branch-selector-family",
+          "passed": false
+        }
+      ],
+      "critical_branch": "even",
+      "critical_q": 1.44746835443038,
+      "dominant_cycles": 16.970561981201172,
+      "preset": {
+        "expected_family": "square",
+        "expected_kind": "double-map-planform",
+        "expected_parity": "even",
+        "expected_pattern": "cobweb",
+        "id": "fig31_square_even",
+        "label": "Fig 31 square/cobweb even planform",
+        "paper_figure": "Figure 31",
+        "source_note": "Analytic planform preset for checking the double-map geometry.",
+        "visual_target": "square lattice in cortex mapped to cobweb-like visual-field structure"
+      },
+      "rendered_parity": "even",
+      "rendered_pattern": "cobweb",
+      "selected_family": "hexagonal",
+      "selected_pattern": "honeycomb",
+      "status": "review"
+    },
+    {
+      "checks": [
+        {
+          "actual": "odd",
+          "expected": "odd",
+          "name": "parity",
+          "passed": true
+        },
+        {
+          "actual": "cobweb",
+          "expected": "cobweb",
+          "name": "rendered-pattern",
+          "passed": true
+        },
+        {
+          "actual": "honeycomb",
+          "expected": "cobweb",
+          "name": "branch-selector-pattern",
+          "passed": false
+        },
+        {
+          "actual": "square",
+          "expected": "square",
+          "name": "rendered-family",
+          "passed": true
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "square",
+          "name": "branch-selector-family",
+          "passed": false
+        }
+      ],
+      "critical_branch": "odd",
+      "critical_q": 1.5784810126582278,
+      "dominant_cycles": 16.970561981201172,
+      "preset": {
+        "expected_family": "square",
+        "expected_kind": "double-map-planform",
+        "expected_parity": "odd",
+        "expected_pattern": "cobweb",
+        "id": "fig32_square_odd",
+        "label": "Fig 32 square/cobweb odd planform",
+        "paper_figure": "Figure 32",
+        "source_note": "Analytic planform preset for checking parity-dependent contour structure.",
+        "visual_target": "odd square lattice variant mapped through the retino-cortical double map"
+      },
+      "rendered_parity": "odd",
+      "rendered_pattern": "cobweb",
+      "selected_family": "hexagonal",
+      "selected_pattern": "honeycomb",
+      "status": "review"
+    },
+    {
+      "checks": [
+        {
+          "actual": "even",
+          "expected": "even",
+          "name": "parity",
+          "passed": true
+        },
+        {
+          "actual": "rhombic",
+          "expected": "rhombic",
+          "name": "rendered-pattern",
+          "passed": true
+        },
+        {
+          "actual": "rhombic",
+          "expected": "rhombic",
+          "name": "branch-selector-pattern",
+          "passed": true
+        },
+        {
+          "actual": "rhombic",
+          "expected": "rhombic",
+          "name": "rendered-family",
+          "passed": true
+        },
+        {
+          "actual": "rhombic",
+          "expected": "rhombic",
+          "name": "branch-selector-family",
+          "passed": true
+        }
+      ],
+      "critical_branch": "even",
+      "critical_q": 1.44746835443038,
+      "dominant_cycles": 14.422204971313477,
+      "preset": {
+        "expected_family": "rhombic",
+        "expected_kind": "double-map-planform",
+        "expected_parity": "even",
+        "expected_pattern": "rhombic",
+        "id": "fig33_rhombic_even",
+        "label": "Fig 33 rhombic even planform",
+        "paper_figure": "Figure 33",
+        "source_note": "Analytic planform preset for the oblique-lattice family.",
+        "visual_target": "rhombic cortical lattice mapped into warped visual-field contours"
+      },
+      "rendered_parity": "even",
+      "rendered_pattern": "rhombic",
+      "selected_family": "rhombic",
+      "selected_pattern": "rhombic",
+      "status": "pass"
+    },
+    {
+      "checks": [
+        {
+          "actual": "even",
+          "expected": "even",
+          "name": "parity",
+          "passed": true
+        },
+        {
+          "actual": "hex_pi",
+          "expected": "hex_pi",
+          "name": "rendered-pattern",
+          "passed": true
+        },
+        {
+          "actual": "honeycomb",
+          "expected": "hex_pi",
+          "name": "branch-selector-pattern",
+          "passed": false
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "hexagonal",
+          "name": "rendered-family",
+          "passed": true
+        },
+        {
+          "actual": "hexagonal",
+          "expected": "hexagonal",
+          "name": "branch-selector-family",
+          "passed": true
+        }
+      ],
+      "critical_branch": "even",
+      "critical_q": 1.44746835443038,
+      "dominant_cycles": 31.890438079833984,
+      "preset": {
+        "expected_family": "hexagonal",
+        "expected_kind": "double-map-planform",
+        "expected_parity": "even",
+        "expected_pattern": "hex_pi",
+        "id": "fig35_hex_even",
+        "label": "Fig 35 hexagonal even planform",
+        "paper_figure": "Figure 35",
+        "source_note": "Analytic planform preset for the three-wave hexagonal family.",
+        "visual_target": "hexagonal branch with pi-phase sign structure"
+      },
+      "rendered_parity": "even",
+      "rendered_pattern": "hex_pi",
+      "selected_family": "hexagonal",
+      "selected_pattern": "honeycomb",
+      "status": "review"
+    }
+  ]
+}
