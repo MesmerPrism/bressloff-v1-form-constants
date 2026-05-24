@@ -109,6 +109,15 @@ small polynomial fit from forcing period to wave number. Use
 refinement around the current beta sign-change brackets without rerunning a
 larger global grid.
 
+If `reports/source-curves/rule-2011-fig8-source-curves.json` is present, the
+Floquet command also writes `source_curve_comparison` and per-curve
+`source_comparison` fields. These compare each generated branch against the
+best-overlapping digitized Figure 8C source branch of the same kind. The
+committed source-curve file contains only public-safe numeric coordinates; the
+private page render and QA overlay remain under `private/`. Use
+`--source-curve-file <path>` to override the source data or
+`--no-source-curve-comparison` to disable this comparison.
+
 Each mode row exports the 2x2 monodromy trace, determinant, and the three
 source-style threshold conditions:
 

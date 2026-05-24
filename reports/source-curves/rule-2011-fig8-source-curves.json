@@ -1,0 +1,427 @@
+{
+  "format": "rule-2011-figure8-source-curves-v1",
+  "source_key": "rule-2011",
+  "figure": "Figure 8C",
+  "source_axes": {
+    "x_axis": "forcing_period",
+    "x_units": "ms",
+    "x_min": 20.0,
+    "x_max": 150.0,
+    "y_axis": "wave_number_beta",
+    "y_units": "dimensionless",
+    "y_min": 0.0,
+    "y_max": 1.0
+  },
+  "digitization": {
+    "method": "thresholded_private_pdf_page_render_with_manual_axis_calibration",
+    "pdf_page": 10,
+    "panel": "C",
+    "page_render_dpi": 300,
+    "crop_pixels": [
+      335,
+      835,
+      930,
+      1295
+    ],
+    "plot_pixels": {
+      "left": 44,
+      "right": 587,
+      "top": 27,
+      "bottom": 434
+    },
+    "annotation_masks": [
+      {
+        "label": "+1 annotation",
+        "crop_pixel_box": [
+          465,
+          245,
+          515,
+          290
+        ],
+        "reason": "Suppress printed panel annotation pixels near the lower +1 branch."
+      }
+    ],
+    "overlay_legend": {
+      "red": "-1 upper boundary",
+      "blue": "-1 lower boundary",
+      "green": "+1 upper boundary",
+      "purple": "+1 lower boundary"
+    },
+    "qa_note": "Overlay colors identify upper/lower branch assignments, not left/right sides. Connected line segments are drawn over sampled points so isolated-looking dots can be checked against the branch trace.",
+    "note": "Derived numeric coordinates only; source PDF render and QA overlay stay under private/."
+  },
+  "curves": [
+    {
+      "curve_id": "rule_fig8c_minus_upper",
+      "kind": "minus_period_doubling",
+      "branch_label": "-1 upper boundary",
+      "point_count": 22,
+      "points": [
+        {
+          "period_ms": 31.0,
+          "wave_number_beta": 0.0
+        },
+        {
+          "period_ms": 31.971,
+          "wave_number_beta": 0.1456
+        },
+        {
+          "period_ms": 33.646,
+          "wave_number_beta": 0.2548
+        },
+        {
+          "period_ms": 35.322,
+          "wave_number_beta": 0.3333
+        },
+        {
+          "period_ms": 36.998,
+          "wave_number_beta": 0.3952
+        },
+        {
+          "period_ms": 38.674,
+          "wave_number_beta": 0.4465
+        },
+        {
+          "period_ms": 40.35,
+          "wave_number_beta": 0.4893
+        },
+        {
+          "period_ms": 42.026,
+          "wave_number_beta": 0.5276
+        },
+        {
+          "period_ms": 43.702,
+          "wave_number_beta": 0.5625
+        },
+        {
+          "period_ms": 45.378,
+          "wave_number_beta": 0.5932
+        },
+        {
+          "period_ms": 47.053,
+          "wave_number_beta": 0.6214
+        },
+        {
+          "period_ms": 48.729,
+          "wave_number_beta": 0.6472
+        },
+        {
+          "period_ms": 50.405,
+          "wave_number_beta": 0.6697
+        },
+        {
+          "period_ms": 52.081,
+          "wave_number_beta": 0.6895
+        },
+        {
+          "period_ms": 53.757,
+          "wave_number_beta": 0.7064
+        },
+        {
+          "period_ms": 55.433,
+          "wave_number_beta": 0.719
+        },
+        {
+          "period_ms": 57.109,
+          "wave_number_beta": 0.7262
+        },
+        {
+          "period_ms": 58.785,
+          "wave_number_beta": 0.7278
+        },
+        {
+          "period_ms": 60.46,
+          "wave_number_beta": 0.7208
+        },
+        {
+          "period_ms": 62.136,
+          "wave_number_beta": 0.7062
+        },
+        {
+          "period_ms": 63.812,
+          "wave_number_beta": 0.6776
+        },
+        {
+          "period_ms": 65.368,
+          "wave_number_beta": 0.6107
+        }
+      ]
+    },
+    {
+      "curve_id": "rule_fig8c_minus_lower",
+      "kind": "minus_period_doubling",
+      "branch_label": "-1 lower boundary",
+      "point_count": 17,
+      "points": [
+        {
+          "period_ms": 39.5,
+          "wave_number_beta": 0.0
+        },
+        {
+          "period_ms": 40.589,
+          "wave_number_beta": 0.1111
+        },
+        {
+          "period_ms": 42.265,
+          "wave_number_beta": 0.1922
+        },
+        {
+          "period_ms": 43.941,
+          "wave_number_beta": 0.2431
+        },
+        {
+          "period_ms": 45.617,
+          "wave_number_beta": 0.2815
+        },
+        {
+          "period_ms": 47.293,
+          "wave_number_beta": 0.3119
+        },
+        {
+          "period_ms": 48.969,
+          "wave_number_beta": 0.3363
+        },
+        {
+          "period_ms": 50.645,
+          "wave_number_beta": 0.3561
+        },
+        {
+          "period_ms": 52.32,
+          "wave_number_beta": 0.3724
+        },
+        {
+          "period_ms": 53.996,
+          "wave_number_beta": 0.3868
+        },
+        {
+          "period_ms": 55.672,
+          "wave_number_beta": 0.4001
+        },
+        {
+          "period_ms": 57.348,
+          "wave_number_beta": 0.4128
+        },
+        {
+          "period_ms": 59.024,
+          "wave_number_beta": 0.427
+        },
+        {
+          "period_ms": 60.7,
+          "wave_number_beta": 0.4444
+        },
+        {
+          "period_ms": 62.376,
+          "wave_number_beta": 0.4686
+        },
+        {
+          "period_ms": 64.052,
+          "wave_number_beta": 0.5056
+        },
+        {
+          "period_ms": 65.249,
+          "wave_number_beta": 0.5412
+        }
+      ]
+    },
+    {
+      "curve_id": "rule_fig8c_plus_upper",
+      "kind": "plus_one_to_one",
+      "branch_label": "+1 upper boundary",
+      "point_count": 23,
+      "points": [
+        {
+          "period_ms": 103.315,
+          "wave_number_beta": 0.4619
+        },
+        {
+          "period_ms": 104.991,
+          "wave_number_beta": 0.5163
+        },
+        {
+          "period_ms": 106.667,
+          "wave_number_beta": 0.5484
+        },
+        {
+          "period_ms": 108.343,
+          "wave_number_beta": 0.5728
+        },
+        {
+          "period_ms": 110.018,
+          "wave_number_beta": 0.5927
+        },
+        {
+          "period_ms": 111.694,
+          "wave_number_beta": 0.6093
+        },
+        {
+          "period_ms": 113.37,
+          "wave_number_beta": 0.6237
+        },
+        {
+          "period_ms": 115.046,
+          "wave_number_beta": 0.6365
+        },
+        {
+          "period_ms": 116.722,
+          "wave_number_beta": 0.6472
+        },
+        {
+          "period_ms": 118.398,
+          "wave_number_beta": 0.6572
+        },
+        {
+          "period_ms": 120.074,
+          "wave_number_beta": 0.6657
+        },
+        {
+          "period_ms": 121.75,
+          "wave_number_beta": 0.673
+        },
+        {
+          "period_ms": 123.425,
+          "wave_number_beta": 0.6792
+        },
+        {
+          "period_ms": 125.101,
+          "wave_number_beta": 0.6846
+        },
+        {
+          "period_ms": 126.777,
+          "wave_number_beta": 0.688
+        },
+        {
+          "period_ms": 128.453,
+          "wave_number_beta": 0.6922
+        },
+        {
+          "period_ms": 130.129,
+          "wave_number_beta": 0.6929
+        },
+        {
+          "period_ms": 131.805,
+          "wave_number_beta": 0.6929
+        },
+        {
+          "period_ms": 133.481,
+          "wave_number_beta": 0.6929
+        },
+        {
+          "period_ms": 135.157,
+          "wave_number_beta": 0.6895
+        },
+        {
+          "period_ms": 136.832,
+          "wave_number_beta": 0.6839
+        },
+        {
+          "period_ms": 138.508,
+          "wave_number_beta": 0.6648
+        },
+        {
+          "period_ms": 140.064,
+          "wave_number_beta": 0.6529
+        }
+      ]
+    },
+    {
+      "curve_id": "rule_fig8c_plus_lower",
+      "kind": "plus_one_to_one",
+      "branch_label": "+1 lower boundary",
+      "point_count": 23,
+      "points": [
+        {
+          "period_ms": 103.315,
+          "wave_number_beta": 0.4563
+        },
+        {
+          "period_ms": 104.991,
+          "wave_number_beta": 0.4516
+        },
+        {
+          "period_ms": 106.667,
+          "wave_number_beta": 0.4535
+        },
+        {
+          "period_ms": 108.343,
+          "wave_number_beta": 0.4616
+        },
+        {
+          "period_ms": 110.018,
+          "wave_number_beta": 0.4696
+        },
+        {
+          "period_ms": 111.694,
+          "wave_number_beta": 0.4775
+        },
+        {
+          "period_ms": 113.37,
+          "wave_number_beta": 0.4851
+        },
+        {
+          "period_ms": 115.046,
+          "wave_number_beta": 0.4919
+        },
+        {
+          "period_ms": 116.722,
+          "wave_number_beta": 0.4986
+        },
+        {
+          "period_ms": 118.398,
+          "wave_number_beta": 0.5049
+        },
+        {
+          "period_ms": 120.074,
+          "wave_number_beta": 0.5112
+        },
+        {
+          "period_ms": 121.75,
+          "wave_number_beta": 0.5177
+        },
+        {
+          "period_ms": 123.425,
+          "wave_number_beta": 0.5242
+        },
+        {
+          "period_ms": 125.101,
+          "wave_number_beta": 0.5314
+        },
+        {
+          "period_ms": 126.777,
+          "wave_number_beta": 0.5384
+        },
+        {
+          "period_ms": 128.453,
+          "wave_number_beta": 0.5462
+        },
+        {
+          "period_ms": 130.129,
+          "wave_number_beta": 0.5542
+        },
+        {
+          "period_ms": 131.805,
+          "wave_number_beta": 0.5635
+        },
+        {
+          "period_ms": 133.481,
+          "wave_number_beta": 0.5734
+        },
+        {
+          "period_ms": 135.157,
+          "wave_number_beta": 0.5851
+        },
+        {
+          "period_ms": 136.832,
+          "wave_number_beta": 0.599
+        },
+        {
+          "period_ms": 138.508,
+          "wave_number_beta": 0.6204
+        },
+        {
+          "period_ms": 140.064,
+          "wave_number_beta": 0.6529
+        }
+      ]
+    }
+  ]
+}

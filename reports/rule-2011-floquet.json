@@ -20,6 +20,14 @@
     "tolerance": 1e-6,
     "max_steps": 64
   },
+  "source_curve_comparison": {
+    "status": "compared",
+    "source_curve_file": "reports\\source-curves\\rule-2011-fig8-source-curves.json",
+    "source_curve_count": 4,
+    "compared_curve_count": 16,
+    "mean_rms_wave_number_error": 0.8544413001642374,
+    "max_rms_wave_number_error": 1.1107381911045668
+  },
   "grid": {
     "preset": "dense",
     "period_min_ms": 40.0,
@@ -18537,6 +18545,17 @@
         "rms_residual": 0.0018575720830433986,
         "max_abs_residual": 0.0024921944704745513
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 40.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 0.49548096504780786,
+        "rms_wave_number_error": 0.49904736359833657,
+        "max_abs_wave_number_error": 0.5654779903582673
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -18654,6 +18673,17 @@
         "rms_residual": 3.204937810639273e-17,
         "max_abs_residual": 5.551115123125783e-17
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 2,
+        "period_overlap_min_ms": 50.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 0.9700786899501834,
+        "rms_wave_number_error": 0.9799232704781657,
+        "max_abs_wave_number_error": 1.1086317531756502
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -18752,6 +18782,17 @@
         "rms_residual": 4.8074067159589095e-17,
         "max_abs_residual": 5.551115123125783e-17
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 40.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 0.590697080363563,
+        "rms_wave_number_error": 0.7012234428470182,
+        "max_abs_wave_number_error": 1.1187800220789943
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -18849,6 +18890,17 @@
         "rms_residual": 0.0,
         "max_abs_residual": 0.0
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 2,
+        "period_overlap_min_ms": 50.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 1.0784671138698612,
+        "rms_wave_number_error": 1.0811607548160393,
+        "max_abs_wave_number_error": 1.1547380916766268
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -18927,6 +18979,17 @@
         ],
         "rms_residual": 0.0,
         "max_abs_residual": 0.0
+      },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 40.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 0.5163219277756724,
+        "rms_wave_number_error": 0.6699833621476876,
+        "max_abs_wave_number_error": 1.1054018787684474
       },
       "points": [
         {
@@ -19025,6 +19088,17 @@
         "rms_residual": 3.925231146709438e-17,
         "max_abs_residual": 5.551115123125783e-17
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 2,
+        "period_overlap_min_ms": 50.0,
+        "period_overlap_max_ms": 60.0,
+        "mean_abs_wave_number_error": 1.0587227176601444,
+        "rms_wave_number_error": 1.0590015540724866,
+        "max_abs_wave_number_error": 1.0830228954014745
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -19103,6 +19177,17 @@
         "rms_residual": 1.962615573354719e-17,
         "max_abs_residual": 2.7755575615628914e-17
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 2,
+        "period_overlap_min_ms": 40.0,
+        "period_overlap_max_ms": 50.0,
+        "mean_abs_wave_number_error": 0.5070686649622951,
+        "rms_wave_number_error": 0.6989898371400562,
+        "max_abs_wave_number_error": 0.9881800464930568
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -19180,6 +19265,17 @@
         "rms_residual": 0.0,
         "max_abs_residual": 0.0
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 1,
+        "period_overlap_min_ms": 50.0,
+        "period_overlap_max_ms": 50.0,
+        "mean_abs_wave_number_error": 1.0827205806431737,
+        "rms_wave_number_error": 1.0827205806431737,
+        "max_abs_wave_number_error": 1.0827205806431737
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -19238,6 +19334,17 @@
         ],
         "rms_residual": 9.813077866773595e-18,
         "max_abs_residual": 1.3877787807814457e-17
+      },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 2,
+        "period_overlap_min_ms": 40.0,
+        "period_overlap_max_ms": 50.0,
+        "mean_abs_wave_number_error": 0.4756498646082912,
+        "rms_wave_number_error": 0.602439863187073,
+        "max_abs_wave_number_error": 0.8453673176112209
       },
       "points": [
         {
@@ -19316,6 +19423,17 @@
         "rms_residual": 0.0,
         "max_abs_residual": 0.0
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_minus_upper",
+        "source_branch_label": "-1 upper boundary",
+        "overlap_point_count": 1,
+        "period_overlap_min_ms": 50.0,
+        "period_overlap_max_ms": 50.0,
+        "mean_abs_wave_number_error": 0.9936597972569432,
+        "rms_wave_number_error": 0.9936597972569432,
+        "max_abs_wave_number_error": 0.9936597972569432
+      },
       "points": [
         {
           "kind": "minus_period_doubling",
@@ -19375,6 +19493,17 @@
         ],
         "rms_residual": 3.204937810639273e-17,
         "max_abs_residual": 5.551115123125783e-17
+      },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 120.0,
+        "period_overlap_max_ms": 140.0,
+        "mean_abs_wave_number_error": 0.8382171516810543,
+        "rms_wave_number_error": 0.8411624967364725,
+        "max_abs_wave_number_error": 0.936357015065485
       },
       "points": [
         {
@@ -19474,6 +19603,17 @@
         "rms_residual": 0.0,
         "max_abs_residual": 0.0
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 120.0,
+        "period_overlap_max_ms": 140.0,
+        "mean_abs_wave_number_error": 1.1079839592372067,
+        "rms_wave_number_error": 1.1107381911045668,
+        "max_abs_wave_number_error": 1.200883382252985
+      },
       "points": [
         {
           "kind": "plus_one_to_one",
@@ -19571,6 +19711,17 @@
         ],
         "rms_residual": 0.0015260362487286867,
         "max_abs_residual": 0.0020473924729716986
+      },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 4,
+        "period_overlap_min_ms": 110.0,
+        "period_overlap_max_ms": 140.0,
+        "mean_abs_wave_number_error": 0.7238420027931831,
+        "rms_wave_number_error": 0.7332682858032131,
+        "max_abs_wave_number_error": 0.9172091421406803
       },
       "points": [
         {
@@ -19689,6 +19840,17 @@
         "rms_residual": 0.00021632734124615497,
         "max_abs_residual": 0.000290233584250954
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 4,
+        "period_overlap_min_ms": 110.0,
+        "period_overlap_max_ms": 140.0,
+        "mean_abs_wave_number_error": 1.0527878779610298,
+        "rms_wave_number_error": 1.0548777581210993,
+        "max_abs_wave_number_error": 1.1105265554707584
+      },
       "points": [
         {
           "kind": "plus_one_to_one",
@@ -19806,6 +19968,17 @@
         "rms_residual": 3.204937810639273e-17,
         "max_abs_residual": 5.551115123125783e-17
       },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 110.0,
+        "period_overlap_max_ms": 130.0,
+        "mean_abs_wave_number_error": 0.8129237220300526,
+        "rms_wave_number_error": 0.8428428317541694,
+        "max_abs_wave_number_error": 0.9712125635843574
+      },
       "points": [
         {
           "kind": "plus_one_to_one",
@@ -19903,6 +20076,17 @@
         ],
         "rms_residual": 4.5324665183683945e-17,
         "max_abs_residual": 5.551115123125783e-17
+      },
+      "source_comparison": {
+        "status": "compared",
+        "source_curve_id": "rule_fig8c_plus_upper",
+        "source_branch_label": "+1 upper boundary",
+        "overlap_point_count": 3,
+        "period_overlap_min_ms": 110.0,
+        "period_overlap_max_ms": 130.0,
+        "mean_abs_wave_number_error": 0.7143061683191151,
+        "rms_wave_number_error": 0.7200214129212981,
+        "max_abs_wave_number_error": 0.8166553912736124
       },
       "points": [
         {

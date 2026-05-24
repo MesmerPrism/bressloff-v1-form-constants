@@ -104,6 +104,16 @@ continuity fields, and a polynomial period-to-wave-number fit. Use
 beta-root refinement inside the current sign-change bands without expanding the
 whole grid.
 
+The Floquet report also reads
+`reports/source-curves/rule-2011-fig8-source-curves.json` by default when the
+report is written to `reports/rule-2011-floquet.json`. That file contains
+public-safe numeric coordinates digitized from the private Rule Figure 8C page
+render. The report-level `source_curve_comparison` summary and per-curve
+`source_comparison` fields are now the first quantitative validation surface
+against the published Figure 8C boundary geometry. The current comparison is a
+calibration diagnostic, not a claim of reproduction; remaining error is expected
+until the Rule constants and domain/wave-number normalization are tuned.
+
 The sweep command also accepts explicit lists and regular grids:
 
 ```powershell
@@ -126,9 +136,8 @@ bressloff-paper-calibration-v4
 ## Deferred
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
-- Figure-level Floquet phase-boundary calibration for Rule Figure 8 against a
-  digitized published curve. The current report has source-axis normalization
-  and fitted refined curves, but not yet image-derived source residuals.
+- Further Figure 8 calibration: reduce the current source-curve residuals by
+  tuning model constants and domain/wave-number normalization.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.

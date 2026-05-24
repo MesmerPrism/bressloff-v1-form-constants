@@ -1728,6 +1728,7 @@ struct RuleFloquetCalibrationReport {
     note: &'static str,
     source_axes: RuleFloquetSourceAxes,
     curve_refinement: RuleFloquetCurveRefinement,
+    source_curve_comparison: RuleFloquetSourceCurveComparisonSummary,
     grid: RuleSweepGridDetails,
     mode_cycles: Vec<f64>,
     points: Vec<RuleFloquetGridPoint>,
@@ -1814,7 +1815,97 @@ struct RuleFloquetBoundaryCurve {
     max_period_gap_ms: f64,
     continuity_score: f64,
     fit: RuleFloquetBoundaryCurveFit,
+    source_comparison: RuleFloquetBoundarySourceComparison,
     points: Vec<RuleFloquetBoundaryCurvePoint>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFloquetSourceCurveComparisonSummary {
+    status: &'static str,
+    source_curve_file: Option<String>,
+    source_curve_count: usize,
+    compared_curve_count: usize,
+    mean_rms_wave_number_error: Option<f64>,
+    max_rms_wave_number_error: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFloquetBoundarySourceComparison {
+    status: &'static str,
+    source_curve_id: Option<String>,
+    source_branch_label: Option<String>,
+    overlap_point_count: usize,
+    period_overlap_min_ms: Option<f64>,
+    period_overlap_max_ms: Option<f64>,
+    mean_abs_wave_number_error: Option<f64>,
+    rms_wave_number_error: Option<f64>,
+    max_abs_wave_number_error: Option<f64>,
+}
+
+impl RuleFloquetBoundarySourceComparison {
+    fn disabled() -> Self {
+        Self {
+            status: "source-curve-comparison-disabled",
+            source_curve_id: None,
+            source_branch_label: None,
+            overlap_point_count: 0,
+            period_overlap_min_ms: None,
+            period_overlap_max_ms: None,
+            mean_abs_wave_number_error: None,
+            rms_wave_number_error: None,
+            max_abs_wave_number_error: None,
+        }
+    }
+
+    fn missing() -> Self {
+        Self {
+            status: "source-curve-file-missing",
+            source_curve_id: None,
+            source_branch_label: None,
+            overlap_point_count: 0,
+            period_overlap_min_ms: None,
+            period_overlap_max_ms: None,
+            mean_abs_wave_number_error: None,
+            rms_wave_number_error: None,
+            max_abs_wave_number_error: None,
+        }
+    }
+
+    fn no_overlap() -> Self {
+        Self {
+            status: "no-overlapping-source-curve",
+            source_curve_id: None,
+            source_branch_label: None,
+            overlap_point_count: 0,
+            period_overlap_min_ms: None,
+            period_overlap_max_ms: None,
+            mean_abs_wave_number_error: None,
+            rms_wave_number_error: None,
+            max_abs_wave_number_error: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct RuleFigure8SourceCurves {
+    format: String,
+    source_key: String,
+    figure: String,
+    curves: Vec<RuleFigure8SourceCurve>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct RuleFigure8SourceCurve {
+    curve_id: String,
+    kind: String,
+    branch_label: String,
+    points: Vec<RuleFigure8SourcePoint>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize)]
+struct RuleFigure8SourcePoint {
+    period_ms: f64,
+    wave_number_beta: f64,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -2963,6 +3054,8 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
     let mut parameter_set = "rule_fig8_source_like";
     let mut curve_refine_steps = 48usize;
     let mut curve_refine_tolerance = 1.0e-6;
+    let mut source_curve_file: Option<PathBuf> = None;
+    let mut source_curve_comparison_enabled = true;
     let mut periods_override: Option<Vec<f64>> = None;
     let mut amplitudes_override: Option<Vec<f64>> = None;
     let mut stim_i_fractions_override: Option<Vec<f64>> = None;
@@ -3007,6 +3100,14 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
                     1.0e-12,
                     1.0e-2,
                 )?;
+            }
+            "--source-curve-file" => {
+                source_curve_file = Some(PathBuf::from(
+                    iter.next().ok_or("--source-curve-file requires a value")?,
+                ));
+            }
+            "--no-source-curve-comparison" => {
+                source_curve_comparison_enabled = false;
             }
             "--periods" => {
                 periods_override = Some(parse_f64_csv(
@@ -3191,12 +3292,26 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         &grid.amplitudes,
         &grid.stim_i_fractions,
     );
-    let boundary_curves = rule_floquet_beta_boundary_curves(
+    let mut boundary_curves = rule_floquet_beta_boundary_curves(
         &points,
         &raw,
         &grid,
         curve_refine_tolerance,
         curve_refine_steps,
+    );
+    let source_curve_file = if source_curve_comparison_enabled {
+        Some(source_curve_file.unwrap_or_else(|| default_rule_figure8_source_curve_file(&out)))
+    } else {
+        None
+    };
+    let source_curves = match source_curve_file.as_ref() {
+        Some(path) if path.exists() => Some(load_rule_figure8_source_curves(path)?),
+        _ => None,
+    };
+    let source_curve_comparison = apply_rule_figure8_source_comparison(
+        &mut boundary_curves,
+        source_curves.as_ref(),
+        source_curve_file.as_ref(),
     );
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent)?;
@@ -3226,6 +3341,7 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
             tolerance: curve_refine_tolerance,
             max_steps: curve_refine_steps,
         },
+        source_curve_comparison,
         grid: rule_sweep_grid_details(&grid),
         mode_cycles,
         points,
@@ -3238,6 +3354,13 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         out.display()
     );
     Ok(())
+}
+
+fn default_rule_figure8_source_curve_file(out: &Path) -> PathBuf {
+    out.parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("source-curves")
+        .join("rule-2011-fig8-source-curves.json")
 }
 
 fn parse_rule_parameter_set(value: &str) -> Result<&'static str, Box<dyn std::error::Error>> {
@@ -3284,6 +3407,160 @@ fn apply_rule_parameter_set(raw: &mut HashMap<String, String>, parameter_set: &s
         "current_defaults" => {}
         _ => {}
     }
+}
+
+fn load_rule_figure8_source_curves(
+    path: &Path,
+) -> Result<RuleFigure8SourceCurves, Box<dyn std::error::Error>> {
+    let body = fs::read_to_string(path)?;
+    let source = serde_json::from_str::<RuleFigure8SourceCurves>(&body)?;
+    if source.format != "rule-2011-figure8-source-curves-v1" {
+        return Err(format!(
+            "unexpected Rule Figure 8 source curve format: {}",
+            source.format
+        )
+        .into());
+    }
+    if source.source_key != "rule-2011" {
+        return Err(format!("unexpected Rule Figure 8 source key: {}", source.source_key).into());
+    }
+    if source.figure != "Figure 8C" {
+        return Err(format!("unexpected Rule Figure 8 source figure: {}", source.figure).into());
+    }
+    Ok(source)
+}
+
+fn apply_rule_figure8_source_comparison(
+    curves: &mut [RuleFloquetBoundaryCurve],
+    source_curves: Option<&RuleFigure8SourceCurves>,
+    source_curve_file: Option<&PathBuf>,
+) -> RuleFloquetSourceCurveComparisonSummary {
+    let Some(source) = source_curves else {
+        for curve in curves {
+            curve.source_comparison = if source_curve_file.is_some() {
+                RuleFloquetBoundarySourceComparison::missing()
+            } else {
+                RuleFloquetBoundarySourceComparison::disabled()
+            };
+        }
+        let status = if source_curve_file.is_some() {
+            "source-curve-file-missing"
+        } else {
+            "source-curve-comparison-disabled"
+        };
+        return RuleFloquetSourceCurveComparisonSummary {
+            status,
+            source_curve_file: source_curve_file.map(|path| path.display().to_string()),
+            source_curve_count: 0,
+            compared_curve_count: 0,
+            mean_rms_wave_number_error: None,
+            max_rms_wave_number_error: None,
+        };
+    };
+
+    let mut rms_values = Vec::new();
+    for curve in curves {
+        curve.source_comparison = best_rule_source_curve_comparison(curve, &source.curves);
+        if let Some(rms) = curve.source_comparison.rms_wave_number_error {
+            rms_values.push(rms);
+        }
+    }
+    let compared_curve_count = rms_values.len();
+    let mean_rms_wave_number_error =
+        (!rms_values.is_empty()).then(|| rms_values.iter().sum::<f64>() / rms_values.len() as f64);
+    let max_rms_wave_number_error = rms_values.iter().copied().reduce(f64::max);
+
+    RuleFloquetSourceCurveComparisonSummary {
+        status: if compared_curve_count > 0 {
+            "compared"
+        } else {
+            "no-overlapping-source-curves"
+        },
+        source_curve_file: source_curve_file.map(|path| path.display().to_string()),
+        source_curve_count: source.curves.len(),
+        compared_curve_count,
+        mean_rms_wave_number_error,
+        max_rms_wave_number_error,
+    }
+}
+
+fn best_rule_source_curve_comparison(
+    curve: &RuleFloquetBoundaryCurve,
+    source_curves: &[RuleFigure8SourceCurve],
+) -> RuleFloquetBoundarySourceComparison {
+    source_curves
+        .iter()
+        .filter(|source| source.kind == curve.kind)
+        .filter_map(|source| compare_rule_source_curve(curve, source))
+        .min_by(|a, b| {
+            a.rms_wave_number_error
+                .unwrap_or(f64::INFINITY)
+                .total_cmp(&b.rms_wave_number_error.unwrap_or(f64::INFINITY))
+        })
+        .unwrap_or_else(RuleFloquetBoundarySourceComparison::no_overlap)
+}
+
+fn compare_rule_source_curve(
+    curve: &RuleFloquetBoundaryCurve,
+    source: &RuleFigure8SourceCurve,
+) -> Option<RuleFloquetBoundarySourceComparison> {
+    let mut source_points = source.points.clone();
+    source_points.sort_by(|a, b| a.period_ms.total_cmp(&b.period_ms));
+    let source_min = source_points.first()?.period_ms;
+    let source_max = source_points.last()?.period_ms;
+    let mut errors = Vec::new();
+    let mut matched_periods = Vec::new();
+    for point in &curve.points {
+        if point.period_ms < source_min || point.period_ms > source_max {
+            continue;
+        }
+        let Some(source_wave) =
+            interpolate_rule_source_wave_number(&source_points, point.period_ms)
+        else {
+            continue;
+        };
+        errors.push(point.beta_cycles - source_wave);
+        matched_periods.push(point.period_ms);
+    }
+    if errors.is_empty() {
+        return None;
+    }
+    let mean_abs_wave_number_error =
+        errors.iter().map(|error| error.abs()).sum::<f64>() / errors.len() as f64;
+    let rms_wave_number_error =
+        (errors.iter().map(|error| error * error).sum::<f64>() / errors.len() as f64).sqrt();
+    let max_abs_wave_number_error = errors.iter().map(|error| error.abs()).fold(0.0, f64::max);
+    Some(RuleFloquetBoundarySourceComparison {
+        status: "compared",
+        source_curve_id: Some(source.curve_id.clone()),
+        source_branch_label: Some(source.branch_label.clone()),
+        overlap_point_count: errors.len(),
+        period_overlap_min_ms: matched_periods.iter().copied().reduce(f64::min),
+        period_overlap_max_ms: matched_periods.iter().copied().reduce(f64::max),
+        mean_abs_wave_number_error: Some(mean_abs_wave_number_error),
+        rms_wave_number_error: Some(rms_wave_number_error),
+        max_abs_wave_number_error: Some(max_abs_wave_number_error),
+    })
+}
+
+fn interpolate_rule_source_wave_number(
+    points: &[RuleFigure8SourcePoint],
+    period_ms: f64,
+) -> Option<f64> {
+    for pair in points.windows(2) {
+        let from = pair[0];
+        let to = pair[1];
+        if period_ms < from.period_ms || period_ms > to.period_ms {
+            continue;
+        }
+        let span = (to.period_ms - from.period_ms).abs();
+        if span <= 1.0e-9 {
+            return Some(from.wave_number_beta);
+        }
+        let t = (period_ms - from.period_ms) / (to.period_ms - from.period_ms);
+        return Some(from.wave_number_beta + t * (to.wave_number_beta - from.wave_number_beta));
+    }
+    None
 }
 
 fn parse_f64_csv(value: &str, min: f64, max: f64) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
@@ -5215,6 +5492,7 @@ fn rule_floquet_boundary_curves_from_points(
                     max_period_gap_ms: 0.0,
                     continuity_score: 0.0,
                     fit: empty_rule_floquet_curve_fit(),
+                    source_comparison: RuleFloquetBoundarySourceComparison::missing(),
                     points: branch_points,
                 });
             }
@@ -8070,6 +8348,75 @@ mod tests {
     }
 
     #[test]
+    fn rule_floquet_source_curve_comparison_attaches_best_overlap() {
+        let mut curves = vec![RuleFloquetBoundaryCurve {
+            curve_id: "test-plus-branch".to_string(),
+            kind: "plus_one_to_one",
+            branch_label: "+1 one-to-one".to_string(),
+            branch_periodicity: "one_to_one",
+            axis: "beta",
+            source_axis: "forcing_period_ms_vs_wave_number",
+            amplitude: 0.8,
+            stim_i_fraction: 0.0,
+            point_count: 2,
+            period_min_ms: 100.0,
+            period_max_ms: 110.0,
+            beta_min_cycles: 0.5,
+            beta_max_cycles: 0.6,
+            wave_number_min_radians: 0.1,
+            wave_number_max_radians: 0.2,
+            mean_residual_abs: 0.0,
+            max_residual_abs: 0.0,
+            mean_bracket_width_beta_cycles: 0.01,
+            max_bracket_width_beta_cycles: 0.01,
+            mean_period_gap_ms: 10.0,
+            max_period_gap_ms: 10.0,
+            continuity_score: 1.0,
+            fit: empty_rule_floquet_curve_fit(),
+            source_comparison: RuleFloquetBoundarySourceComparison::missing(),
+            points: vec![
+                test_boundary_curve_point("plus_one_to_one", 100.0, 0.5),
+                test_boundary_curve_point("plus_one_to_one", 110.0, 0.6),
+            ],
+        }];
+        let source = RuleFigure8SourceCurves {
+            format: "rule-2011-figure8-source-curves-v1".to_string(),
+            source_key: "rule-2011".to_string(),
+            figure: "Figure 8C".to_string(),
+            curves: vec![RuleFigure8SourceCurve {
+                curve_id: "source-plus".to_string(),
+                kind: "plus_one_to_one".to_string(),
+                branch_label: "+1 source branch".to_string(),
+                points: vec![
+                    RuleFigure8SourcePoint {
+                        period_ms: 100.0,
+                        wave_number_beta: 0.5,
+                    },
+                    RuleFigure8SourcePoint {
+                        period_ms: 110.0,
+                        wave_number_beta: 0.6,
+                    },
+                ],
+            }],
+        };
+
+        let summary = apply_rule_figure8_source_comparison(
+            &mut curves,
+            Some(&source),
+            Some(&PathBuf::from("reports/source-curves/test.json")),
+        );
+
+        assert_eq!(summary.status, "compared");
+        assert_eq!(summary.compared_curve_count, 1);
+        assert_eq!(
+            curves[0].source_comparison.source_curve_id.as_deref(),
+            Some("source-plus")
+        );
+        assert_eq!(curves[0].source_comparison.overlap_point_count, 2);
+        assert!(curves[0].source_comparison.rms_wave_number_error.unwrap() < 1.0e-9);
+    }
+
+    #[test]
     fn scalar_sign_change_refinement_finds_root() {
         let (root, residual, iterations) =
             refine_scalar_sign_change(1.0, 3.0, 1.0e-8, 64, |x| x - 2.0)
@@ -8103,6 +8450,32 @@ mod tests {
         assert_eq!(details.period_steps, 13);
         assert_eq!(details.amplitude_steps, 5);
         assert_eq!(details.n, 32);
+    }
+
+    fn test_boundary_curve_point(
+        kind: &'static str,
+        period_ms: f64,
+        beta_cycles: f64,
+    ) -> RuleFloquetBoundaryCurvePoint {
+        RuleFloquetBoundaryCurvePoint {
+            kind,
+            branch_label: rule_floquet_branch_label(kind),
+            branch_periodicity: rule_floquet_branch_periodicity(kind),
+            axis: "beta",
+            period_ms,
+            stimulus_frequency_hz: 1000.0 / period_ms,
+            amplitude: 0.8,
+            stim_i_fraction: 0.0,
+            beta_cycles,
+            wave_number_radians: rule_wave_number_for_cycles(beta_cycles, 32),
+            bracket_low_beta_cycles: beta_cycles - 0.01,
+            bracket_high_beta_cycles: beta_cycles + 0.01,
+            bracket_width_beta_cycles: 0.02,
+            margin: 0.0,
+            condition_value: 0.0,
+            iterations: 1,
+            residual_abs: 0.0,
+        }
     }
 
     fn test_floquet_grid_point(
