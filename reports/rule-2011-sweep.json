@@ -4,6 +4,22 @@
   "source_key": "rule-2011",
   "status": "first-pass-simulator-backed",
   "note": "Frequency/amplitude grid and homogeneous-orbit monodromy diagnostics; not yet a figure-level Rule 2011 calibration.",
+  "classification_version": "rule-spatial-temporal-diagnostics-v2",
+  "grid": {
+    "preset": "quick",
+    "period_min_ms": 55.0,
+    "period_max_ms": 140.0,
+    "period_steps": 5,
+    "amplitude_min": 0.65,
+    "amplitude_max": 1.0,
+    "amplitude_steps": 3,
+    "stim_i_fraction_min": 0.0,
+    "stim_i_fraction_max": 0.0,
+    "stim_i_fraction_steps": 1,
+    "n": 40,
+    "frames": 120,
+    "preview_step": 0.5
+  },
   "periods_ms": [
     140.0,
     120.0,
@@ -34,6 +50,76 @@
       "stimulus_frequency_hz": 7.142857142857143,
       "peak_activity": 0.52540493,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 0.00002646535750776438,
+        "square_power": 0.000026511420176289453,
+        "hex_power": 0.00002652483320065772,
+        "total_power": 0.000047922270480153194,
+        "mode_entropy": 0.5854699079582787,
+        "confidence": 0.3091444902170941,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 0.00002646535750776438
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 7.93040204736775e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 7.675253613927385e-6
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 59.99999999999999,
+            "family": "axis",
+            "power": 8.893284121175343e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 8.789446468258987e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 6.054795718723043e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 4.571003827544914e-7
+          },
+          {
+            "cycles": 4.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 3.7600416659501577e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.99981946,
+        "corr_2t": 0.9972147,
+        "corr_3t": 0.96039474,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.99851704,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -58,6 +144,76 @@
       "stimulus_frequency_hz": 7.142857142857143,
       "peak_activity": 0.6121465,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 8.144788085447897e-6,
+        "square_power": 0.000010307157585975432,
+        "hex_power": 8.175476612921275e-6,
+        "total_power": 0.000018941552012696374,
+        "mode_entropy": 0.7476289563338001,
+        "confidence": 0.12724745352768504,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 8.144788085447897e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 3.095474422797536e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 3.081322937233009e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 2.1623695005275357e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 14.999999999999998,
+            "family": "axis",
+            "power": 8.274988479775134e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 6.232933820884425e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 1.871263354950171e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 1.4572695864520366e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.9998083,
+        "corr_2t": 0.99832,
+        "corr_3t": 0.97242403,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.99906415,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -73,7 +229,7 @@
       "amplitude": 1.0,
       "stim_i_fraction": 0.0,
       "seed_pattern": "hexagonal",
-      "spatial_family": "stripe",
+      "spatial_family": "square",
       "response_mode": "one_to_one",
       "pattern_strength": 0.00035677513,
       "dominant_cycles": 2.0,
@@ -82,6 +238,76 @@
       "stimulus_frequency_hz": 7.142857142857143,
       "peak_activity": 0.48187828,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "square",
+        "dominant_cycles": 2.0,
+        "stripe_power": 3.568676416736591e-7,
+        "square_power": 7.003092785034621e-7,
+        "hex_power": 3.603781764940711e-7,
+        "total_power": 1.2864335250093132e-6,
+        "mode_entropy": 0.835351302272331,
+        "confidence": 0.2611006360895338,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 3.568676416736591e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 3.43441636829803e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 1.40920157483426e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 1.397840794648048e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 14.999999999999998,
+            "family": "axis",
+            "power": 1.2070950306629375e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 1.0614026744509932e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 1.1986146364674032e-8
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 1.1177975992667684e-8
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.999411,
+        "corr_2t": 0.99586594,
+        "corr_3t": 0.96062577,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.648465,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -106,6 +332,76 @@
       "stimulus_frequency_hz": 8.333333333333334,
       "peak_activity": 0.42202196,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 0.00005323596761451256,
+        "square_power": 0.000060036332864834904,
+        "hex_power": 0.00005405864065181033,
+        "total_power": 0.00010970589958462543,
+        "mode_entropy": 0.6476436374332,
+        "confidence": 0.22224824027238263,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 0.00005323596761451256
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 0.000019981162824807132
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 0.000019240573185243882
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 6.800365250322348e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 1.7058684103062996e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 14.999999999999998,
+            "family": "axis",
+            "power": 1.623349171650154e-6
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 6.633999897025427e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 6.460353342251851e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.80927616,
+        "corr_2t": 0.80008537,
+        "corr_3t": 0.2354513,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.80468076,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -130,6 +426,76 @@
       "stimulus_frequency_hz": 8.333333333333334,
       "peak_activity": 0.44804132,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 0.00002124954539704917,
+        "square_power": 0.000024893295116987228,
+        "hex_power": 0.000021507770316506796,
+        "total_power": 0.000048639264902110914,
+        "mode_entropy": 0.7150735917125453,
+        "confidence": 0.1920867286771568,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 0.00002124954539704917
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 7.905307584013868e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 7.826574701348162e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 3.643749719938057e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 14.999999999999998,
+            "family": "axis",
+            "power": 1.4682638674307502e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 1.3564562336434249e-6
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 5.312361305126276e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 4.1349027941335153e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.50054723,
+        "corr_2t": 0.83067054,
+        "corr_3t": 0.010224998,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.6656089,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -154,6 +520,76 @@
       "stimulus_frequency_hz": 8.333333333333334,
       "peak_activity": 0.56227416,
       "status_level": "one-to-one",
+      "spatial": {
+        "family": "hexagonal",
+        "dominant_cycles": 3.0,
+        "stripe_power": 6.927747722787892e-7,
+        "square_power": 1.256289237306915e-6,
+        "hex_power": 1.4491494239791388e-6,
+        "total_power": 6.736707405396522e-6,
+        "mode_entropy": 0.9911988857550024,
+        "confidence": 0.013510623705845765,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 6.927747722787892e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 5.635144650281258e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 59.99999999999999,
+            "family": "axis",
+            "power": 5.224170789783984e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 4.916749082438844e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 4.6555828849432396e-7
+          },
+          {
+            "cycles": 3.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 4.3505743675685655e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 3.87207682270021e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 59.99999999999999,
+            "family": "axis",
+            "power": 3.806003617333892e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": 0.33045864,
+        "corr_2t": 0.88349974,
+        "corr_3t": -0.10144139,
+        "response_mode": "one_to_one",
+        "estimated_period_cycles": 1.0,
+        "confidence": 0.6069792,
+        "note": "one stimulus cycle per response repeat"
+      },
+      "classification_note": "mixed spatial spectrum; family label should be read qualitatively",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -178,6 +614,27 @@
       "stimulus_frequency_hz": 11.764705882352942,
       "peak_activity": 0.5547833,
       "status_level": "suppressed",
+      "spatial": {
+        "family": "homogeneous",
+        "dominant_cycles": 0.0,
+        "stripe_power": 0.0,
+        "square_power": 0.0,
+        "hex_power": 0.0,
+        "total_power": 0.0,
+        "mode_entropy": 0.0,
+        "confidence": 1.0,
+        "top_modes": []
+      },
+      "temporal": {
+        "corr_t": -0.9928334,
+        "corr_2t": 0.93518436,
+        "corr_3t": -0.7224183,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.57426107,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -202,6 +659,27 @@
       "stimulus_frequency_hz": 11.764705882352942,
       "peak_activity": 0.47497433,
       "status_level": "suppressed",
+      "spatial": {
+        "family": "homogeneous",
+        "dominant_cycles": 0.0,
+        "stripe_power": 0.0,
+        "square_power": 0.0,
+        "hex_power": 0.0,
+        "total_power": 0.0,
+        "mode_entropy": 0.0,
+        "confidence": 1.0,
+        "top_modes": []
+      },
+      "temporal": {
+        "corr_t": -0.6968987,
+        "corr_2t": 0.70259774,
+        "corr_3t": -0.56141394,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.42486387,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -226,6 +704,27 @@
       "stimulus_frequency_hz": 11.764705882352942,
       "peak_activity": 0.6764322,
       "status_level": "suppressed",
+      "spatial": {
+        "family": "homogeneous",
+        "dominant_cycles": 0.0,
+        "stripe_power": 0.0,
+        "square_power": 0.0,
+        "hex_power": 0.0,
+        "total_power": 0.0,
+        "mode_entropy": 0.0,
+        "confidence": 1.0,
+        "top_modes": []
+      },
+      "temporal": {
+        "corr_t": -0.9709196,
+        "corr_2t": -0.34527075,
+        "corr_3t": -0.06088586,
+        "response_mode": "mixed",
+        "estimated_period_cycles": 0.0,
+        "confidence": 0.018902253,
+        "note": "mixed or weak temporal repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -250,6 +749,76 @@
       "stimulus_frequency_hz": 15.384615384615385,
       "peak_activity": 0.39787996,
       "status_level": "period-doubled",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 5.258382261777862e-6,
+        "square_power": 5.376213718440901e-6,
+        "hex_power": 5.430091587437263e-6,
+        "total_power": 0.000010765359533049987,
+        "mode_entropy": 0.6767085622389235,
+        "confidence": 0.2948908211037566,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 5.258382261777862e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 1.619344722633606e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 1.4108009778422054e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 5.540604959455386e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 2.448572599533452e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 2.422057420563899e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 59.99999999999999,
+            "family": "axis",
+            "power": 1.906692191094267e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 1.6613402180691667e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": -0.9918535,
+        "corr_2t": 0.96423846,
+        "corr_3t": -0.896087,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.9507263,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -274,6 +843,76 @@
       "stimulus_frequency_hz": 15.384615384615385,
       "peak_activity": 0.44674337,
       "status_level": "period-doubled",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 6.255065727341454e-7,
+        "square_power": 6.406314024009455e-7,
+        "hex_power": 6.609228677721826e-7,
+        "total_power": 1.3639236196140182e-6,
+        "mode_entropy": 0.7326851834896402,
+        "confidence": 0.2936688764990874,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 6.255065727341454e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 1.8747031110963234e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 1.6086512227027977e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 1.0156024406138072e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 4.693787991710725e-8
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 59.99999999999999,
+            "family": "axis",
+            "power": 3.5459868272512084e-8
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 3.5087424611396896e-8
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 45.0,
+            "family": "axis",
+            "power": 2.9464521133760957e-8
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": -0.98081666,
+        "corr_2t": 0.91485876,
+        "corr_3t": -0.80556256,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.5852682,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -298,6 +937,27 @@
       "stimulus_frequency_hz": 15.384615384615385,
       "peak_activity": 0.4905939,
       "status_level": "suppressed",
+      "spatial": {
+        "family": "homogeneous",
+        "dominant_cycles": 0.0,
+        "stripe_power": 0.0,
+        "square_power": 0.0,
+        "hex_power": 0.0,
+        "total_power": 0.0,
+        "mode_entropy": 0.0,
+        "confidence": 1.0,
+        "top_modes": []
+      },
+      "temporal": {
+        "corr_t": -0.98772967,
+        "corr_2t": 0.9554342,
+        "corr_3t": -0.9222595,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.6208417,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "weak spatial contrast; temporal classification is more reliable than visible pattern family",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -322,6 +982,76 @@
       "stimulus_frequency_hz": 18.181818181818183,
       "peak_activity": 0.3587781,
       "status_level": "period-doubled",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 0.00006837413316735299,
+        "square_power": 0.00007997466486578618,
+        "hex_power": 0.00007174096371741405,
+        "total_power": 0.00016403414618092034,
+        "mode_entropy": 0.7823830684474712,
+        "confidence": 0.19333615313628202,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 0.00006837413316735299
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 0.000024294574076273547
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 0.00002186057938378533
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 0.000011600531698433192
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 0.000010693331618438057
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 5.890977054510872e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 14.999999999999998,
+            "family": "axis",
+            "power": 4.0593058858659306e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 3.2033167310804018e-6
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": -0.9838061,
+        "corr_2t": 0.98696256,
+        "corr_3t": -0.86717874,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.94598246,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -346,6 +1076,76 @@
       "stimulus_frequency_hz": 18.181818181818183,
       "peak_activity": 0.3886827,
       "status_level": "period-doubled",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 0.00004585378274652666,
+        "square_power": 0.000053099707396674096,
+        "hex_power": 0.000049118849882858506,
+        "total_power": 0.00011476929975176666,
+        "mode_entropy": 0.8069264744243115,
+        "confidence": 0.20136386430301276,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 0.00004585378274652666
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 0.00001612668155494366
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 0.000014321601562323044
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 0.000010236695879425731
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 7.245924650147433e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 4.048979631931724e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 3.3108673565515253e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 3.202607185600424e-6
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": -0.98760086,
+        "corr_2t": 0.97709376,
+        "corr_3t": -0.9416062,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.9687669,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",
@@ -370,6 +1170,76 @@
       "stimulus_frequency_hz": 18.181818181818183,
       "peak_activity": 0.4154411,
       "status_level": "period-doubled",
+      "spatial": {
+        "family": "stripe",
+        "dominant_cycles": 2.0,
+        "stripe_power": 8.257855443875176e-6,
+        "square_power": 9.695656988220437e-6,
+        "hex_power": 9.036665307703865e-6,
+        "total_power": 0.00002209582174827959,
+        "mode_entropy": 0.8389248619320405,
+        "confidence": 0.19026676631453546,
+        "top_modes": [
+          {
+            "cycles": 2.0,
+            "angle_degrees": 90.0,
+            "family": "axis",
+            "power": 8.257855443875176e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 75.0,
+            "family": "axis",
+            "power": 2.898467448832225e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 105.0,
+            "family": "axis",
+            "power": 2.615805850457648e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 135.0,
+            "family": "axis",
+            "power": 2.422212263283697e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 0.0,
+            "family": "axis",
+            "power": 1.4378015443452596e-6
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 165.0,
+            "family": "axis",
+            "power": 8.472628080021598e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 119.99999999999999,
+            "family": "axis",
+            "power": 8.21032868594953e-7
+          },
+          {
+            "cycles": 2.0,
+            "angle_degrees": 150.0,
+            "family": "axis",
+            "power": 7.775639796589887e-7
+          }
+        ]
+      },
+      "temporal": {
+        "corr_t": -0.9843457,
+        "corr_2t": 0.96767604,
+        "corr_3t": -0.8760662,
+        "response_mode": "period_doubled",
+        "estimated_period_cycles": 2.0,
+        "confidence": 0.9426959,
+        "note": "two stimulus cycles per response repeat"
+      },
+      "classification_note": "qualitative classifier",
       "thumbnail": {
         "format": "rule-2011-u8-thumbnail-v1",
         "encoding": "base64/u8-row-major",

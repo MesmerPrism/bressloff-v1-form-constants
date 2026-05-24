@@ -57,9 +57,15 @@ The first Rule sweep report is generated separately:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
 ```
 
+The denser website/analysis map is generated with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
+```
+
 It uses `format: rule-2011-sweep-report-v1` and
 `model_family: rule_flicker_ei`. It includes period/amplitude grid points,
-website thumbnail frames, temporal-correlation diagnostics, homogeneous-orbit
-summaries, and first-pass monodromy multipliers. It is still a qualitative
-implementation report, not an exact reproduction of Rule's published stability
-boundary figures.
+website thumbnail frames, Fourier-family scores, top spatial modes, temporal
+confidence diagnostics, homogeneous-orbit summaries, and first-pass monodromy
+multipliers. It is still a qualitative implementation report, not an exact
+reproduction of Rule's published stability boundary figures.

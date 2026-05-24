@@ -1469,6 +1469,8 @@ struct RuleDetails {
     temporal_corr_t: f32,
     temporal_corr_2t: f32,
     stimulus_frequency_hz: f64,
+    spatial: RuleSpatialDiagnostics,
+    temporal: RuleTemporalDiagnostics,
     parameters: RuleParamDetails,
     checks: Vec<CalibrationCheck>,
 }
@@ -1585,11 +1587,30 @@ struct RuleSweepReport {
     source_key: &'static str,
     status: &'static str,
     note: &'static str,
+    classification_version: &'static str,
+    grid: RuleSweepGridDetails,
     periods_ms: Vec<f64>,
     amplitudes: Vec<f64>,
     stim_i_fractions: Vec<f64>,
     points: Vec<RuleSweepPoint>,
     floquet_reports: Vec<RuleFloquetReport>,
+}
+
+#[derive(Serialize)]
+struct RuleSweepGridDetails {
+    preset: &'static str,
+    period_min_ms: f64,
+    period_max_ms: f64,
+    period_steps: usize,
+    amplitude_min: f64,
+    amplitude_max: f64,
+    amplitude_steps: usize,
+    stim_i_fraction_min: f64,
+    stim_i_fraction_max: f64,
+    stim_i_fraction_steps: usize,
+    n: usize,
+    frames: usize,
+    preview_step: f64,
 }
 
 #[derive(Serialize)]
@@ -1607,7 +1628,42 @@ struct RuleSweepPoint {
     stimulus_frequency_hz: f64,
     peak_activity: f32,
     status_level: &'static str,
+    spatial: RuleSpatialDiagnostics,
+    temporal: RuleTemporalDiagnostics,
+    classification_note: &'static str,
     thumbnail: RuleThumbnail,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleSpatialDiagnostics {
+    family: &'static str,
+    dominant_cycles: f32,
+    stripe_power: f64,
+    square_power: f64,
+    hex_power: f64,
+    total_power: f64,
+    mode_entropy: f64,
+    confidence: f64,
+    top_modes: Vec<RuleModePower>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleModePower {
+    cycles: f64,
+    angle_degrees: f64,
+    family: &'static str,
+    power: f64,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleTemporalDiagnostics {
+    corr_t: f32,
+    corr_2t: f32,
+    corr_3t: f32,
+    response_mode: &'static str,
+    estimated_period_cycles: f32,
+    confidence: f32,
+    note: &'static str,
 }
 
 #[derive(Serialize)]
@@ -1654,6 +1710,17 @@ struct RuleFloquetMode {
     multiplier_2_imag: f64,
     max_abs_multiplier: f64,
     crossing_hint: &'static str,
+}
+
+#[derive(Clone, Debug)]
+struct RuleSweepGridConfig {
+    preset: &'static str,
+    periods: Vec<f64>,
+    amplitudes: Vec<f64>,
+    stim_i_fractions: Vec<f64>,
+    n: usize,
+    frames: usize,
+    preview_step: f64,
 }
 
 #[derive(Serialize)]
@@ -1816,7 +1883,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--periods 140,120,85,65,55] [--amplitudes 0.65,0.8,1.0] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]"
     );
 }
 
@@ -2053,9 +2120,19 @@ fn rule_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>
 
 fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut out = PathBuf::from("reports/rule-2011-sweep.json");
-    let mut periods = vec![140.0, 120.0, 85.0, 65.0, 55.0];
-    let mut amplitudes = vec![0.65, 0.8, 1.0];
-    let mut stim_i_fractions = vec![0.0];
+    let mut grid = rule_sweep_grid_defaults("quick");
+    let mut periods_override: Option<Vec<f64>> = None;
+    let mut amplitudes_override: Option<Vec<f64>> = None;
+    let mut stim_i_fractions_override: Option<Vec<f64>> = None;
+    let mut period_min: Option<f64> = None;
+    let mut period_max: Option<f64> = None;
+    let mut period_steps: Option<usize> = None;
+    let mut amplitude_min: Option<f64> = None;
+    let mut amplitude_max: Option<f64> = None;
+    let mut amplitude_steps: Option<usize> = None;
+    let mut stim_i_fraction_min: Option<f64> = None;
+    let mut stim_i_fraction_max: Option<f64> = None;
+    let mut stim_i_fraction_steps: Option<usize> = None;
     let mut floquet_periods = vec![120.0, 85.0, 55.0];
     let mut floquet_amplitude = 0.8;
     let mut floquet_stim_i_fraction = 0.0;
@@ -2064,26 +2141,96 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--preset-grid" | "--grid" => {
+                grid =
+                    rule_sweep_grid_defaults(iter.next().ok_or("--preset-grid requires a value")?);
+            }
             "--periods" => {
-                periods = parse_f64_csv(
+                periods_override = Some(parse_f64_csv(
                     iter.next().ok_or("--periods requires a value")?,
                     20.0,
                     180.0,
-                )?;
+                )?);
+            }
+            "--period-min" => {
+                period_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-min requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-max" => {
+                period_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-max requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-steps" => {
+                period_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--period-steps requires a value")?,
+                    1,
+                    61,
+                )?);
             }
             "--amplitudes" => {
-                amplitudes = parse_f64_csv(
+                amplitudes_override = Some(parse_f64_csv(
                     iter.next().ok_or("--amplitudes requires a value")?,
                     0.0,
                     1.5,
-                )?;
+                )?);
+            }
+            "--amplitude-min" => {
+                amplitude_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-min requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-max" => {
+                amplitude_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-max requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-steps" => {
+                amplitude_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--amplitude-steps requires a value")?,
+                    1,
+                    41,
+                )?);
             }
             "--stim-i-fractions" | "--inhibitory-drive" => {
-                stim_i_fractions = parse_f64_csv(
+                stim_i_fractions_override = Some(parse_f64_csv(
                     iter.next().ok_or("--stim-i-fractions requires a value")?,
                     0.0,
                     1.0,
-                )?;
+                )?);
+            }
+            "--stim-i-fraction-min" | "--inhibitory-drive-min" => {
+                stim_i_fraction_min = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-min requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-max" | "--inhibitory-drive-max" => {
+                stim_i_fraction_max = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-max requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-steps" | "--inhibitory-drive-steps" => {
+                stim_i_fraction_steps = Some(parse_clamped_usize(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-steps requires a value")?,
+                    1,
+                    21,
+                )?);
             }
             "--floquet-periods" => {
                 floquet_periods = parse_f64_csv(
@@ -2118,11 +2265,44 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
         }
     }
 
+    if let Some(periods) = periods_override {
+        grid.periods = periods;
+    } else if period_min.is_some() || period_max.is_some() || period_steps.is_some() {
+        grid.periods = linspace_values(
+            period_min.unwrap_or_else(|| *grid.periods.first().unwrap_or(&40.0)),
+            period_max.unwrap_or_else(|| *grid.periods.last().unwrap_or(&160.0)),
+            period_steps.unwrap_or(grid.periods.len()),
+        );
+    }
+
+    if let Some(amplitudes) = amplitudes_override {
+        grid.amplitudes = amplitudes;
+    } else if amplitude_min.is_some() || amplitude_max.is_some() || amplitude_steps.is_some() {
+        grid.amplitudes = linspace_values(
+            amplitude_min.unwrap_or_else(|| *grid.amplitudes.first().unwrap_or(&0.4)),
+            amplitude_max.unwrap_or_else(|| *grid.amplitudes.last().unwrap_or(&1.2)),
+            amplitude_steps.unwrap_or(grid.amplitudes.len()),
+        );
+    }
+
+    if let Some(stim_i_fractions) = stim_i_fractions_override {
+        grid.stim_i_fractions = stim_i_fractions;
+    } else if stim_i_fraction_min.is_some()
+        || stim_i_fraction_max.is_some()
+        || stim_i_fraction_steps.is_some()
+    {
+        grid.stim_i_fractions = linspace_values(
+            stim_i_fraction_min.unwrap_or_else(|| *grid.stim_i_fractions.first().unwrap_or(&0.0)),
+            stim_i_fraction_max.unwrap_or_else(|| *grid.stim_i_fractions.last().unwrap_or(&0.0)),
+            stim_i_fraction_steps.unwrap_or(grid.stim_i_fractions.len()),
+        );
+    }
+
     let mut points = Vec::new();
-    for period in &periods {
-        for amplitude in &amplitudes {
-            for stim_i_fraction in &stim_i_fractions {
-                let params = rule_sweep_params(&raw, *period, *amplitude, *stim_i_fraction);
+    for period in &grid.periods {
+        for amplitude in &grid.amplitudes {
+            for stim_i_fraction in &grid.stim_i_fractions {
+                let params = rule_sweep_params(&raw, &grid, *period, *amplitude, *stim_i_fraction);
                 points.push(rule_sweep_point_for(params));
             }
         }
@@ -2132,8 +2312,13 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
     let floquet_reports = floquet_periods
         .iter()
         .map(|period| {
-            let params =
-                rule_sweep_params(&raw, *period, floquet_amplitude, floquet_stim_i_fraction);
+            let params = rule_sweep_params(
+                &raw,
+                &grid,
+                *period,
+                floquet_amplitude,
+                floquet_stim_i_fraction,
+            );
             rule_floquet_report(params, &mode_cycles)
         })
         .collect::<Vec<_>>();
@@ -2148,9 +2333,11 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
         source_key: "rule-2011",
         status: "first-pass-simulator-backed",
         note: "Frequency/amplitude grid and homogeneous-orbit monodromy diagnostics; not yet a figure-level Rule 2011 calibration.",
-        periods_ms: periods,
-        amplitudes,
-        stim_i_fractions,
+        classification_version: "rule-spatial-temporal-diagnostics-v2",
+        grid: rule_sweep_grid_details(&grid),
+        periods_ms: grid.periods,
+        amplitudes: grid.amplitudes,
+        stim_i_fractions: grid.stim_i_fractions,
         points,
         floquet_reports,
     };
@@ -2159,11 +2346,7 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-fn parse_f64_csv(
-    value: &str,
-    min: f64,
-    max: f64,
-) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
+fn parse_f64_csv(value: &str, min: f64, max: f64) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
     let values = value
         .split(',')
         .filter_map(|part| {
@@ -2179,8 +2362,98 @@ fn parse_f64_csv(
     }
 }
 
+fn parse_clamped_f64(value: &str, min: f64, max: f64) -> Result<f64, Box<dyn std::error::Error>> {
+    Ok(value.parse::<f64>()?.clamp(min, max))
+}
+
+fn parse_clamped_usize(
+    value: &str,
+    min: usize,
+    max: usize,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    Ok(value.parse::<usize>()?.clamp(min, max))
+}
+
+fn linspace_values(min: f64, max: f64, steps: usize) -> Vec<f64> {
+    let steps = steps.max(1);
+    if steps == 1 {
+        return vec![min.clamp(0.0, f64::INFINITY)];
+    }
+    let lo = min.min(max);
+    let hi = min.max(max);
+    (0..steps)
+        .map(|index| {
+            let t = index as f64 / (steps - 1) as f64;
+            lo + (hi - lo) * t
+        })
+        .collect()
+}
+
+fn rule_sweep_grid_defaults(name: &str) -> RuleSweepGridConfig {
+    match name {
+        "dense" => RuleSweepGridConfig {
+            preset: "dense",
+            periods: linspace_values(40.0, 160.0, 13),
+            amplitudes: linspace_values(0.4, 1.2, 5),
+            stim_i_fractions: vec![0.0],
+            n: 32,
+            frames: 72,
+            preview_step: 0.5,
+        },
+        "paper" => RuleSweepGridConfig {
+            preset: "paper",
+            periods: vec![140.0, 130.0, 120.0, 110.0, 100.0, 85.0, 75.0, 65.0, 55.0],
+            amplitudes: vec![0.4, 0.65, 0.8, 1.0, 1.2],
+            stim_i_fractions: vec![0.0, 0.25, 0.5],
+            n: 32,
+            frames: 72,
+            preview_step: 0.5,
+        },
+        _ => RuleSweepGridConfig {
+            preset: "quick",
+            periods: vec![140.0, 120.0, 85.0, 65.0, 55.0],
+            amplitudes: vec![0.65, 0.8, 1.0],
+            stim_i_fractions: vec![0.0],
+            n: 40,
+            frames: 120,
+            preview_step: 0.5,
+        },
+    }
+}
+
+fn rule_sweep_grid_details(grid: &RuleSweepGridConfig) -> RuleSweepGridDetails {
+    let (period_min, period_max) = value_min_max(&grid.periods);
+    let (amplitude_min, amplitude_max) = value_min_max(&grid.amplitudes);
+    let (stim_min, stim_max) = value_min_max(&grid.stim_i_fractions);
+    RuleSweepGridDetails {
+        preset: grid.preset,
+        period_min_ms: period_min,
+        period_max_ms: period_max,
+        period_steps: grid.periods.len(),
+        amplitude_min,
+        amplitude_max,
+        amplitude_steps: grid.amplitudes.len(),
+        stim_i_fraction_min: stim_min,
+        stim_i_fraction_max: stim_max,
+        stim_i_fraction_steps: grid.stim_i_fractions.len(),
+        n: grid.n,
+        frames: grid.frames,
+        preview_step: grid.preview_step,
+    }
+}
+
+fn value_min_max(values: &[f64]) -> (f64, f64) {
+    values
+        .iter()
+        .copied()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), value| {
+            (lo.min(value), hi.max(value))
+        })
+}
+
 fn rule_sweep_params(
     raw: &HashMap<String, String>,
+    grid: &RuleSweepGridConfig,
     period_ms: f64,
     amplitude: f64,
     stim_i_fraction: f64,
@@ -2191,16 +2464,16 @@ fn rule_sweep_params(
         .or_insert_with(|| "rule_flicker".to_string());
     sweep_raw
         .entry("n".to_string())
-        .or_insert_with(|| "40".to_string());
+        .or_insert_with(|| grid.n.to_string());
     sweep_raw
         .entry("m".to_string())
         .or_insert_with(|| "4".to_string());
     sweep_raw
         .entry("frames".to_string())
-        .or_insert_with(|| "120".to_string());
+        .or_insert_with(|| grid.frames.to_string());
     sweep_raw
         .entry("preview_step".to_string())
-        .or_insert_with(|| "0.5".to_string());
+        .or_insert_with(|| format!("{:.6}", grid.preview_step));
     sweep_raw
         .entry("trim_warmup".to_string())
         .or_insert_with(|| "false".to_string());
@@ -2213,14 +2486,8 @@ fn rule_sweep_params(
     sweep_raw
         .entry("t".to_string())
         .or_insert_with(|| format!("{:.6}", rule_sweep_duration_ms(period_ms)));
-    sweep_raw.insert(
-        "rule_stim_period_ms".to_string(),
-        format!("{period_ms:.6}"),
-    );
-    sweep_raw.insert(
-        "rule_stim_amplitude".to_string(),
-        format!("{amplitude:.6}"),
-    );
+    sweep_raw.insert("rule_stim_period_ms".to_string(), format!("{period_ms:.6}"));
+    sweep_raw.insert("rule_stim_amplitude".to_string(), format!("{amplitude:.6}"));
     sweep_raw.insert(
         "rule_stim_i_fraction".to_string(),
         format!("{stim_i_fraction:.6}"),
@@ -2266,6 +2533,9 @@ fn rule_sweep_point_for(params: FrameParams) -> RuleSweepPoint {
         stimulus_frequency_hz: details.stimulus_frequency_hz,
         peak_activity,
         status_level: rule_sweep_status_level(&details),
+        spatial: details.spatial.clone(),
+        temporal: details.temporal,
+        classification_note: rule_classification_note(&details),
         thumbnail: rule_thumbnail_from_frame(final_frame, params.n),
     }
 }
@@ -2279,6 +2549,18 @@ fn rule_sweep_status_level(details: &RuleDetails) -> &'static str {
         "one-to-one"
     } else {
         "transition"
+    }
+}
+
+fn rule_classification_note(details: &RuleDetails) -> &'static str {
+    if details.status == "manual" && details.pattern_strength < 0.001 {
+        "weak spatial contrast; temporal classification is more reliable than visible pattern family"
+    } else if details.spatial.confidence < 0.12 {
+        "mixed spatial spectrum; family label should be read qualitatively"
+    } else if details.temporal.confidence < 0.35 {
+        "weak temporal repeat confidence"
+    } else {
+        "qualitative classifier"
     }
 }
 
@@ -3575,12 +3857,7 @@ fn rule_homogeneous_step(
     )
 }
 
-fn rule_homogeneous_inputs(
-    params: FrameParams,
-    ue: f64,
-    ui: f64,
-    time_ms: f64,
-) -> (f64, f64) {
+fn rule_homogeneous_inputs(params: FrameParams, ue: f64, ui: f64, time_ms: f64) -> (f64, f64) {
     let stim = params.rule_stim_amplitude * rule_stimulus(params, time_ms);
     (
         params.rule_aee * ue - params.rule_aie * ui - params.rule_theta_e + stim,
@@ -3689,8 +3966,7 @@ fn floquet_mode_from_matrix(
         || (l2_imag.abs() < 1.0e-9 && l2_real < -1.0)
     {
         "minus_period_doubling"
-    } else if (l1_imag.abs() < 1.0e-9 && l1_real > 1.0)
-        || (l2_imag.abs() < 1.0e-9 && l2_real > 1.0)
+    } else if (l1_imag.abs() < 1.0e-9 && l1_real > 1.0) || (l2_imag.abs() < 1.0e-9 && l2_real > 1.0)
     {
         "plus_one_to_one"
     } else if abs_1.max(abs_2) > 1.0 {
@@ -3868,12 +4144,22 @@ fn rule_details(
 ) -> RuleDetails {
     let final_frame = representative_rule_frame(frames, params.n).unwrap_or(&[]);
     let pattern_strength = rule_pattern_strength(frames, params.n);
-    let (spatial_family, dominant_cycles) = classify_rule_spatial_family(final_frame, params.n);
+    let spatial = analyze_rule_spatial(final_frame, params.n);
     let temporal_corr_t =
         temporal_correlation_at_period(frames, times, params.n, params.rule_stim_period_ms);
     let temporal_corr_2t =
         temporal_correlation_at_period(frames, times, params.n, 2.0 * params.rule_stim_period_ms);
-    let response_mode = classify_rule_response_mode(temporal_corr_t, temporal_corr_2t);
+    let temporal_corr_3t =
+        temporal_correlation_at_period(frames, times, params.n, 3.0 * params.rule_stim_period_ms);
+    let temporal = analyze_rule_temporal(
+        temporal_corr_t,
+        temporal_corr_2t,
+        temporal_corr_3t,
+        pattern_strength,
+    );
+    let spatial_family = spatial.family;
+    let dominant_cycles = spatial.dominant_cycles;
+    let response_mode = temporal.response_mode;
     let mut checks = Vec::new();
 
     if let Some(preset) = preset {
@@ -3922,6 +4208,8 @@ fn rule_details(
         temporal_corr_t,
         temporal_corr_2t,
         stimulus_frequency_hz: 1000.0 / params.rule_stim_period_ms.max(1.0e-9),
+        spatial,
+        temporal,
         parameters: RuleParamDetails {
             tau_e_ms: params.rule_tau_e_ms,
             tau_i_ms: params.rule_tau_i_ms,
@@ -3972,35 +4260,214 @@ fn representative_rule_frame(frames: &[f32], n: usize) -> Option<&[f32]> {
         .max_by(|a, b| stddev(a).total_cmp(&stddev(b)))
 }
 
-fn classify_rule_spatial_family(frame: &[f32], n: usize) -> (&'static str, f32) {
+fn analyze_rule_spatial(frame: &[f32], n: usize) -> RuleSpatialDiagnostics {
     let strength = stddev(frame);
     if frame.is_empty() || strength < 0.001 {
-        return ("homogeneous", 0.0);
+        return RuleSpatialDiagnostics {
+            family: "homogeneous",
+            dominant_cycles: 0.0,
+            stripe_power: 0.0,
+            square_power: 0.0,
+            hex_power: 0.0,
+            total_power: 0.0,
+            mode_entropy: 0.0,
+            confidence: 1.0,
+            top_modes: Vec::new(),
+        };
     }
 
-    let mut best_stripe = (0.0_f64, 0.0_f32);
-    let mut best_hex = (0.0_f64, 0.0_f32);
+    let angles = rule_mode_scan_angles();
+    let mut top_modes = Vec::new();
+    let mut total_power = 0.0_f64;
+    let mut best_stripe = RuleModePower {
+        cycles: 0.0,
+        angle_degrees: 0.0,
+        family: "stripe",
+        power: 0.0,
+    };
+    let mut best_square = RuleModePower {
+        cycles: 0.0,
+        angle_degrees: 0.0,
+        family: "square",
+        power: 0.0,
+    };
+    let mut best_hex = RuleModePower {
+        cycles: 0.0,
+        angle_degrees: 0.0,
+        family: "hexagonal",
+        power: 0.0,
+    };
+
     for cycles in 2..=10 {
         let cycles_f = cycles as f64;
-        for angle in [0.0, PI / 4.0, PI / 2.0, 3.0 * PI / 4.0] {
+        for angle in angles {
             let power = projection_power(frame, n, cycles_f, angle);
-            if power > best_stripe.0 {
-                best_stripe = (power, cycles as f32);
+            total_power += power;
+            let mode = RuleModePower {
+                cycles: cycles_f,
+                angle_degrees: angle.to_degrees(),
+                family: "axis",
+                power,
+            };
+            top_modes.push(mode);
+            if power > best_stripe.power {
+                best_stripe = RuleModePower {
+                    family: "stripe",
+                    ..mode
+                };
             }
         }
 
-        let hex_power = projection_power(frame, n, cycles_f, 0.0)
-            + projection_power(frame, n, cycles_f, PI / 3.0)
-            + projection_power(frame, n, cycles_f, -PI / 3.0);
-        if hex_power > best_hex.0 {
-            best_hex = (hex_power, cycles as f32);
+        for angle in [0.0, PI / 8.0, PI / 4.0, 3.0 * PI / 8.0] {
+            let square_power = projection_power(frame, n, cycles_f, angle)
+                + projection_power(frame, n, cycles_f, angle + PI / 2.0);
+            if square_power > best_square.power {
+                best_square = RuleModePower {
+                    cycles: cycles_f,
+                    angle_degrees: angle.to_degrees(),
+                    family: "square",
+                    power: square_power,
+                };
+            }
+        }
+
+        for angle in [0.0, PI / 12.0, PI / 6.0, PI / 4.0] {
+            let hex_power = projection_power(frame, n, cycles_f, angle)
+                + projection_power(frame, n, cycles_f, angle + PI / 3.0)
+                + projection_power(frame, n, cycles_f, angle - PI / 3.0);
+            if hex_power > best_hex.power {
+                best_hex = RuleModePower {
+                    cycles: cycles_f,
+                    angle_degrees: angle.to_degrees(),
+                    family: "hexagonal",
+                    power: hex_power,
+                };
+            }
         }
     }
 
-    if best_hex.0 > 1.65 * best_stripe.0 {
-        ("hexagonal", best_hex.1)
+    top_modes.sort_by(|a, b| b.power.total_cmp(&a.power));
+    top_modes.truncate(8);
+    let stripe_score = best_stripe.power;
+    let square_score = best_square.power / 1.45;
+    let hex_score = best_hex.power / 1.65;
+    let mut scores = [
+        ("stripe", best_stripe.cycles as f32, stripe_score),
+        ("square", best_square.cycles as f32, square_score),
+        ("hexagonal", best_hex.cycles as f32, hex_score),
+    ];
+    scores.sort_by(|a, b| b.2.total_cmp(&a.2));
+    let family = if best_hex.power > 1.65 * best_stripe.power {
+        "hexagonal"
+    } else if best_square.power > 1.45 * best_stripe.power
+        && best_square.power > 0.75 * best_hex.power
+    {
+        "square"
     } else {
-        ("stripe", best_stripe.1)
+        scores[0].0
+    };
+    let dominant_cycles = match family {
+        "hexagonal" => best_hex.cycles as f32,
+        "square" => best_square.cycles as f32,
+        _ => best_stripe.cycles as f32,
+    };
+    let winner = scores[0].2.max(1.0e-12);
+    let runner_up = scores[1].2.max(0.0);
+    let confidence = ((winner - runner_up) / winner).clamp(0.0, 1.0);
+
+    RuleSpatialDiagnostics {
+        family,
+        dominant_cycles,
+        stripe_power: best_stripe.power,
+        square_power: best_square.power,
+        hex_power: best_hex.power,
+        total_power,
+        mode_entropy: rule_mode_entropy(&top_modes),
+        confidence,
+        top_modes,
+    }
+}
+
+fn rule_mode_scan_angles() -> [f64; 12] {
+    [
+        0.0,
+        PI / 12.0,
+        PI / 6.0,
+        PI / 4.0,
+        PI / 3.0,
+        5.0 * PI / 12.0,
+        PI / 2.0,
+        7.0 * PI / 12.0,
+        2.0 * PI / 3.0,
+        3.0 * PI / 4.0,
+        5.0 * PI / 6.0,
+        11.0 * PI / 12.0,
+    ]
+}
+
+fn rule_mode_entropy(modes: &[RuleModePower]) -> f64 {
+    if modes.len() < 2 {
+        return 0.0;
+    }
+    let sum: f64 = modes.iter().map(|mode| mode.power.max(0.0)).sum();
+    if sum <= 1.0e-18 {
+        return 0.0;
+    }
+    let entropy = modes
+        .iter()
+        .map(|mode| mode.power.max(0.0) / sum)
+        .filter(|p| *p > 1.0e-12)
+        .map(|p| -p * p.ln())
+        .sum::<f64>();
+    (entropy / (modes.len() as f64).ln()).clamp(0.0, 1.0)
+}
+
+fn analyze_rule_temporal(
+    corr_t: f32,
+    corr_2t: f32,
+    corr_3t: f32,
+    pattern_strength: f32,
+) -> RuleTemporalDiagnostics {
+    let response_mode = classify_rule_response_mode(corr_t, corr_2t);
+    let (estimated_period_cycles, mut confidence, note) = match response_mode {
+        "period_doubled" => {
+            let confidence = ((-corr_t).max(0.0) + corr_2t.max(0.0) + (-corr_3t).max(0.0)) / 3.0;
+            (2.0, confidence, "two stimulus cycles per response repeat")
+        }
+        "one_to_one" => {
+            let confidence = (corr_t.max(0.0) + corr_2t.max(0.0)) * 0.5;
+            (1.0, confidence, "one stimulus cycle per response repeat")
+        }
+        _ => {
+            let strongest = corr_t.abs().max(corr_2t.abs()).max(corr_3t.abs());
+            (
+                0.0,
+                (1.0 - strongest).clamp(0.0, 1.0),
+                "mixed or weak temporal repeat",
+            )
+        }
+    };
+    if pattern_strength < 0.001 {
+        confidence *= 0.65;
+    }
+    RuleTemporalDiagnostics {
+        corr_t,
+        corr_2t,
+        corr_3t,
+        response_mode,
+        estimated_period_cycles,
+        confidence: confidence.clamp(0.0, 1.0),
+        note,
+    }
+}
+
+fn classify_rule_response_mode(corr_t: f32, corr_2t: f32) -> &'static str {
+    if corr_t < -0.2 && corr_2t > 0.2 {
+        "period_doubled"
+    } else if corr_t > 0.2 {
+        "one_to_one"
+    } else {
+        "mixed"
     }
 }
 
@@ -4077,16 +4544,6 @@ fn frame_correlation(a: &[f32], b: &[f32]) -> f32 {
         0.0
     } else {
         (numerator / (denom_a * denom_b).sqrt()).clamp(-1.0, 1.0) as f32
-    }
-}
-
-fn classify_rule_response_mode(corr_t: f32, corr_2t: f32) -> &'static str {
-    if corr_t < -0.2 && corr_2t > 0.2 {
-        "period_doubled"
-    } else if corr_t > 0.2 {
-        "one_to_one"
-    } else {
-        "mixed"
     }
 }
 
@@ -5760,7 +6217,8 @@ mod tests {
 
     #[test]
     fn rule_sweep_point_exports_thumbnail_and_rule_family_metrics() {
-        let params = rule_sweep_params(&HashMap::new(), 55.0, 0.8, 0.0);
+        let grid = rule_sweep_grid_defaults("quick");
+        let params = rule_sweep_params(&HashMap::new(), &grid, 55.0, 0.8, 0.0);
         let point = rule_sweep_point_for(FrameParams {
             n: 32,
             frames: 48,
@@ -5773,11 +6231,14 @@ mod tests {
         assert!(point.pattern_strength.is_finite());
         assert_eq!(point.thumbnail.width, 32);
         assert!(!point.thumbnail.data_base64.is_empty());
+        assert!(!point.spatial.top_modes.is_empty());
+        assert!(point.temporal.confidence.is_finite());
     }
 
     #[test]
     fn rule_floquet_report_exports_mode_rows() {
-        let params = rule_sweep_params(&HashMap::new(), 55.0, 0.8, 0.0);
+        let grid = rule_sweep_grid_defaults("quick");
+        let params = rule_sweep_params(&HashMap::new(), &grid, 55.0, 0.8, 0.0);
         let report = rule_floquet_report(
             FrameParams {
                 n: 32,
@@ -5791,5 +6252,18 @@ mod tests {
         assert_eq!(report.modes.len(), 2);
         assert!(report.orbit.samples > 0);
         assert!(report.strongest_mode.max_abs_multiplier.is_finite());
+    }
+
+    #[test]
+    fn rule_sweep_dense_grid_has_expected_dimensions() {
+        let grid = rule_sweep_grid_defaults("dense");
+        assert_eq!(grid.preset, "dense");
+        assert_eq!(grid.periods.len(), 13);
+        assert_eq!(grid.amplitudes.len(), 5);
+        assert_eq!(grid.stim_i_fractions.len(), 1);
+        let details = rule_sweep_grid_details(&grid);
+        assert_eq!(details.period_steps, 13);
+        assert_eq!(details.amplitude_steps, 5);
+        assert_eq!(details.n, 32);
     }
 }

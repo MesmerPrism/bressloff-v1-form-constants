@@ -36,6 +36,9 @@ through a separate Rule preset registry.
   - period/amplitude grid points
   - row-major base64 thumbnail frames for website sweep strips
   - peak activity, dominant cycles, spatial family, and temporal correlations
+  - stripe, square, and hexagonal Fourier-family scores
+  - top spatial modes, mode entropy, and spatial confidence
+  - `T`, `2T`, and `3T` temporal correlations with response-period confidence
   - homogeneous periodic-orbit summaries
   - first-pass 2x2 monodromy multipliers for representative spatial modes
 
@@ -63,6 +66,18 @@ Generate the first sweep and monodromy report with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
 ```
 
+Generate the denser frequency/amplitude map with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
+```
+
+The sweep command also accepts explicit lists and regular grids:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --period-min 40 --period-max 160 --period-steps 13 --amplitude-min 0.4 --amplitude-max 1.2 --amplitude-steps 5
+```
+
 The sweep report format is:
 
 ```text
@@ -77,7 +92,7 @@ bressloff-paper-calibration-v4
 
 ## Deferred
 
-- Dense 1D and 2D frequency/amplitude sweeps for Rule Figures 3 and 6.
+- Paper-calibrated dense sweeps for Rule Figures 3 and 6.
 - Figure-level Floquet phase-boundary calibration for Rule Figure 8.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.

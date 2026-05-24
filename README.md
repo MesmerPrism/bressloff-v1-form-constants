@@ -107,6 +107,12 @@ Generate the first simulator-backed Rule frequency/amplitude sweep report:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
 ```
 
+Generate the denser website/analysis map:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
+```
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is
