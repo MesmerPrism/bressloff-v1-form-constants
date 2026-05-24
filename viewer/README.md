@@ -102,6 +102,12 @@ Run the Rule qualitative regime report:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-report --out reports\rule-2011-regimes.json
 ```
 
+Run the Rule sweep and first-pass monodromy report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
+```
+
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for
 analysis. Use `--solver accurate` if you need the slower fixed-step RK4 solve.
 

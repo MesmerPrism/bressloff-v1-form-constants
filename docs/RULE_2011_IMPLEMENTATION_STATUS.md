@@ -1,6 +1,6 @@
 # Rule 2011 Implementation Status
 
-Updated: 2026-05-23
+Updated: 2026-05-24
 
 Rule, Stoffregen, and Ermentrout 2011 is implemented as a separate model
 family:
@@ -32,12 +32,18 @@ through a separate Rule preset registry.
   - temporal response: `period_doubled`, `one_to_one`, or `mixed`
   - pattern strength
   - `T` and `2T` temporal correlations
+- Simulator-backed `rule-sweep` report with:
+  - period/amplitude grid points
+  - row-major base64 thumbnail frames for website sweep strips
+  - peak activity, dominant cycles, spatial family, and temporal correlations
+  - homogeneous periodic-orbit summaries
+  - first-pass 2x2 monodromy multipliers for representative spatial modes
 
 The low-frequency preset currently uses a 120 ms qualitative representative
 rather than claiming exact reproduction of Rule Figure 5B's 110 ms panel. This
 keeps the first pass honest: it demonstrates the intended one-to-one hexagonal
-regime while leaving figure-level period/amplitude calibration to the sweep and
-Floquet work.
+regime while leaving figure-level period/amplitude calibration to later exact
+parameter tuning.
 
 ## Report Command
 
@@ -51,6 +57,18 @@ The report format is:
 rule-2011-regime-report-v1
 ```
 
+Generate the first sweep and monodromy report with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
+```
+
+The sweep report format is:
+
+```text
+rule-2011-sweep-report-v1
+```
+
 This is intentionally separate from:
 
 ```text
@@ -59,8 +77,8 @@ bressloff-paper-calibration-v4
 
 ## Deferred
 
-- 1D and 2D frequency/amplitude sweeps for Rule Figures 3 and 6.
-- Homogeneous periodic orbit and Floquet monodromy reports for Rule Figure 8.
+- Dense 1D and 2D frequency/amplitude sweeps for Rule Figures 3 and 6.
+- Figure-level Floquet phase-boundary calibration for Rule Figure 8.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.

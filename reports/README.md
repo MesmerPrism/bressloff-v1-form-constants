@@ -49,5 +49,17 @@ Rule 2011 uses a separate report command and format:
 
 The Rule report uses `format: rule-2011-regime-report-v1` and
 `model_family: rule_flicker_ei`. It checks qualitative seeded regimes for
-spatial family and temporal response mode; it is not a Floquet stability or full
-frequency/amplitude sweep report.
+spatial family and temporal response mode.
+
+The first Rule sweep report is generated separately:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
+```
+
+It uses `format: rule-2011-sweep-report-v1` and
+`model_family: rule_flicker_ei`. It includes period/amplitude grid points,
+website thumbnail frames, temporal-correlation diagnostics, homogeneous-orbit
+summaries, and first-pass monodromy multipliers. It is still a qualitative
+implementation report, not an exact reproduction of Rule's published stability
+boundary figures.

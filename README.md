@@ -101,6 +101,12 @@ Generate the first Rule 2011 qualitative regime report:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-report --out reports\rule-2011-regimes.json
 ```
 
+Generate the first simulator-backed Rule frequency/amplitude sweep report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --out reports\rule-2011-sweep.json
+```
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is
