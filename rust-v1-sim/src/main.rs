@@ -12,7 +12,7 @@ use std::{
 
 use base64::{engine::general_purpose, Engine as _};
 use rayon::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const PI: f64 = std::f64::consts::PI;
 const DYNAMIC_CELL_MM: f64 = 0.7;
@@ -1723,13 +1723,35 @@ struct RuleFloquetCalibrationReport {
     format: &'static str,
     model_family: &'static str,
     source_key: &'static str,
+    parameter_set: &'static str,
     status: &'static str,
     note: &'static str,
+    source_axes: RuleFloquetSourceAxes,
+    curve_refinement: RuleFloquetCurveRefinement,
     grid: RuleSweepGridDetails,
     mode_cycles: Vec<f64>,
     points: Vec<RuleFloquetGridPoint>,
     boundary_candidates: Vec<RuleFloquetBoundaryCandidate>,
     boundary_curves: Vec<RuleFloquetBoundaryCurve>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleFloquetSourceAxes {
+    x_axis: &'static str,
+    x_units: &'static str,
+    x_secondary_axis: &'static str,
+    x_secondary_units: &'static str,
+    y_axis: &'static str,
+    y_units: &'static str,
+    y_secondary_axis: &'static str,
+    y_secondary_units: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleFloquetCurveRefinement {
+    method: &'static str,
+    tolerance: f64,
+    max_steps: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1771,6 +1793,8 @@ struct RuleFloquetBoundaryCandidate {
 struct RuleFloquetBoundaryCurve {
     curve_id: String,
     kind: &'static str,
+    branch_label: String,
+    branch_periodicity: &'static str,
     axis: &'static str,
     source_axis: &'static str,
     amplitude: f64,
@@ -1780,12 +1804,37 @@ struct RuleFloquetBoundaryCurve {
     period_max_ms: f64,
     beta_min_cycles: f64,
     beta_max_cycles: f64,
+    wave_number_min_radians: f64,
+    wave_number_max_radians: f64,
+    mean_residual_abs: f64,
+    max_residual_abs: f64,
+    mean_bracket_width_beta_cycles: f64,
+    max_bracket_width_beta_cycles: f64,
+    mean_period_gap_ms: f64,
+    max_period_gap_ms: f64,
+    continuity_score: f64,
+    fit: RuleFloquetBoundaryCurveFit,
     points: Vec<RuleFloquetBoundaryCurvePoint>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFloquetBoundaryCurveFit {
+    model: &'static str,
+    degree: usize,
+    x_axis: &'static str,
+    y_axis: &'static str,
+    x_origin_ms: f64,
+    x_scale_ms: f64,
+    coefficients: Vec<f64>,
+    rms_residual: f64,
+    max_abs_residual: f64,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
 struct RuleFloquetBoundaryCurvePoint {
     kind: &'static str,
+    branch_label: &'static str,
+    branch_periodicity: &'static str,
     axis: &'static str,
     period_ms: f64,
     stimulus_frequency_hz: f64,
@@ -1795,6 +1844,7 @@ struct RuleFloquetBoundaryCurvePoint {
     wave_number_radians: f64,
     bracket_low_beta_cycles: f64,
     bracket_high_beta_cycles: f64,
+    bracket_width_beta_cycles: f64,
     margin: f64,
     condition_value: f64,
     iterations: usize,
@@ -1835,9 +1885,11 @@ struct BressloffFigureGeometryReport {
     source_key: &'static str,
     status: &'static str,
     note: &'static str,
+    source_profile_dir: String,
     width: usize,
     height: usize,
     still_count: usize,
+    compared_still_count: usize,
     stills: Vec<BressloffFigureStill>,
 }
 
@@ -1845,7 +1897,7 @@ struct BressloffFigureGeometryReport {
 struct BressloffFigureStill {
     preset: PaperPresetDetails,
     target_mask_status: &'static str,
-    target_mask_id: Option<&'static str>,
+    target_mask_id: Option<String>,
     width: usize,
     height: usize,
     frame_index: usize,
@@ -1854,6 +1906,7 @@ struct BressloffFigureStill {
     selected_family: &'static str,
     image: BressloffStillImage,
     metrics: BressloffStillMetrics,
+    source_comparison: BressloffSourceComparison,
 }
 
 #[derive(Serialize)]
@@ -1870,8 +1923,34 @@ struct BressloffStillMetrics {
     std_luma: f64,
     active_fraction: f64,
     edge_density: f64,
+    dominant_angle_degrees: f64,
     radial_profile: Vec<f64>,
     angular_profile: Vec<f64>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct BressloffSourceComparison {
+    status: &'static str,
+    source_profile_id: Option<String>,
+    source_mask_id: Option<String>,
+    radial_profile_error: Option<f64>,
+    angular_profile_error: Option<f64>,
+    edge_overlap: Option<f64>,
+    active_fraction_error: Option<f64>,
+    edge_density_error: Option<f64>,
+    lattice_angle_error_degrees: Option<f64>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct BressloffSourceProfile {
+    preset_id: String,
+    profile_id: Option<String>,
+    mask_id: Option<String>,
+    active_fraction: Option<f64>,
+    edge_density: Option<f64>,
+    lattice_angle_degrees: Option<f64>,
+    radial_profile: Option<Vec<f64>>,
+    angular_profile: Option<Vec<f64>>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -2185,6 +2264,7 @@ fn calibrate_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> 
 
 fn bressloff_geometry_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut out = PathBuf::from("reports/figure-targets/bressloff-generated-stills.json");
+    let mut source_profile_dir = PathBuf::from("private/figure-targets/derived");
     let mut preset_set = "figures29-36".to_string();
     let mut preset_override: Option<Vec<PaperPreset>> = None;
     let mut raw = HashMap::new();
@@ -2192,6 +2272,10 @@ fn bressloff_geometry_command(args: &[String]) -> Result<(), Box<dyn std::error:
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--source-profile-dir" => {
+                source_profile_dir =
+                    PathBuf::from(iter.next().ok_or("--source-profile-dir requires a value")?);
+            }
             "--preset-set" => {
                 preset_set = iter
                     .next()
@@ -2238,10 +2322,14 @@ fn bressloff_geometry_command(args: &[String]) -> Result<(), Box<dyn std::error:
         let frame_index = payload.frame_count.saturating_sub(1);
         let frame = payload_frame_u8(&payload, frame_index)?;
         let metrics = bressloff_still_metrics(&frame, payload.width, payload.height);
+        let source_profile =
+            load_bressloff_source_profile(&source_profile_dir, calibration.preset.id)?;
+        let source_comparison =
+            bressloff_source_comparison(calibration.preset.id, &metrics, source_profile.as_ref());
         stills.push(BressloffFigureStill {
             preset: calibration.preset,
-            target_mask_status: "generated-only-awaiting-private-source-mask",
-            target_mask_id: None,
+            target_mask_status: source_comparison.status,
+            target_mask_id: source_comparison.source_mask_id.clone(),
             width: payload.width,
             height: payload.height,
             frame_index,
@@ -2255,6 +2343,7 @@ fn bressloff_geometry_command(args: &[String]) -> Result<(), Box<dyn std::error:
                 data_base64: general_purpose::STANDARD.encode(frame),
             },
             metrics,
+            source_comparison,
         });
     }
 
@@ -2262,17 +2351,27 @@ fn bressloff_geometry_command(args: &[String]) -> Result<(), Box<dyn std::error:
         fs::create_dir_all(parent)?;
     }
     let still_count = stills.len();
+    let compared_still_count = stills
+        .iter()
+        .filter(|still| still.source_comparison.status == "compared")
+        .count();
     let width = stills.first().map(|still| still.width).unwrap_or(0);
     let height = stills.first().map(|still| still.height).unwrap_or(0);
     let report = BressloffFigureGeometryReport {
-        format: "bressloff-generated-figure-stills-v1",
+        format: "bressloff-generated-figure-stills-v2",
         model_family: MODEL_FAMILY_BRESSLOFF,
         source_key: "bressloff-2001-2002",
-        status: "generated-targets-ready-for-private-mask-calibration",
-        note: "Generated-only Bressloff figure stills and derived metrics for public-safe geometry calibration. This report does not include original paper scans or crops.",
+        status: if compared_still_count > 0 {
+            "generated-vs-source-derived-comparison"
+        } else {
+            "generated-targets-ready-for-private-mask-calibration"
+        },
+        note: "Bressloff figure stills and public-safe geometry metrics. Private source scans/crops stay out of the report; comparisons use only derived numeric masks/profiles when available.",
+        source_profile_dir: source_profile_dir.display().to_string(),
         width,
         height,
         still_count,
+        compared_still_count,
         stills,
     };
     fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
@@ -2376,6 +2475,10 @@ fn bressloff_still_metrics(frame: &[u8], width: usize, height: usize) -> Bresslo
         }
     }
 
+    let radial_profile = normalized_radial_profile(frame, width, height, 16);
+    let angular_profile = normalized_angular_profile(frame, width, height, 24);
+    let dominant_angle_degrees = dominant_profile_angle_degrees(&angular_profile);
+
     BressloffStillMetrics {
         mean_luma: mean,
         std_luma: variance.sqrt(),
@@ -2385,8 +2488,9 @@ fn bressloff_still_metrics(frame: &[u8], width: usize, height: usize) -> Bresslo
         } else {
             edge_sum / edge_count as f64
         },
-        radial_profile: normalized_radial_profile(frame, width, height, 16),
-        angular_profile: normalized_angular_profile(frame, width, height, 24),
+        dominant_angle_degrees,
+        radial_profile,
+        angular_profile,
     }
 }
 
@@ -2434,6 +2538,123 @@ fn normalized_angular_profile(frame: &[u8], width: usize, height: usize, bins: u
         .zip(counts)
         .map(|(sum, count)| if count == 0 { 0.0 } else { sum / count as f64 })
         .collect()
+}
+
+fn dominant_profile_angle_degrees(profile: &[f64]) -> f64 {
+    if profile.is_empty() {
+        return 0.0;
+    }
+    let (index, _) = profile
+        .iter()
+        .enumerate()
+        .max_by(|(_, a), (_, b)| a.total_cmp(b))
+        .unwrap_or((0, &0.0));
+    (index as f64 + 0.5) * 360.0 / profile.len() as f64
+}
+
+fn load_bressloff_source_profile(
+    source_profile_dir: &Path,
+    preset_id: &str,
+) -> Result<Option<BressloffSourceProfile>, Box<dyn std::error::Error>> {
+    let path = source_profile_dir.join(format!("{preset_id}.json"));
+    if !path.exists() {
+        return Ok(None);
+    }
+    let body = fs::read_to_string(path)?;
+    let profile = serde_json::from_str::<BressloffSourceProfile>(&body)?;
+    if profile.preset_id != preset_id {
+        return Err(format!(
+            "source profile preset mismatch: expected {preset_id}, found {}",
+            profile.preset_id
+        )
+        .into());
+    }
+    Ok(Some(profile))
+}
+
+fn bressloff_source_comparison(
+    preset_id: &str,
+    metrics: &BressloffStillMetrics,
+    source_profile: Option<&BressloffSourceProfile>,
+) -> BressloffSourceComparison {
+    let Some(source) = source_profile else {
+        return BressloffSourceComparison {
+            status: "source-profile-missing",
+            source_profile_id: None,
+            source_mask_id: None,
+            radial_profile_error: None,
+            angular_profile_error: None,
+            edge_overlap: None,
+            active_fraction_error: None,
+            edge_density_error: None,
+            lattice_angle_error_degrees: None,
+        };
+    };
+
+    let radial_profile_error = source
+        .radial_profile
+        .as_ref()
+        .and_then(|profile| mean_absolute_profile_error(&metrics.radial_profile, profile));
+    let angular_profile_error = source
+        .angular_profile
+        .as_ref()
+        .and_then(|profile| mean_absolute_profile_error(&metrics.angular_profile, profile));
+    let active_fraction_error = source
+        .active_fraction
+        .map(|value| (metrics.active_fraction - value).abs());
+    let edge_density_error = source
+        .edge_density
+        .map(|value| (metrics.edge_density - value).abs());
+    let edge_overlap = source
+        .edge_density
+        .map(|value| edge_overlap_from_densities(metrics.edge_density, value));
+    let lattice_angle_error_degrees = source
+        .lattice_angle_degrees
+        .map(|value| angular_difference_degrees(metrics.dominant_angle_degrees, value, 180.0));
+
+    BressloffSourceComparison {
+        status: "compared",
+        source_profile_id: source
+            .profile_id
+            .clone()
+            .or_else(|| Some(format!("{preset_id}-source-profile"))),
+        source_mask_id: source.mask_id.clone(),
+        radial_profile_error,
+        angular_profile_error,
+        edge_overlap,
+        active_fraction_error,
+        edge_density_error,
+        lattice_angle_error_degrees,
+    }
+}
+
+fn mean_absolute_profile_error(generated: &[f64], source: &[f64]) -> Option<f64> {
+    let len = generated.len().min(source.len());
+    if len == 0 {
+        return None;
+    }
+    Some(
+        generated
+            .iter()
+            .take(len)
+            .zip(source.iter().take(len))
+            .map(|(a, b)| (a - b).abs())
+            .sum::<f64>()
+            / len as f64,
+    )
+}
+
+fn edge_overlap_from_densities(generated: f64, source: f64) -> f64 {
+    let denom = generated.max(source).max(1.0e-9);
+    1.0 - ((generated - source).abs() / denom).clamp(0.0, 1.0)
+}
+
+fn angular_difference_degrees(a: f64, b: f64, period: f64) -> f64 {
+    let mut delta = (a - b).abs().rem_euclid(period);
+    if delta > period * 0.5 {
+        delta = period - delta;
+    }
+    delta
 }
 
 fn rule_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
@@ -2739,6 +2960,9 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
 fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut out = PathBuf::from("reports/rule-2011-floquet.json");
     let mut grid = rule_sweep_grid_defaults("dense");
+    let mut parameter_set = "rule_fig8_source_like";
+    let mut curve_refine_steps = 48usize;
+    let mut curve_refine_tolerance = 1.0e-6;
     let mut periods_override: Option<Vec<f64>> = None;
     let mut amplitudes_override: Option<Vec<f64>> = None;
     let mut stim_i_fractions_override: Option<Vec<f64>> = None;
@@ -2763,6 +2987,26 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
             "--preset-grid" | "--grid" => {
                 grid =
                     rule_sweep_grid_defaults(iter.next().ok_or("--preset-grid requires a value")?);
+            }
+            "--rule-parameter-set" | "--parameter-set" => {
+                parameter_set = parse_rule_parameter_set(
+                    iter.next().ok_or("--rule-parameter-set requires a value")?,
+                )?;
+            }
+            "--curve-refine-steps" => {
+                curve_refine_steps = parse_clamped_usize(
+                    iter.next().ok_or("--curve-refine-steps requires a value")?,
+                    1,
+                    128,
+                )?;
+            }
+            "--curve-refine-tolerance" => {
+                curve_refine_tolerance = parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--curve-refine-tolerance requires a value")?,
+                    1.0e-12,
+                    1.0e-2,
+                )?;
             }
             "--periods" => {
                 periods_override = Some(parse_f64_csv(
@@ -2888,6 +3132,8 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         }
     }
 
+    apply_rule_parameter_set(&mut raw, parameter_set);
+
     if mode_min.is_some() || mode_max.is_some() || mode_steps.is_some() {
         mode_cycles = linspace_values(
             mode_min.unwrap_or_else(|| *mode_cycles.first().unwrap_or(&0.5)),
@@ -2945,7 +3191,13 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         &grid.amplitudes,
         &grid.stim_i_fractions,
     );
-    let boundary_curves = rule_floquet_beta_boundary_curves(&points, &raw, &grid);
+    let boundary_curves = rule_floquet_beta_boundary_curves(
+        &points,
+        &raw,
+        &grid,
+        curve_refine_tolerance,
+        curve_refine_steps,
+    );
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -2953,11 +3205,27 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
     let boundary_count = boundary_candidates.len();
     let curve_count = boundary_curves.len();
     let report = RuleFloquetCalibrationReport {
-        format: "rule-2011-floquet-calibration-v2",
+        format: "rule-2011-floquet-calibration-v3",
         model_family: MODEL_FAMILY_RULE,
         source_key: "rule-2011",
+        parameter_set,
         status: "figure8-refined-beta-boundary-curves",
-        note: "Homogeneous-orbit monodromy grid for Rule et al. 2011 Figure 8 style diagnostics. The default mode grid resolves true +1/-1 sign-change crossings and refines beta-axis roots into first-pass boundary curves; the curves are still numerical calibration targets, not a final published-figure reproduction.",
+        note: "Homogeneous-orbit monodromy grid for Rule et al. 2011 Figure 8 style diagnostics. The mode grid resolves true +1/-1 sign-change crossings and refines beta-axis roots into source-axis boundary curves; the curves are still numerical calibration targets, not a final published-figure reproduction.",
+        source_axes: RuleFloquetSourceAxes {
+            x_axis: "forcing_period",
+            x_units: "ms",
+            x_secondary_axis: "stimulus_frequency",
+            x_secondary_units: "Hz",
+            y_axis: "wave_number",
+            y_units: "radians_per_domain",
+            y_secondary_axis: "beta_cycles",
+            y_secondary_units: "cycles_per_domain",
+        },
+        curve_refinement: RuleFloquetCurveRefinement {
+            method: "bisection_on_beta_sign_change",
+            tolerance: curve_refine_tolerance,
+            max_steps: curve_refine_steps,
+        },
         grid: rule_sweep_grid_details(&grid),
         mode_cycles,
         points,
@@ -2970,6 +3238,52 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         out.display()
     );
     Ok(())
+}
+
+fn parse_rule_parameter_set(value: &str) -> Result<&'static str, Box<dyn std::error::Error>> {
+    match value {
+        "rule_fig8_source_like" | "source_like" | "figure8" => Ok("rule_fig8_source_like"),
+        "current_defaults" | "default" => Ok("current_defaults"),
+        _ => Err(format!(
+            "unknown Rule parameter set: {value}; expected rule_fig8_source_like or current_defaults"
+        )
+        .into()),
+    }
+}
+
+fn apply_rule_parameter_set(raw: &mut HashMap<String, String>, parameter_set: &str) {
+    match parameter_set {
+        "rule_fig8_source_like" => {
+            raw.entry("generator".to_string())
+                .or_insert_with(|| "rule_flicker".to_string());
+            raw.entry("rule_tau_e_ms".to_string())
+                .or_insert_with(|| "10".to_string());
+            raw.entry("rule_tau_i_ms".to_string())
+                .or_insert_with(|| "20".to_string());
+            raw.entry("rule_aee".to_string())
+                .or_insert_with(|| "10".to_string());
+            raw.entry("rule_aei".to_string())
+                .or_insert_with(|| "12".to_string());
+            raw.entry("rule_aie".to_string())
+                .or_insert_with(|| "8.5".to_string());
+            raw.entry("rule_aii".to_string())
+                .or_insert_with(|| "3".to_string());
+            raw.entry("rule_theta_e".to_string())
+                .or_insert_with(|| "2".to_string());
+            raw.entry("rule_theta_i".to_string())
+                .or_insert_with(|| "3.5".to_string());
+            raw.entry("rule_sigma_e".to_string())
+                .or_insert_with(|| "2".to_string());
+            raw.entry("rule_sigma_i".to_string())
+                .or_insert_with(|| "5".to_string());
+            raw.entry("rule_stim_threshold".to_string())
+                .or_insert_with(|| "0.8".to_string());
+            raw.entry("rule_stim_smoothing".to_string())
+                .or_insert_with(|| "50".to_string());
+        }
+        "current_defaults" => {}
+        _ => {}
+    }
 }
 
 fn parse_f64_csv(value: &str, min: f64, max: f64) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
@@ -4699,6 +5013,8 @@ fn rule_floquet_beta_boundary_curves(
     points: &[RuleFloquetGridPoint],
     raw: &HashMap<String, String>,
     grid: &RuleSweepGridConfig,
+    tolerance: f64,
+    max_steps: usize,
 ) -> Vec<RuleFloquetBoundaryCurve> {
     const KINDS: [&str; 3] = [
         "minus_period_doubling",
@@ -4732,6 +5048,8 @@ fn rule_floquet_beta_boundary_curves(
                     kind,
                     from_mode.beta_cycles,
                     to_mode.beta_cycles,
+                    tolerance,
+                    max_steps,
                 ) {
                     refined_points.push(refined);
                 }
@@ -4747,12 +5065,18 @@ fn refine_rule_floquet_beta_boundary(
     kind: &'static str,
     beta_low: f64,
     beta_high: f64,
+    tolerance: f64,
+    max_steps: usize,
 ) -> Option<RuleFloquetBoundaryCurvePoint> {
     let eval = |beta: f64| floquet_mode_margin(&rule_floquet_mode(params, steps, beta), kind);
     let (beta_cycles, margin, iterations) =
-        refine_scalar_sign_change(beta_low, beta_high, 1.0e-5, 32, eval)?;
+        refine_scalar_sign_change(beta_low, beta_high, tolerance, max_steps, eval)?;
+    let bracket_low_beta_cycles = beta_low.min(beta_high);
+    let bracket_high_beta_cycles = beta_low.max(beta_high);
     Some(RuleFloquetBoundaryCurvePoint {
         kind,
+        branch_label: rule_floquet_branch_label(kind),
+        branch_periodicity: rule_floquet_branch_periodicity(kind),
         axis: "beta",
         period_ms: params.rule_stim_period_ms,
         stimulus_frequency_hz: 1000.0 / params.rule_stim_period_ms.max(1.0e-9),
@@ -4760,13 +5084,32 @@ fn refine_rule_floquet_beta_boundary(
         stim_i_fraction: params.rule_stim_i_fraction,
         beta_cycles,
         wave_number_radians: rule_wave_number_for_cycles(beta_cycles, params.n),
-        bracket_low_beta_cycles: beta_low.min(beta_high),
-        bracket_high_beta_cycles: beta_low.max(beta_high),
+        bracket_low_beta_cycles,
+        bracket_high_beta_cycles,
+        bracket_width_beta_cycles: bracket_high_beta_cycles - bracket_low_beta_cycles,
         margin,
         condition_value: -margin,
         iterations,
         residual_abs: margin.abs(),
     })
+}
+
+fn rule_floquet_branch_label(kind: &str) -> &'static str {
+    match kind {
+        "minus_period_doubling" => "-1 period-doubling",
+        "plus_one_to_one" => "+1 one-to-one",
+        "unstable_complex" => "complex unit-circle",
+        _ => "unknown",
+    }
+}
+
+fn rule_floquet_branch_periodicity(kind: &str) -> &'static str {
+    match kind {
+        "minus_period_doubling" => "2T",
+        "plus_one_to_one" => "T",
+        "unstable_complex" => "complex",
+        _ => "unknown",
+    }
 }
 
 fn refine_scalar_sign_change<F>(
@@ -4824,32 +5167,58 @@ fn rule_floquet_boundary_curves_from_points(
             .then_with(|| a.beta_cycles.total_cmp(&b.beta_cycles))
     });
     let mut curves: Vec<RuleFloquetBoundaryCurve> = Vec::new();
-    for point in points {
-        if let Some(curve) = curves.iter_mut().find(|curve| {
-            curve.kind == point.kind
-                && (curve.amplitude - point.amplitude).abs() < 1.0e-9
-                && (curve.stim_i_fraction - point.stim_i_fraction).abs() < 1.0e-9
-        }) {
-            curve.points.push(point);
-            continue;
+    let mut index = 0usize;
+    while index < points.len() {
+        let start = index;
+        let key = (
+            points[index].kind,
+            points[index].amplitude,
+            points[index].stim_i_fraction,
+        );
+        while index < points.len()
+            && points[index].kind == key.0
+            && (points[index].amplitude - key.1).abs() < 1.0e-9
+            && (points[index].stim_i_fraction - key.2).abs() < 1.0e-9
+        {
+            index += 1;
         }
-        curves.push(RuleFloquetBoundaryCurve {
-            curve_id: format!(
-                "{}-amp-{:.3}-stim-i-{:.3}",
-                point.kind, point.amplitude, point.stim_i_fraction
-            ),
-            kind: point.kind,
-            axis: "beta",
-            source_axis: "wave_number_vs_forcing_period",
-            amplitude: point.amplitude,
-            stim_i_fraction: point.stim_i_fraction,
-            point_count: 0,
-            period_min_ms: point.period_ms,
-            period_max_ms: point.period_ms,
-            beta_min_cycles: point.beta_cycles,
-            beta_max_cycles: point.beta_cycles,
-            points: vec![point],
-        });
+        let branches = split_rule_floquet_boundary_branches(points[start..index].to_vec());
+        for (branch_index, branch_points) in branches.into_iter().enumerate() {
+            if let Some(point) = branch_points.first().copied() {
+                curves.push(RuleFloquetBoundaryCurve {
+                    curve_id: format!(
+                        "{}-branch-{:02}-amp-{:.3}-stim-i-{:.3}",
+                        point.kind,
+                        branch_index + 1,
+                        point.amplitude,
+                        point.stim_i_fraction
+                    ),
+                    kind: point.kind,
+                    branch_label: format!("{} branch {}", point.branch_label, branch_index + 1),
+                    branch_periodicity: point.branch_periodicity,
+                    axis: "beta",
+                    source_axis: "wave_number_vs_forcing_period",
+                    amplitude: point.amplitude,
+                    stim_i_fraction: point.stim_i_fraction,
+                    point_count: 0,
+                    period_min_ms: point.period_ms,
+                    period_max_ms: point.period_ms,
+                    beta_min_cycles: point.beta_cycles,
+                    beta_max_cycles: point.beta_cycles,
+                    wave_number_min_radians: point.wave_number_radians,
+                    wave_number_max_radians: point.wave_number_radians,
+                    mean_residual_abs: 0.0,
+                    max_residual_abs: 0.0,
+                    mean_bracket_width_beta_cycles: 0.0,
+                    max_bracket_width_beta_cycles: 0.0,
+                    mean_period_gap_ms: 0.0,
+                    max_period_gap_ms: 0.0,
+                    continuity_score: 0.0,
+                    fit: empty_rule_floquet_curve_fit(),
+                    points: branch_points,
+                });
+            }
+        }
     }
 
     for curve in &mut curves {
@@ -4864,15 +5233,275 @@ fn rule_floquet_boundary_curves_from_points(
             curve.period_max_ms = first.period_ms;
             curve.beta_min_cycles = first.beta_cycles;
             curve.beta_max_cycles = first.beta_cycles;
+            curve.wave_number_min_radians = first.wave_number_radians;
+            curve.wave_number_max_radians = first.wave_number_radians;
         }
         for point in &curve.points {
             curve.period_min_ms = curve.period_min_ms.min(point.period_ms);
             curve.period_max_ms = curve.period_max_ms.max(point.period_ms);
             curve.beta_min_cycles = curve.beta_min_cycles.min(point.beta_cycles);
             curve.beta_max_cycles = curve.beta_max_cycles.max(point.beta_cycles);
+            curve.wave_number_min_radians =
+                curve.wave_number_min_radians.min(point.wave_number_radians);
+            curve.wave_number_max_radians =
+                curve.wave_number_max_radians.max(point.wave_number_radians);
         }
+        update_rule_floquet_curve_quality(curve);
+        curve.fit = fit_rule_floquet_boundary_curve(&curve.points);
     }
     curves
+}
+
+fn split_rule_floquet_boundary_branches(
+    mut points: Vec<RuleFloquetBoundaryCurvePoint>,
+) -> Vec<Vec<RuleFloquetBoundaryCurvePoint>> {
+    points.sort_by(|a, b| {
+        a.period_ms
+            .total_cmp(&b.period_ms)
+            .then_with(|| a.beta_cycles.total_cmp(&b.beta_cycles))
+    });
+    let mut branches: Vec<Vec<RuleFloquetBoundaryCurvePoint>> = Vec::new();
+    let mut index = 0usize;
+    while index < points.len() {
+        let period = points[index].period_ms;
+        let start = index;
+        while index < points.len() && (points[index].period_ms - period).abs() < 1.0e-9 {
+            index += 1;
+        }
+        let mut period_points = points[start..index].to_vec();
+        period_points.sort_by(|a, b| a.beta_cycles.total_cmp(&b.beta_cycles));
+        let mut available = (0..branches.len()).collect::<Vec<_>>();
+        for point in period_points {
+            if available.is_empty() {
+                branches.push(vec![point]);
+                continue;
+            }
+            let best_available_index = available
+                .iter()
+                .enumerate()
+                .min_by(|(_, a), (_, b)| {
+                    let a_last = branches[**a]
+                        .last()
+                        .map(|last| last.beta_cycles)
+                        .unwrap_or(0.0);
+                    let b_last = branches[**b]
+                        .last()
+                        .map(|last| last.beta_cycles)
+                        .unwrap_or(0.0);
+                    (a_last - point.beta_cycles)
+                        .abs()
+                        .total_cmp(&(b_last - point.beta_cycles).abs())
+                })
+                .map(|(available_index, _)| available_index)
+                .unwrap_or(0);
+            let branch_index = available.remove(best_available_index);
+            branches[branch_index].push(point);
+        }
+    }
+    branches.sort_by(|a, b| {
+        let a_first = a.first().map(|point| point.beta_cycles).unwrap_or(0.0);
+        let b_first = b.first().map(|point| point.beta_cycles).unwrap_or(0.0);
+        a_first.total_cmp(&b_first)
+    });
+    branches
+}
+
+fn empty_rule_floquet_curve_fit() -> RuleFloquetBoundaryCurveFit {
+    RuleFloquetBoundaryCurveFit {
+        model: "polynomial_period_to_wave_number",
+        degree: 0,
+        x_axis: "forcing_period_ms",
+        y_axis: "wave_number_radians",
+        x_origin_ms: 0.0,
+        x_scale_ms: 1.0,
+        coefficients: vec![0.0],
+        rms_residual: 0.0,
+        max_abs_residual: 0.0,
+    }
+}
+
+fn fit_rule_floquet_boundary_curve(
+    points: &[RuleFloquetBoundaryCurvePoint],
+) -> RuleFloquetBoundaryCurveFit {
+    if points.is_empty() {
+        return empty_rule_floquet_curve_fit();
+    }
+
+    let x_origin_ms = points.iter().map(|point| point.period_ms).sum::<f64>() / points.len() as f64;
+    let x_scale_ms = points
+        .iter()
+        .map(|point| (point.period_ms - x_origin_ms).abs())
+        .fold(0.0, f64::max)
+        .max(1.0);
+    let requested_degree = if points.len() >= 3 {
+        2usize
+    } else if points.len() >= 2 {
+        1usize
+    } else {
+        0usize
+    };
+
+    let coefficients = polynomial_fit_normalized(
+        points
+            .iter()
+            .map(|point| {
+                (
+                    (point.period_ms - x_origin_ms) / x_scale_ms,
+                    point.wave_number_radians,
+                )
+            })
+            .collect::<Vec<_>>()
+            .as_slice(),
+        requested_degree,
+    )
+    .unwrap_or_else(|| {
+        vec![
+            points
+                .iter()
+                .map(|point| point.wave_number_radians)
+                .sum::<f64>()
+                / points.len() as f64,
+        ]
+    });
+    let degree = coefficients.len().saturating_sub(1);
+    let residuals = points
+        .iter()
+        .map(|point| {
+            let x = (point.period_ms - x_origin_ms) / x_scale_ms;
+            polynomial_value(&coefficients, x) - point.wave_number_radians
+        })
+        .collect::<Vec<_>>();
+    let rms_residual = (residuals
+        .iter()
+        .map(|residual| residual * residual)
+        .sum::<f64>()
+        / residuals.len().max(1) as f64)
+        .sqrt();
+    let max_abs_residual = residuals
+        .iter()
+        .map(|residual| residual.abs())
+        .fold(0.0, f64::max);
+
+    RuleFloquetBoundaryCurveFit {
+        model: "polynomial_period_to_wave_number",
+        degree,
+        x_axis: "forcing_period_ms",
+        y_axis: "wave_number_radians",
+        x_origin_ms,
+        x_scale_ms,
+        coefficients,
+        rms_residual,
+        max_abs_residual,
+    }
+}
+
+fn polynomial_fit_normalized(points: &[(f64, f64)], degree: usize) -> Option<Vec<f64>> {
+    let terms = degree + 1;
+    if points.len() < terms {
+        return None;
+    }
+    let mut matrix = vec![vec![0.0; terms]; terms];
+    let mut rhs = vec![0.0; terms];
+    for (x, y) in points {
+        let mut powers = vec![1.0; terms * 2];
+        for i in 1..powers.len() {
+            powers[i] = powers[i - 1] * x;
+        }
+        for row in 0..terms {
+            rhs[row] += y * powers[row];
+            for col in 0..terms {
+                matrix[row][col] += powers[row + col];
+            }
+        }
+    }
+    solve_linear_system(matrix, rhs)
+}
+
+fn solve_linear_system(mut matrix: Vec<Vec<f64>>, mut rhs: Vec<f64>) -> Option<Vec<f64>> {
+    let n = rhs.len();
+    for col in 0..n {
+        let pivot =
+            (col..n).max_by(|a, b| matrix[*a][col].abs().total_cmp(&matrix[*b][col].abs()))?;
+        if matrix[pivot][col].abs() < 1.0e-12 {
+            return None;
+        }
+        matrix.swap(col, pivot);
+        rhs.swap(col, pivot);
+        let pivot_value = matrix[col][col];
+        for j in col..n {
+            matrix[col][j] /= pivot_value;
+        }
+        rhs[col] /= pivot_value;
+        for row in 0..n {
+            if row == col {
+                continue;
+            }
+            let factor = matrix[row][col];
+            for j in col..n {
+                matrix[row][j] -= factor * matrix[col][j];
+            }
+            rhs[row] -= factor * rhs[col];
+        }
+    }
+    Some(rhs)
+}
+
+fn polynomial_value(coefficients: &[f64], x: f64) -> f64 {
+    coefficients
+        .iter()
+        .rev()
+        .fold(0.0, |acc, coefficient| acc * x + coefficient)
+}
+
+fn update_rule_floquet_curve_quality(curve: &mut RuleFloquetBoundaryCurve) {
+    let point_count = curve.points.len();
+    if point_count == 0 {
+        return;
+    }
+
+    curve.mean_residual_abs = curve
+        .points
+        .iter()
+        .map(|point| point.residual_abs)
+        .sum::<f64>()
+        / point_count as f64;
+    curve.max_residual_abs = curve
+        .points
+        .iter()
+        .map(|point| point.residual_abs)
+        .fold(0.0, f64::max);
+    curve.mean_bracket_width_beta_cycles = curve
+        .points
+        .iter()
+        .map(|point| point.bracket_width_beta_cycles)
+        .sum::<f64>()
+        / point_count as f64;
+    curve.max_bracket_width_beta_cycles = curve
+        .points
+        .iter()
+        .map(|point| point.bracket_width_beta_cycles)
+        .fold(0.0, f64::max);
+
+    let gaps = curve
+        .points
+        .windows(2)
+        .map(|pair| (pair[1].period_ms - pair[0].period_ms).abs())
+        .collect::<Vec<_>>();
+    if gaps.is_empty() {
+        curve.mean_period_gap_ms = 0.0;
+        curve.max_period_gap_ms = 0.0;
+        curve.continuity_score = 1.0;
+        return;
+    }
+
+    curve.mean_period_gap_ms = gaps.iter().sum::<f64>() / gaps.len() as f64;
+    curve.max_period_gap_ms = gaps.iter().copied().fold(0.0, f64::max);
+    let span = (curve.period_max_ms - curve.period_min_ms).abs();
+    curve.continuity_score = if span <= 1.0e-9 {
+        1.0
+    } else {
+        (1.0 - (curve.max_period_gap_ms / span).clamp(0.0, 1.0)).clamp(0.0, 1.0)
+    };
 }
 
 fn rule_floquet_nearest_boundary_candidates(

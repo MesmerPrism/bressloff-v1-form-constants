@@ -14,11 +14,13 @@ Generate public-safe Bressloff figure-geometry still targets with:
 .\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
 ```
 
-This writes `format: bressloff-generated-figure-stills-v1` under
-`reports/figure-targets/`. The report contains generated-only normalized still
-frames for Figures 29-36 plus radial, angular, and edge metrics. It deliberately
-does not contain source paper scans or crops; private/source-derived masks can
-be matched to these generated still IDs in a later calibration pass.
+This writes `format: bressloff-generated-figure-stills-v2` under
+`reports/figure-targets/`. The report contains normalized generated still frames
+for Figures 29-36 plus radial, angular, edge, active-fraction, and dominant-angle
+metrics. It also includes public-safe comparison fields. Source paper scans and
+crops remain private; numeric profiles can be generated locally with
+`tools/extract_bressloff_source_profiles.py` and matched via
+`--source-profile-dir private\figure-targets\derived`.
 
 Orientation-channel payloads are intentionally generated on demand because they
 can become large. Example:
@@ -88,13 +90,24 @@ The dedicated Rule Floquet calibration surface is generated with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
-It uses `format: rule-2011-floquet-calibration-v2` and
+It uses `format: rule-2011-floquet-calibration-v3` and
 `model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
-margins over the dense grid plus `boundary_candidates`. The mode grid defaults
-to 0.5-4.0 cycles, which is low enough to expose first-pass Rule Figure 8-style
-boundary crossings. It also exports `boundary_curves`: beta-axis roots refined
-from adjacent mode sign changes and grouped as wave-number-versus-period curves
-for each amplitude and inhibitory-drive setting.
+margins over the dense grid plus `boundary_candidates`. The default
+`parameter_set` is `rule_fig8_source_like`, which names the current Rule
+Figure 8 source-like constants (`tau_e = 10`, `tau_i = 20`, `aee = 10`,
+`aei = 12`, `aie = 8.5`, `aii = 3`, `theta_e = 2`, `theta_i = 3.5`,
+`sigma_e = 2`, `sigma_i = 5`) while preserving explicit CLI overrides. The mode
+grid defaults to 0.5-4.0 cycles, which is low enough to expose first-pass Rule
+Figure 8-style boundary crossings.
+
+`boundary_curves` contains beta-axis roots refined from adjacent mode sign
+changes, normalized to source-style axes as wave number versus forcing period.
+Each curve carries a branch label (`+1 one-to-one` or `-1 period-doubling`),
+condition residuals, beta bracket widths, period-gap continuity fields, and a
+small polynomial fit from forcing period to wave number. Use
+`--curve-refine-steps` and `--curve-refine-tolerance` for denser targeted
+refinement around the current beta sign-change brackets without rerunning a
+larger global grid.
 
 Each mode row exports the 2x2 monodromy trace, determinant, and the three
 source-style threshold conditions:

@@ -45,6 +45,16 @@ The v4 calibration report also includes non-rendering checks for
 selection remains a review target because the paper's odd-hexagonal discussion
 depends on higher-order terms not yet fitted in this normalized selector.
 
+## Geometry Metrics
+
+`reports/figure-targets/bressloff-generated-stills.json` is the public-safe
+geometry surface for Figures 29-36. Its v2 schema stores generated stills plus
+radial profile, angular profile, active fraction, edge density, and dominant
+angle metrics. If ignored private source profiles exist under
+`private/figure-targets/derived/`, the same command adds radial-profile error,
+angular-profile error, edge overlap, active-fraction error, edge-density error,
+and lattice-angle error without exporting source paper scans or crops.
+
 ## Presentation Rules
 
 - Label generated panels as generated implementation output, not reproduced paper

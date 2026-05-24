@@ -1,12 +1,14 @@
 {
-  "format": "bressloff-generated-figure-stills-v1",
+  "format": "bressloff-generated-figure-stills-v2",
   "model_family": "bressloff_orientation_hypercolumn",
   "source_key": "bressloff-2001-2002",
   "status": "generated-targets-ready-for-private-mask-calibration",
-  "note": "Generated-only Bressloff figure stills and derived metrics for public-safe geometry calibration. This report does not include original paper scans or crops.",
+  "note": "Bressloff figure stills and public-safe geometry metrics. Private source scans/crops stay out of the report; comparisons use only derived numeric masks/profiles when available.",
+  "source_profile_dir": "private/figure-targets/derived",
   "width": 96,
   "height": 96,
   "still_count": 16,
+  "compared_still_count": 0,
   "stills": [
     {
       "preset": {
@@ -28,7 +30,7 @@
         "visual_target": "single inverse retinocortical map of a non-contoured square activity planform",
         "source_note": "Activity-threshold planform; no local orientation contours are sampled."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -47,6 +49,7 @@
         "std_luma": 0.40237245776921093,
         "active_fraction": 0.5,
         "edge_density": 0.17966202270381515,
+        "dominant_angle_degrees": 352.5,
         "radial_profile": [
           0.5062594268476622,
           0.49237207077953166,
@@ -91,6 +94,17 @@
           0.5100462656972906,
           0.5815253374076907
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -113,7 +127,7 @@
         "visual_target": "single inverse retinocortical map of a non-contoured roll activity planform",
         "source_note": "Rendered with the rings/tunnel roll orientation; rotate manually for ray or spiral variants."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -132,6 +146,7 @@
         "std_luma": 0.42113520811496974,
         "active_fraction": 0.5,
         "edge_density": 0.1244994840041275,
+        "dominant_angle_degrees": 262.5,
         "radial_profile": [
           0.43921568627450974,
           0.5441415590626499,
@@ -176,6 +191,17 @@
           0.5241242564441495,
           0.5206518971224849
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -198,7 +224,7 @@
         "visual_target": "single inverse retinocortical map of a non-contoured rhombic activity planform",
         "source_note": "Activity-threshold companion to the contoured rhombic Figure 33/34 family."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -217,6 +243,7 @@
         "std_luma": 0.40259849914124657,
         "active_fraction": 0.4992404513888889,
         "edge_density": 0.16598017715857347,
+        "dominant_angle_degrees": 322.5,
         "radial_profile": [
           0.5081447963800905,
           0.4956719273075083,
@@ -261,6 +288,17 @@
           0.512557832121613,
           0.5125286478227661
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -283,7 +321,7 @@
         "visual_target": "single inverse retinocortical map of a non-contoured hexagonal activity planform",
         "source_note": "Uses the neutral three-wave hexagonal basis without interpreting local contour orientation."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -302,6 +340,7 @@
         "std_luma": 0.4275854437032964,
         "active_fraction": 0.3919270833333333,
         "edge_density": 0.16200206398347966,
+        "dominant_angle_degrees": 337.5,
         "radial_profile": [
           0.33650075414781294,
           0.4729316116690582,
@@ -346,6 +385,17 @@
           0.48920467063229883,
           0.4294244970715568
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -368,7 +418,7 @@
         "visual_target": "square lattice in cortex mapped to cobweb-like visual-field structure",
         "source_note": "Analytic planform preset for checking the double-map geometry."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -387,6 +437,7 @@
         "std_luma": 0.4056940455476835,
         "active_fraction": 0.5,
         "edge_density": 0.2952760577915235,
+        "dominant_angle_degrees": 352.5,
         "radial_profile": [
           0.515233785822021,
           0.48830703012912513,
@@ -431,6 +482,17 @@
           0.5084930601454062,
           0.5615864527629228
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -453,7 +515,7 @@
         "visual_target": "even roll branch mapped through the double retinocortical map",
         "source_note": "Roll companion subpanel for the even square/cobweb figure."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -472,6 +534,7 @@
         "std_luma": 0.4226479571174104,
         "active_fraction": 0.5,
         "edge_density": 0.12452012383900339,
+        "dominant_angle_degrees": 97.5,
         "radial_profile": [
           0.43906485671191553,
           0.5442850310856048,
@@ -516,6 +579,17 @@
           0.5241242564441501,
           0.520651897122485
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -538,7 +612,7 @@
         "visual_target": "odd square lattice variant mapped through the retino-cortical double map",
         "source_note": "Analytic planform preset for checking parity-dependent contour structure."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -557,6 +631,7 @@
         "std_luma": 0.40339180773891326,
         "active_fraction": 0.4928385416666667,
         "edge_density": 0.18095545235637547,
+        "dominant_angle_degrees": 82.5,
         "radial_profile": [
           0.5821266968325792,
           0.43452893352462957,
@@ -601,6 +676,17 @@
           0.4673165895571716,
           0.5465622612681442
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -623,7 +709,7 @@
         "visual_target": "odd roll branch mapped through the double retinocortical map",
         "source_note": "Roll companion subpanel for the odd square/cobweb figure."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -642,6 +728,7 @@
         "std_luma": 0.4220972517861396,
         "active_fraction": 0.5,
         "edge_density": 0.1244994840041275,
+        "dominant_angle_degrees": 82.5,
         "radial_profile": [
           0.556711915535445,
           0.4520325203252041,
@@ -686,6 +773,17 @@
           0.4718660497907018,
           0.47535014005602205
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -708,7 +806,7 @@
         "visual_target": "rhombic cortical lattice mapped into warped visual-field contours",
         "source_note": "Analytic planform preset for the oblique-lattice family."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -727,6 +825,7 @@
         "std_luma": 0.47084513719132337,
         "active_fraction": 0.4997829861111111,
         "edge_density": 0.20857843137253787,
+        "dominant_angle_degrees": 262.5,
         "radial_profile": [
           0.47579185520361994,
           0.49230033476805407,
@@ -771,6 +870,17 @@
           0.5218330028640672,
           0.5096384008148716
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -793,7 +903,7 @@
         "visual_target": "even roll branch in the rhombic family mapped through the double map",
         "source_note": "Roll companion subpanel for the even rhombic figure."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -812,6 +922,7 @@
         "std_luma": 0.42039901632978716,
         "active_fraction": 0.4981553819444444,
         "edge_density": 0.17621904024766147,
+        "dominant_angle_degrees": 307.5,
         "radial_profile": [
           0.44147812971342376,
           0.5363223338115733,
@@ -856,6 +967,17 @@
           0.5157193214364401,
           0.4996180290297941
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -878,7 +1000,7 @@
         "visual_target": "odd rhombic cortical lattice mapped through the retino-cortical double map",
         "source_note": "Analytic companion to the even rhombic Fig 33 preset; calibration still depends on the paper rhombic angle."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -897,6 +1019,7 @@
         "std_luma": 0.47073228694206604,
         "active_fraction": 0.4971788194444444,
         "edge_density": 0.3792548159614759,
+        "dominant_angle_degrees": 352.5,
         "radial_profile": [
           0.4697586726998492,
           0.5192252510760405,
@@ -941,6 +1064,17 @@
           0.49263053536021173,
           0.521772345301757
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -963,7 +1097,7 @@
         "visual_target": "odd roll branch in the rhombic family mapped through the double map",
         "source_note": "Roll companion subpanel for the odd rhombic figure."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -982,6 +1116,7 @@
         "std_luma": 0.4199693391920817,
         "active_fraction": 0.4981553819444444,
         "edge_density": 0.17621560027518132,
+        "dominant_angle_degrees": 307.5,
         "radial_profile": [
           0.44147812971342376,
           0.5366092778574845,
@@ -1026,6 +1161,17 @@
           0.5160938532716459,
           0.4996562261268145
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -1048,7 +1194,7 @@
         "visual_target": "hexagonal branch with pi-phase sign structure",
         "source_note": "Analytic planform preset for the three-wave hexagonal family."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -1067,6 +1213,7 @@
         "std_luma": 0.4428840863151598,
         "active_fraction": 0.349609375,
         "edge_density": 0.34442014963879686,
+        "dominant_angle_degrees": 67.5,
         "radial_profile": [
           0.38815987933634993,
           0.366905786704926,
@@ -1111,6 +1258,17 @@
           0.3648601013439087,
           0.3567354214413042
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -1133,7 +1291,7 @@
         "visual_target": "0-hexagonal even phase partner of the Fig 35 hexagonal planform",
         "source_note": "Analytic phase companion to the pi-hexagonal Fig 35 preset."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -1152,6 +1310,7 @@
         "std_luma": 0.4249220635024333,
         "active_fraction": 0.7122395833333334,
         "edge_density": 0.3522407120742995,
+        "dominant_angle_degrees": 82.5,
         "radial_profile": [
           0.76395173453997,
           0.683739837398375,
@@ -1196,6 +1355,17 @@
           0.6672174487772645,
           0.6830404889228429
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -1218,7 +1388,7 @@
         "visual_target": "odd triangular branch on a hexagonal lattice mapped through the double map",
         "source_note": "Uses the odd hexagonal sine-combination branch; higher-order terms determine stability in the source discussion."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -1237,6 +1407,7 @@
         "std_luma": 0.45825116788237485,
         "active_fraction": 0.5,
         "edge_density": 0.3833832129342972,
+        "dominant_angle_degrees": 127.5,
         "radial_profile": [
           0.49803921568627446,
           0.49803921568627474,
@@ -1281,6 +1452,17 @@
           0.501806565322759,
           0.46114081996435013
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     },
     {
@@ -1303,7 +1485,7 @@
         "visual_target": "odd 0-hexagonal branch on a hexagonal lattice mapped through the double map",
         "source_note": "Odd-parity companion to the even 0-hexagonal phase target."
       },
-      "target_mask_status": "generated-only-awaiting-private-source-mask",
+      "target_mask_status": "source-profile-missing",
       "target_mask_id": null,
       "width": 96,
       "height": 96,
@@ -1322,6 +1504,7 @@
         "std_luma": 0.46440210853949754,
         "active_fraction": 0.5,
         "edge_density": 0.427708118335053,
+        "dominant_angle_degrees": 97.5,
         "radial_profile": [
           0.4981900452488688,
           0.4981109516977526,
@@ -1366,6 +1549,17 @@
           0.514959242123816,
           0.481996434937612
         ]
+      },
+      "source_comparison": {
+        "status": "source-profile-missing",
+        "source_profile_id": null,
+        "source_mask_id": null,
+        "radial_profile_error": null,
+        "angular_profile_error": null,
+        "edge_overlap": null,
+        "active_fraction_error": null,
+        "edge_density_error": null,
+        "lattice_angle_error_degrees": null
       }
     }
   ]

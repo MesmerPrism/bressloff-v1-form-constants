@@ -122,14 +122,27 @@ Generate the denser website/analysis map:
 Generate the first dedicated Rule Floquet calibration surface:
 
 ```powershell
-.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json --curve-refine-steps 64 --curve-refine-tolerance 0.000001
 ```
 
 Use `--mode-min`, `--mode-max`, and `--mode-steps` to refine the Figure
 8-style wave-number scan. The default mode grid covers 0.5-4.0 cycles and is
 dense enough to expose first-pass +1 and -1 sign-change crossings. The report
-also refines beta-axis crossings into `boundary_curves` for Figure 8-style
-wave-number versus forcing-period calibration.
+also refines beta-axis crossings into source-axis `boundary_curves` for Figure
+8-style wave-number versus forcing-period calibration. The default
+`rule_fig8_source_like` parameter set names the current source-like constants
+from the paper extraction; explicit CLI flags still override individual values.
+
+Generate Bressloff figure-geometry stills and public-safe comparison slots:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
+```
+
+Original paper scans/crops stay under `private/`. Use
+`tools\extract_bressloff_source_profiles.py` to derive local numeric masks and
+profiles, then re-run `bressloff-geometry` with `--source-profile-dir` to fill
+radial, angular, edge-overlap, and lattice-angle comparison metrics.
 
 ## Viewer Workflow
 

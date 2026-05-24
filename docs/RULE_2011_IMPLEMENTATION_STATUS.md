@@ -94,6 +94,16 @@ points. Use `--modes` for an explicit wave-number list, or `--mode-min`,
 `--mode-max`, and `--mode-steps` for regular refinement around an observed
 crossing.
 
+The Figure 8 calibration command now uses the named
+`rule_fig8_source_like` parameter set by default and reports source-style axes:
+forcing period in milliseconds, secondary stimulus frequency in Hz, and wave
+number in radians across the modeled domain. The refined `boundary_curves`
+include branch labels, beta bracket widths, Floquet-condition residuals, curve
+continuity fields, and a polynomial period-to-wave-number fit. Use
+`--curve-refine-steps` and `--curve-refine-tolerance` to densify the targeted
+beta-root refinement inside the current sign-change bands without expanding the
+whole grid.
+
 The sweep command also accepts explicit lists and regular grids:
 
 ```powershell
@@ -104,7 +114,7 @@ The sweep and Floquet report formats are:
 
 ```text
 rule-2011-sweep-report-v1
-rule-2011-floquet-calibration-v2
+rule-2011-floquet-calibration-v3
 ```
 
 This is intentionally separate from:
@@ -116,9 +126,9 @@ bressloff-paper-calibration-v4
 ## Deferred
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
-- Figure-level Floquet phase-boundary calibration for Rule Figure 8 against the
-  published axes and parameter set, including curve fitting and source-axis
-  normalization beyond the current refined beta-root points.
+- Figure-level Floquet phase-boundary calibration for Rule Figure 8 against a
+  digitized published curve. The current report has source-axis normalization
+  and fitted refined curves, but not yet image-derived source residuals.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.
