@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bressloff and Rule Modeling Deep Dive</title>
+  <link rel="stylesheet" href="deep-dive.css">
+</head>
+<body>
+  <header class="article-topbar">
+    <a class="site-title" href="index.html">Bressloff V1</a>
+    <nav class="topnav" aria-label="Site">
+      <a href="index.html">Lab</a>
+      <a href="deep-dive.html" aria-current="page">Deep dive</a>
+    </nav>
+  </header>
+
+  <main class="article-shell">
+    <aside class="article-index" aria-label="Article sections">
+      <a href="#history">History</a>
+      <a href="#bressloff">Bressloff model</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#examples">Examples</a>
+      <a href="#stability">Reports</a>
+      <a href="#rule">Rule model</a>
+      <a href="#ledger">Claim ledger</a>
+      <a href="#limits">Open work</a>
+    </aside>
+
+    <article class="deep-article">
+      <header class="article-header">
+        <p class="section-label">Deep dive</p>
+        <h1>From cortical symmetry to flicker-driven form constants</h1>
+        <p class="lede">
+          This page is the notebook-style companion to the interactive lab. It
+          explains why the Bressloff orientation-hypercolumn model and the Rule,
+          Stoffregen, and Ermentrout flicker model are separate model families,
+          then walks through generated examples one at a time.
+        </p>
+        <p class="article-note">
+          The animations are generated implementation output. They are not scans
+          of the source papers, not clinical predictions, and not calibrated
+          reconstructions of any individual visual experience.
+        </p>
+      </header>
+
+      <section id="history" class="prose-section">
+        <h2>The historical problem</h2>
+        <p>
+          Geometric visual hallucinations are recurring reports with a stubborn
+          mathematical shape: tunnels, spirals, rays, cobwebs, lattices,
+          honeycombs, checkerboards, and funnels. The modeling question is not
+          merely whether those pictures can be drawn. It is whether a plausible
+          cortical system has natural pattern-forming modes that look like them.
+        </p>
+        <p>
+          Ermentrout and Cowan had already shown how a two-dimensional cortical
+          sheet with Mexican-hat interactions can destabilize into stripes,
+          squares, and hexagons. Bressloff, Cowan, Golubitsky, Thomas, and
+          Wiener add two crucial pieces: the retinocortical map between visual
+          space and V1, and the orientation preference structure of V1
+          hypercolumns. That upgrade turns some hallucinations from simple
+          light-dark regions into fields of local contour elements.
+        </p>
+
+        <div class="source-grid" aria-label="Historical model split">
+          <div class="source-card">
+            <h3>Scalar cortical sheet</h3>
+            <p>
+              Useful for rings, rays, spirals, and some light-dark lattices
+              because cortical stripes map cleanly through the complex-log
+              retinocortical transform.
+            </p>
+          </div>
+          <div class="source-card">
+            <h3>Orientation hypercolumns</h3>
+            <p>
+              Needed for cobwebs, honeycombs, and lattice tunnels that are more
+              naturally described as locally oriented contours rather than only
+              bright and dark regions.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="bressloff" class="prose-section">
+        <h2>The Bressloff model family</h2>
+        <p>
+          The Bressloff track in this repository is an orientation-hypercolumn
+          model family:
+        </p>
+        <pre><code>model_family = bressloff_orientation_hypercolumn</code></pre>
+        <p>
+          Its state is not just activity over cortical position. It is activity
+          over cortical position and orientation preference. That extra
+          orientation coordinate is what lets the renderer draw local contour
+          elements, distinguish even and odd branches, and apply the double
+          retinocortical map used by the paper's contoured examples.
+        </p>
+
+        <div class="equation-panel" aria-label="Bressloff equations">
+          <div>
+            <h3>Position map</h3>
+            <pre><code>z = x + i y
+z ~= log(r_R exp(i theta_R))
+x ~= log r_R
+y ~= theta_R</code></pre>
+            <p>
+              Circles, rays, and logarithmic spirals in visual space become
+              vertical, horizontal, and oblique stripes in cortical coordinates.
+            </p>
+          </div>
+          <div>
+            <h3>Orientation map</h3>
+            <pre><code>phi = phi_R - theta_R
+equivalently:
+phi_R = phi + theta_R</code></pre>
+            <p>
+              Local retinal contour orientation is measured relative to angular
+              visual-field position. The implementation uses the equivalent
+              <code>phi_R = phi + theta_R</code> convention for drawing glyphs.
+            </p>
+          </div>
+          <div>
+            <h3>Hypercolumn field</h3>
+            <pre><code>da(r, phi, t)/dt =
+  -a(r, phi, t)
+  + mu integral w sigma(a)</code></pre>
+            <p>
+              The weight separates local isotropic coupling inside a
+              hypercolumn from anisotropic long-range lateral coupling between
+              similarly tuned orientation patches.
+            </p>
+          </div>
+          <div>
+            <h3>Planform modes</h3>
+            <pre><code>a(r, phi) ~
+  sum_j c_j u(phi - phi_j)
+        exp(i k_j dot r)</code></pre>
+            <p>
+              Near instability, the candidate patterns are finite combinations
+              of orientation-modulated cortical plane waves on square, rhombic,
+              or hexagonal lattices.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline" class="prose-section">
+        <h2>What the code computes</h2>
+        <p>
+          The viewer separates rendering from mathematical status. A preset can
+          explicitly render a source-targeted figure while the current
+          normalized stability calculation still reports a different branch.
+          That distinction is deliberate: it keeps the public page from
+          overstating calibration.
+        </p>
+
+        <ol class="pipeline-list">
+          <li>
+            <strong>Choose a model family.</strong>
+            Bressloff uses orientation-channel planforms and dynamics. Rule uses
+            a scalar excitatory/inhibitory flicker field.
+          </li>
+          <li>
+            <strong>Generate cortical activity.</strong>
+            Bressloff either solves dynamics or renders analytic planforms. Rule
+            integrates a flicker-driven E/I field.
+          </li>
+          <li>
+            <strong>Analyze status.</strong>
+            Bressloff reports contour mode, parity, rendered family, and
+            branch-selection diagnostics. Rule reports spatial family and
+            temporal response mode.
+          </li>
+          <li>
+            <strong>Map to the viewing surface.</strong>
+            Scalar activity can be shown directly or sampled through the
+            retinocortical map. Bressloff contoured planforms also draw local
+            orientation glyphs through the double map.
+          </li>
+        </ol>
+      </section>
+
+      <section id="examples" class="notebook">
+        <h2>Generated Bressloff examples</h2>
+
+        <section class="notebook-cell" id="cell-cortical-roll">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 01</p>
+            <h3>Cortical roll before the visual map</h3>
+            <p>
+              A roll is the simplest cortical planform: one periodic wave on the
+              cortical sheet. It is the right first example because the
+              retinocortical transform explains why a single stripe family can
+              appear as rings, rays, funnels, or spirals depending on cortical
+              angle.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2002 Figure 5</dd></div>
+              <div><dt>Preset</dt><dd><code>fig5_roll_cortical</code></dd></div>
+              <div><dt>Computation</dt><dd>analytic cortical planform</dd></div>
+              <div><dt>Status</dt><dd>convenience alias, not digitized figure calibration</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="2002 Fig 5 roll cortical"
+            data-query="paper_preset=fig5_roll_cortical&n=64&frames=96&t=24&cmap=twilight"
+            data-view="cortical"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig5_roll_cortical&view=cortical">
+            <canvas width="360" height="360" aria-label="Generated cortical roll animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-tunnel">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 02</p>
+            <h3>The retinocortical map turns waves into tunnels</h3>
+            <p>
+              The visual-field tunnel is not drawn as a tunnel template. The code
+              starts from cortical activity, then samples it through the same
+              inverse retinocortical map used by the lab. This is the cleanest
+              public demonstration of the complex-log geometry.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2002 Figure 7</dd></div>
+              <div><dt>Preset</dt><dd><code>fig7_lattice_tunnel</code></dd></div>
+              <div><dt>View</dt><dd>visual field / retinal coordinates</dd></div>
+              <div><dt>Status</dt><dd>representative even-roll tunnel alias</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="2002 Fig 7 lattice tunnel"
+            data-query="paper_preset=fig7_lattice_tunnel&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig7_lattice_tunnel&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated visual-field tunnel animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-noncontoured">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 03</p>
+            <h3>Single inverse map: non-contoured square cells</h3>
+            <p>
+              Figures 29 and 30 in the 2001 paper show what happens when a
+              planform is treated as scalar activity only. There are no local
+              orientation glyphs here. The pattern is thresholded as bright and
+              dark regions, then mapped back to visual-field coordinates.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2001 Figure 29, Table 2</dd></div>
+              <div><dt>Preset</dt><dd><code>fig29_square_noncontoured</code></dd></div>
+              <div><dt>Map</dt><dd>single inverse retinocortical map</dd></div>
+              <div><dt>Status</dt><dd>rendered target pass; threshold geometry still approximate</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Fig 29 square non-contoured"
+            data-query="paper_preset=fig29_square_noncontoured&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig29_square_noncontoured&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated non-contoured square animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-cobweb">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 04</p>
+            <h3>Double inverse map: square/cobweb contours</h3>
+            <p>
+              The cobweb example is where Bressloff's orientation extension
+              matters. The square lattice is not just a scalar checkerboard. It
+              is an orientation-modulated planform whose local contour elements
+              are carried through the tangent map.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2001 Figure 31, Table 3</dd></div>
+              <div><dt>Preset</dt><dd><code>fig31_square_even</code></dd></div>
+              <div><dt>Map</dt><dd>double inverse retinocortical map</dd></div>
+              <div><dt>Status</dt><dd>rendered target; branch selector currently reports roll locally</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Fig 31 square even"
+            data-query="paper_preset=fig31_square_even&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig31_square_even&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated square cobweb animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-rhombic">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 05</p>
+            <h3>Rhombic branches keep the lattice angle visible</h3>
+            <p>
+              Rhombic planforms make the stability problem less abstract because
+              the lattice angle is visible. The current implementation can
+              render a rhombic target and separately report whether the
+              amplitude-equation branch selector agrees.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2001 Figure 33, Table 3</dd></div>
+              <div><dt>Preset</dt><dd><code>fig33_rhombic_even</code></dd></div>
+              <div><dt>Branch</dt><dd>same-lattice rhombic pass</dd></div>
+              <div><dt>Open work</dt><dd>source-fitted rhombic angle and contour sampling</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Fig 33 rhombic even"
+            data-query="paper_preset=fig33_rhombic_even&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig33_rhombic_even&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated rhombic animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-hex">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 06</p>
+            <h3>Hexagonal phases: 0 and pi partners</h3>
+            <p>
+              Hexagonal planforms show why family labels are not enough. The
+              paper distinguishes phase partners such as 0-hexagonal and
+              pi-hexagonal planforms. The code currently renders useful phase
+              targets, but some phase-selection signs still need source-fitted
+              calibration.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2001 Figure 35, Table 3</dd></div>
+              <div><dt>Preset</dt><dd><code>fig35_hex_zero_even</code></dd></div>
+              <div><dt>Branch</dt><dd>hexagonal family pass for this phase partner</dd></div>
+              <div><dt>Open work</dt><dd>final 0/pi phase convention audit</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Fig 35 zero-hexagonal even"
+            data-query="paper_preset=fig35_hex_zero_even&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig35_hex_zero_even&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated hexagonal honeycomb animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-triangle">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 07</p>
+            <h3>Odd triangular branch as an explicit target</h3>
+            <p>
+              The odd triangular branch is intentionally presented as a split
+              status. The renderer can draw the Figure 36 target, but the
+              normalized cubic selector does not yet include the higher-order
+              terms needed to reproduce the paper's full odd-hexagonal
+              stability decision.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Bressloff 2001 Figure 36 and Figure 40</dd></div>
+              <div><dt>Preset</dt><dd><code>fig36_triangle_odd</code></dd></div>
+              <div><dt>Rendered target</dt><dd>triangular odd planform</dd></div>
+              <div><dt>Status</dt><dd>higher-order branch-selection review</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Fig 36 triangular odd"
+            data-query="paper_preset=fig36_triangle_odd&n=64&frames=96&t=24&cmap=twilight"
+            data-view="retinal"
+            data-fps="18"
+            data-lab="index.html?paper_preset=fig36_triangle_odd&view=retinal">
+            <canvas width="360" height="360" aria-label="Generated triangular odd animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+      </section>
+
+      <section id="stability" class="prose-section">
+        <h2>What the reports currently say</h2>
+        <p>
+          The calibration report is a status surface, not a victory lap. It
+          separates category coverage from figure-level reproduction. At this
+          point the Bressloff registry covers the intended public preset set,
+          while the remaining work is phase, geometry, and stability
+          calibration.
+        </p>
+
+        <div class="report-output">
+          <div class="report-stat">
+            <strong>24</strong>
+            <span>Bressloff paper-oriented presets</span>
+          </div>
+          <div class="report-stat">
+            <strong>17</strong>
+            <span>current pass statuses</span>
+          </div>
+          <div class="report-stat">
+            <strong>7</strong>
+            <span>current review statuses</span>
+          </div>
+        </div>
+
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th>Review target</th>
+              <th>Why it remains open</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Square/cobweb Figure 31 and Figure 32</td>
+              <td>Rendered targets exist, but same-lattice branch readout selects the roll branch in the current normalized selector.</td>
+            </tr>
+            <tr>
+              <td>Figure 35 pi-hexagonal phase</td>
+              <td>The family matches, but 0/pi phase selection needs a source-sign audit.</td>
+            </tr>
+            <tr>
+              <td>Figure 36 triangular odd branch</td>
+              <td>The visual target renders; Figure 40 stability depends on higher-order odd-hexagonal terms.</td>
+            </tr>
+            <tr>
+              <td>2002 Figure 6 visual-field panel</td>
+              <td>The current preset is a representative panel rather than a split per-subpanel reproduction.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="rule" class="prose-section">
+        <h2>The Rule flicker model is a separate family</h2>
+        <p>
+          Rule, Stoffregen, and Ermentrout ask a different first question: what
+          patterns does a periodically forced excitatory-inhibitory field
+          produce under diffuse flicker? This is not an orientation-hypercolumn
+          preset:
+        </p>
+        <pre><code>model_family = rule_flicker_ei
+generator = rule_flicker</code></pre>
+
+        <div class="equation-panel" aria-label="Rule equations">
+          <div>
+            <h3>E/I field</h3>
+            <pre><code>tau_e dUe/dt =
+  -Ue + F(aee Ke*Ue - aei Ki*Ui - theta_e + ge S)
+
+tau_i dUi/dt =
+  -Ui + F(aie Ke*Ue - aii Ki*Ui - theta_i + gi S)</code></pre>
+            <p>
+              The implementation uses two scalar fields over a periodic 2D
+              domain with normalized Gaussian spatial kernels.
+            </p>
+          </div>
+          <div>
+            <h3>Flicker stimulus</h3>
+            <pre><code>S(t) = A H(sin(2 pi t / T) - threshold)</code></pre>
+            <p>
+              Period <code>T</code>, amplitude <code>A</code>, threshold, smoothing, and feed-forward
+              inhibitory fraction are Rule-specific controls.
+            </p>
+          </div>
+          <div>
+            <h3>Temporal check</h3>
+            <pre><code>high frequency: response period ~= 2T
+low frequency:  response period ~= T</code></pre>
+            <p>
+              The qualitative report compares the final frames against frames
+              one and two stimulus periods earlier.
+            </p>
+          </div>
+          <div>
+            <h3>Deferred stability</h3>
+            <pre><code>homogeneous periodic orbit
+linearized mode equation
+monodromy matrix
+Floquet multipliers</code></pre>
+            <p>
+              These are the next rigorous layer for Rule Figures 3, 6, 8, and
+              9. The page below is still simulation-first.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="notebook">
+        <section class="notebook-cell" id="cell-rule-stripes">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 08</p>
+            <h3>High-frequency flicker: period-doubled stripes</h3>
+            <p>
+              Rule's high-frequency island is dominated by stripe-like spatial
+              patterns. The qualitative signature is period doubling: after one
+              forcing cycle, foreground and background have approximately
+              exchanged; after two cycles, the pattern matches again.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Rule 2011 Figures 4 and 5A</dd></div>
+              <div><dt>Preset</dt><dd><code>rule_fig4_high_freq_stripes</code></dd></div>
+              <div><dt>Stimulus</dt><dd>55 ms representative period</dd></div>
+              <div><dt>Status</dt><dd>qualitative seeded regime pass</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Rule Fig 4 high-frequency stripes"
+            data-query="rule_preset=rule_fig4_high_freq_stripes&frames=144&cmap=turbo"
+            data-view="cortical"
+            data-fps="24"
+            data-lab="index.html?rule_preset=rule_fig4_high_freq_stripes&view=cortical">
+            <canvas width="360" height="360" aria-label="Generated Rule high-frequency stripe animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+
+        <section class="notebook-cell" id="cell-rule-hex">
+          <div class="cell-copy">
+            <p class="cell-number">Cell 09</p>
+            <h3>Lower-frequency flicker: one-to-one hexagons</h3>
+            <p>
+              Rule's lower-frequency island tends toward hexagonal patterns. In
+              the current implementation the low-frequency example uses a 120 ms
+              qualitative representative rather than claiming exact reproduction
+              of the 110 ms panel in the paper.
+            </p>
+            <dl class="cell-status">
+              <div><dt>Source</dt><dd>Rule 2011 Figures 4 and 5B</dd></div>
+              <div><dt>Preset</dt><dd><code>rule_fig4_low_freq_hexagons</code></dd></div>
+              <div><dt>Stimulus</dt><dd>120 ms qualitative representative</dd></div>
+              <div><dt>Status</dt><dd>qualitative seeded regime pass</dd></div>
+            </dl>
+          </div>
+          <div
+            class="example-output"
+            data-example
+            data-title="Rule Fig 4 low-frequency hexagons"
+            data-query="rule_preset=rule_fig4_low_freq_hexagons&frames=144&cmap=turbo"
+            data-view="cortical"
+            data-fps="24"
+            data-lab="index.html?rule_preset=rule_fig4_low_freq_hexagons&view=cortical">
+            <canvas width="360" height="360" aria-label="Generated Rule low-frequency hexagon animation"></canvas>
+            <div class="example-meta">Waiting to load</div>
+          </div>
+        </section>
+      </section>
+
+      <section id="ledger" class="prose-section">
+        <h2>Claim ledger</h2>
+        <p>
+          A useful public notebook should make its claims auditable. This is the
+          current state of the modeling claims represented by the page.
+        </p>
+
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th>Claim</th>
+              <th>Current level</th>
+              <th>Next work</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bressloff retinocortical map and visual-field sampling</td>
+              <td>Implemented and visually inspectable</td>
+              <td>Validate source scale, hemifield alignment, and figure crops.</td>
+            </tr>
+            <tr>
+              <td>Bressloff orientation double-map contours</td>
+              <td>Implemented in normalized form</td>
+              <td>Audit sign conventions and contour sampling density against source figures.</td>
+            </tr>
+            <tr>
+              <td>Bressloff paper preset coverage</td>
+              <td>Source-anchored registry exists</td>
+              <td>Digitize Figures 29-36 and add quantitative image metrics.</td>
+            </tr>
+            <tr>
+              <td>Bressloff branch and stability reports</td>
+              <td>Qualitative/normalized checks exist</td>
+              <td>Fit phase conventions, rhombic angle curves, and odd-hexagonal higher-order terms.</td>
+            </tr>
+            <tr>
+              <td>Rule scalar E/I simulation core</td>
+              <td>Implemented first pass</td>
+              <td>Add 1D/2D sweeps and exact period/amplitude calibration.</td>
+            </tr>
+            <tr>
+              <td>Rule Floquet explanation</td>
+              <td>Explained as deferred</td>
+              <td>Implement homogeneous periodic orbit and monodromy multiplier reports.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="limits" class="prose-section">
+        <h2>What remains open</h2>
+        <p>
+          The next mathematical work is calibration rather than adding more
+          panels. Bressloff needs source-fitted phase conventions, digitized
+          curve and image metrics, and a higher-order odd-hexagonal selector.
+          Rule needs frequency-amplitude sweeps, Floquet stability around the
+          homogeneous periodic orbit, and exact figure-level parameter checks.
+        </p>
+        <p>
+          The next writing work is to turn this page from a strong guided
+          notebook into a source-annotated essay: add compact citations near
+          each formula, add one still or report panel for stability curves, and
+          split the 2002 Figure 6 representative into per-subpanel examples once
+          the source geometry is calibrated.
+        </p>
+      </section>
+
+      <footer class="references">
+        <h2>References</h2>
+        <p>
+          Bressloff et al. 2001:
+          <a href="https://doi.org/10.1098/rstb.2000.0769">doi:10.1098/rstb.2000.0769</a>.
+          Bressloff et al. 2002:
+          <a href="https://doi.org/10.1162/089976602317250861">doi:10.1162/089976602317250861</a>.
+          Bressloff 2012:
+          <a href="https://doi.org/10.1088/1751-8113/45/3/033001">doi:10.1088/1751-8113/45/3/033001</a>.
+          Rule, Stoffregen, and Ermentrout 2011:
+          <a href="https://doi.org/10.1371/journal.pcbi.1002158">doi:10.1371/journal.pcbi.1002158</a>.
+        </p>
+      </footer>
+    </article>
+  </main>
+
+  <script src="deep-dive.js"></script>
+</body>
+</html>

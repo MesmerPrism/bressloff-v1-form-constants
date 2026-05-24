@@ -16,6 +16,17 @@ Open:
 http://127.0.0.1:8892/viewer/index.html
 ```
 
+The companion long-form article is served from the same viewer root:
+
+```text
+http://127.0.0.1:8892/viewer/deep-dive.html
+```
+
+It uses `/api/generate` to render inline looping examples for Bressloff and Rule
+presets. On a static host without the Rust API those generated panels will not
+load; use the server-backed deployment path documented in
+`docs/WEB_HOSTING_PLAN.md` for the full article.
+
 The controls regenerate frames through `/api/generate`. By default, generated
 payloads use the fixed-step preview solver and trim the low-contrast warmup
 transient before playback. Switch `Generator` to `Planform` to render analytic

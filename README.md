@@ -71,6 +71,12 @@ Open:
 http://127.0.0.1:8892/viewer/index.html
 ```
 
+The long-form generated-model walkthrough lives at:
+
+```text
+http://127.0.0.1:8892/viewer/deep-dive.html
+```
+
 Export a static payload:
 
 ```powershell
@@ -156,6 +162,9 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
 - [`docs/WEB_HOSTING_PLAN.md`](docs/WEB_HOSTING_PLAN.md) describes the
   server-backed container deployment path for a public interactive version.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.
+- [`viewer/deep-dive.html`](viewer/deep-dive.html) is the public, notebook-style
+  Bressloff and Rule modeling article backed by the same generated animations as
+  the interactive lab.
 
 ## Public Article
 

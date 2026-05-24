@@ -51,6 +51,24 @@ select {
   background: var(--surface);
 }
 
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.topnav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topnav a:hover,
+.topnav a[aria-current="page"] {
+  color: var(--text);
+}
+
 h1,
 h2 {
   margin: 0;

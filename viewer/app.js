@@ -1078,6 +1078,36 @@ function applyParams(params) {
   updateGeneratorVisibility();
 }
 
+function paramsFromLocation() {
+  const params = {};
+  const search = new URLSearchParams(window.location.search);
+  search.forEach((value, key) => {
+    params[key] = value;
+  });
+  return params;
+}
+
+function applyInitialParamsFromLocation() {
+  const params = paramsFromLocation();
+  if (Object.keys(params).length === 0) {
+    return;
+  }
+
+  if (params.paper_preset && params.paper_preset !== "manual") {
+    applyPaperPreset(params.paper_preset);
+    applyParams({ ...currentParams(), ...params });
+  } else if (params.rule_preset && params.rule_preset !== "manual") {
+    applyRulePreset(params.rule_preset);
+    applyParams({ ...currentParams(), ...params });
+  } else {
+    applyParams({ ...DEFAULT_PARAMS, ...params });
+  }
+
+  if (params.view && els.view) {
+    els.view.value = params.view;
+  }
+}
+
 function installPayload(payload) {
   state.meta = payload;
   state.bytes = decodeBase64(payload.data_base64);
@@ -1213,6 +1243,7 @@ async function resetToDefault() {
 async function init() {
   bindOutputs();
   applyDefaultControls();
+  applyInitialParamsFromLocation();
 
   els.frame.addEventListener("input", () => {
     state.currentFrame = Number(els.frame.value);
