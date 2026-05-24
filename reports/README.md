@@ -90,7 +90,7 @@ The dedicated Rule Floquet calibration surface is generated with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
-It uses `format: rule-2011-floquet-calibration-v4` and
+It uses `format: rule-2011-floquet-calibration-v5` and
 `model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
 margins over the dense grid plus `boundary_candidates`. The default
 `parameter_set` is `rule_fig8_source_like`, which names the current Rule
@@ -99,6 +99,15 @@ Figure 8 source-like constants (`tau_e = 10`, `tau_i = 20`, `aee = 10`,
 `sigma_e = 2`, `sigma_i = 5`) while preserving explicit CLI overrides. The mode
 grid defaults to 0.5-4.0 cycles, which is low enough to expose first-pass Rule
 Figure 8-style boundary crossings.
+
+The v5 report makes the Figure 8 wave-number normalization explicit through
+`wave_number_normalization`. By default it uses the zero-offset domain decision
+`source_beta = 0.42868451880191133 * model_beta_cycles`; the old affine fit is
+kept as a diagnostic because a nonzero wave-number offset is not a model-domain
+normalization. Use `--figure8-beta-scale`, `--source-beta-per-model-cycle`, or
+`--model-cycles-per-source-beta` to change that decision. Use
+`--source-beta-modes` or `--source-beta-min/--source-beta-max/--source-beta-steps`
+to specify the Floquet mode scan on the source Figure 8 beta axis.
 
 `boundary_curves` contains beta-axis roots refined from adjacent mode sign
 changes, normalized to source-style axes as wave number versus forcing period.
@@ -118,14 +127,16 @@ private page render and QA overlay remain under `private/`. Use
 `--source-curve-file <path>` to override the source data or
 `--no-source-curve-comparison` to disable this comparison.
 
-The v4 report-level `source_curve_comparison` also includes:
+The v5 report-level `source_curve_comparison` also includes:
 
+- `domain_beta_mapping`: configured zero-offset model-domain normalization used
+  by source-curve errors and the fit objective.
 - `raw_beta_mapping`: identity generated-beta to source-beta mismatch.
 - `scale_only_beta_mapping`: best scalar generated-beta normalization.
 - `affine_beta_mapping`: best affine generated-beta normalization.
-- `fit_objective`: a lower-is-better score combining beta residuals, source
-  branch coverage, generated curve coverage, continuity, underresolved branch
-  penalties, and `-1`/`+1` period ordering.
+- `fit_objective`: a lower-is-better score combining domain-normalized beta
+  residuals, source branch coverage, generated curve coverage, continuity,
+  underresolved branch penalties, and `-1`/`+1` period ordering.
 
 Run the compact one-parameter fit search with:
 
@@ -133,7 +144,7 @@ Run the compact one-parameter fit search with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-fit --out reports\rule-2011-fit-search.json --max-trials 25
 ```
 
-This writes `format: rule-2011-figure8-fit-search-v1`. It ranks trial constants
+This writes `format: rule-2011-figure8-fit-search-v2`. It ranks trial constants
 around `rule_fig8_source_like` without promoting any trial into a named preset.
 
 Each mode row exports the 2x2 monodromy trace, determinant, and the three

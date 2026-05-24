@@ -132,6 +132,11 @@ also refines beta-axis crossings into source-axis `boundary_curves` for Figure
 8-style wave-number versus forcing-period calibration. The default
 `rule_fig8_source_like` parameter set names the current source-like constants
 from the paper extraction; explicit CLI flags still override individual values.
+The Figure 8 source beta normalization is now an explicit zero-offset model
+decision: `source_beta = 0.42868451880191133 * model_beta_cycles` by default.
+Use `--figure8-beta-scale` to change that domain scale, or use
+`--source-beta-modes` / `--source-beta-min` / `--source-beta-max` /
+`--source-beta-steps` to specify the scan on the source Figure 8 beta axis.
 
 Generate the first Rule Figure 8 fit-search report:
 
@@ -141,8 +146,8 @@ Generate the first Rule Figure 8 fit-search report:
 
 This keeps `rule_fig8_source_like` unchanged and records one-parameter
 calibration trials against the digitized Figure 8C source curves. The objective
-separates raw beta mismatch from scale-only and affine beta-axis mappings so
-normalization errors do not get confused with dynamical-branch errors.
+uses the configured domain-normalized beta residual while preserving raw,
+scale-only, and affine beta-axis mappings as diagnostics.
 
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 

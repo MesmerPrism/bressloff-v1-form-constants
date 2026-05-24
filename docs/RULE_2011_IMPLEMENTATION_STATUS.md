@@ -49,8 +49,8 @@ through a separate Rule preset registry.
     amplitude grid edges
   - refined beta-axis `boundary_curves` grouped as wave-number-versus-period
     curves for each amplitude and inhibitory-drive setting
-  - source-curve comparison fields with raw, scale-only, and affine beta-axis
-    normalization diagnostics
+  - source-curve comparison fields with configured domain-normalized, raw,
+    scale-only, and affine beta-axis normalization diagnostics
   - a report-level Figure 8 fit objective that combines beta residuals, branch
     coverage, continuity, underresolved branches, and +1/-1 period ordering
   - `nearest_margin` candidates that mark closest-to-threshold points for the
@@ -110,18 +110,30 @@ continuity fields, and a polynomial period-to-wave-number fit. Use
 beta-root refinement inside the current sign-change bands without expanding the
 whole grid.
 
+The Figure 8 domain/wave-number normalization is now an explicit report and CLI
+parameter instead of only a post-hoc affine display fit. The default v5
+decision is zero-offset:
+
+```text
+source_beta = 0.42868451880191133 * model_beta_cycles
+```
+
+This scale is used by source-curve errors and `fit_objective`; raw identity,
+best scale-only, and affine beta mappings remain in the report as diagnostics.
+Use `--figure8-beta-scale`, `--source-beta-per-model-cycle`, or
+`--model-cycles-per-source-beta` to change the domain scale. Use
+`--source-beta-modes` or `--source-beta-min/--source-beta-max/--source-beta-steps`
+to define the scan in the source Figure 8 beta coordinate.
+
 The Floquet report also reads
 `reports/source-curves/rule-2011-fig8-source-curves.json` by default when the
 report is written to `reports/rule-2011-floquet.json`. That file contains
 public-safe numeric coordinates digitized from the private Rule Figure 8C page
 render. The report-level `source_curve_comparison` summary and per-curve
 `source_comparison` fields are now the first quantitative validation surface
-against the published Figure 8C boundary geometry. The v4 report separates the
-identity beta-axis residual from scale-only and affine generated-beta to
-source-beta fits, then exposes a lower-is-better `fit_objective`. The current
-comparison is a calibration diagnostic, not a claim of reproduction; remaining
-error is expected until the Rule constants and domain/wave-number normalization
-are tuned.
+against the published Figure 8C boundary geometry. The current comparison is a
+calibration diagnostic, not a claim of reproduction; remaining error is
+expected until the Rule constants, branch coverage, and domain scale are tuned.
 
 Generate the compact Figure 8 fit-search report with:
 
@@ -143,8 +155,8 @@ The sweep and Floquet report formats are:
 
 ```text
 rule-2011-sweep-report-v1
-rule-2011-floquet-calibration-v4
-rule-2011-figure8-fit-search-v1
+rule-2011-floquet-calibration-v5
+rule-2011-figure8-fit-search-v2
 ```
 
 This is intentionally separate from:
