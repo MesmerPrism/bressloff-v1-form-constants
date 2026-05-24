@@ -120,6 +120,10 @@ Run the dedicated Rule Floquet calibration grid used for boundary hints:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
+The default Floquet mode grid scans 0.5-4.0 cycles. Use `--modes` for an
+explicit list or `--mode-min`, `--mode-max`, and `--mode-steps` for a regular
+wave-number scan when tightening the Rule Figure 8 boundary crossings.
+
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for
 analysis. Use `--solver accurate` if you need the slower fixed-step RK4 solve.
 

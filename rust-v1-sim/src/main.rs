@@ -1704,11 +1704,17 @@ struct RuleOrbitSummary {
 #[derive(Clone, Copy, Debug, Serialize)]
 struct RuleFloquetMode {
     beta_cycles: f64,
+    wave_number_radians: f64,
     multiplier_1_real: f64,
     multiplier_1_imag: f64,
     multiplier_2_real: f64,
     multiplier_2_imag: f64,
     max_abs_multiplier: f64,
+    monodromy_trace: f64,
+    monodromy_determinant: f64,
+    plus_condition: f64,
+    minus_condition: f64,
+    determinant_condition: f64,
     crossing_hint: &'static str,
 }
 
@@ -1751,8 +1757,10 @@ struct RuleFloquetBoundaryCandidate {
     stim_i_fraction: f64,
     from_period_ms: f64,
     from_amplitude: f64,
+    from_beta_cycles: f64,
     to_period_ms: f64,
     to_amplitude: f64,
+    to_beta_cycles: f64,
     margin_from: f64,
     margin_to: f64,
     confidence: f64,
@@ -1930,7 +1938,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 2,3,4,5,6,8,10] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 0.5,0.75,...,4.0] [--mode-min 0.5 --mode-max 4.0 --mode-steps 15] [model params]"
     );
 }
 
@@ -2408,7 +2416,10 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
     let mut stim_i_fraction_min: Option<f64> = None;
     let mut stim_i_fraction_max: Option<f64> = None;
     let mut stim_i_fraction_steps: Option<usize> = None;
-    let mut mode_cycles = vec![2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0];
+    let mut mode_cycles = rule_floquet_mode_defaults();
+    let mut mode_min: Option<f64> = None;
+    let mut mode_max: Option<f64> = None;
+    let mut mode_steps: Option<usize> = None;
     let mut raw = HashMap::new();
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -2509,6 +2520,27 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
                 mode_cycles =
                     parse_f64_csv(iter.next().ok_or("--modes requires a value")?, 0.5, 32.0)?;
             }
+            "--mode-min" => {
+                mode_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--mode-min requires a value")?,
+                    0.05,
+                    32.0,
+                )?);
+            }
+            "--mode-max" => {
+                mode_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--mode-max requires a value")?,
+                    0.05,
+                    32.0,
+                )?);
+            }
+            "--mode-steps" => {
+                mode_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--mode-steps requires a value")?,
+                    1,
+                    257,
+                )?);
+            }
             "--no-trim-warmup" => {
                 raw.insert("trim_warmup".to_string(), "false".to_string());
             }
@@ -2519,6 +2551,14 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
             }
             _ => {}
         }
+    }
+
+    if mode_min.is_some() || mode_max.is_some() || mode_steps.is_some() {
+        mode_cycles = linspace_values(
+            mode_min.unwrap_or_else(|| *mode_cycles.first().unwrap_or(&0.5)),
+            mode_max.unwrap_or_else(|| *mode_cycles.last().unwrap_or(&4.0)),
+            mode_steps.unwrap_or(mode_cycles.len()),
+        );
     }
 
     if let Some(periods) = periods_override {
@@ -2579,8 +2619,8 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         format: "rule-2011-floquet-calibration-v1",
         model_family: MODEL_FAMILY_RULE,
         source_key: "rule-2011",
-        status: "first-pass-homogeneous-orbit",
-        note: "Homogeneous-orbit monodromy grid for Rule et al. 2011 qualitative regimes; boundary candidates are first-pass numerical hints, not a published-figure calibration.",
+        status: "figure8-first-pass-sign-crossings",
+        note: "Homogeneous-orbit monodromy grid for Rule et al. 2011 Figure 8 style diagnostics. The default mode grid resolves true +1/-1 sign-change crossings, but the curves are still first-pass numerical boundaries, not a final published-figure reproduction.",
         grid: rule_sweep_grid_details(&grid),
         mode_cycles,
         points,
@@ -2667,6 +2707,10 @@ fn rule_sweep_grid_defaults(name: &str) -> RuleSweepGridConfig {
             preview_step: 0.5,
         },
     }
+}
+
+fn rule_floquet_mode_defaults() -> Vec<f64> {
+    linspace_values(0.5, 4.0, 15)
 }
 
 fn rule_sweep_grid_details(grid: &RuleSweepGridConfig) -> RuleSweepGridDetails {
@@ -4059,11 +4103,17 @@ fn rule_floquet_report(params: FrameParams, mode_cycles: &[f64]) -> RuleFloquetR
         .max_by(|a, b| a.max_abs_multiplier.total_cmp(&b.max_abs_multiplier))
         .unwrap_or(RuleFloquetMode {
             beta_cycles: 0.0,
+            wave_number_radians: 0.0,
             multiplier_1_real: 0.0,
             multiplier_1_imag: 0.0,
             multiplier_2_real: 0.0,
             multiplier_2_imag: 0.0,
             max_abs_multiplier: 0.0,
+            monodromy_trace: 0.0,
+            monodromy_determinant: 0.0,
+            plus_condition: 1.0,
+            minus_condition: 1.0,
+            determinant_condition: 1.0,
             crossing_hint: "no-modes",
         });
     let plus_crossing_modes = modes
@@ -4151,6 +4201,7 @@ fn rule_floquet_boundary_candidates(
             }
         }
     }
+    candidates.extend(rule_floquet_beta_boundary_candidates(points));
     candidates.extend(rule_floquet_nearest_boundary_candidates(points, 6));
     candidates.sort_by(|a, b| {
         b.confidence
@@ -4229,12 +4280,71 @@ fn rule_floquet_boundary_between(
                     + (to.stim_i_fraction - from.stim_i_fraction) * t,
                 from_period_ms: from.period_ms,
                 from_amplitude: from.amplitude,
+                from_beta_cycles: from_mode.beta_cycles,
                 to_period_ms: to.period_ms,
                 to_amplitude: to.amplitude,
+                to_beta_cycles: to_mode.beta_cycles,
                 margin_from,
                 margin_to,
                 confidence: (margin_to - margin_from).abs().min(1.0),
             });
+        }
+    }
+    candidates
+}
+
+fn rule_floquet_beta_boundary_candidates(
+    points: &[RuleFloquetGridPoint],
+) -> Vec<RuleFloquetBoundaryCandidate> {
+    const KINDS: [&str; 3] = [
+        "minus_period_doubling",
+        "plus_one_to_one",
+        "unstable_complex",
+    ];
+    let mut candidates = Vec::new();
+    for point in points {
+        let mut modes = point.modes.clone();
+        modes.sort_by(|a, b| a.beta_cycles.total_cmp(&b.beta_cycles));
+        for pair in modes.windows(2) {
+            let from_mode = pair[0];
+            let to_mode = pair[1];
+            for kind in KINDS {
+                let margin_from = floquet_mode_margin(&from_mode, kind);
+                let margin_to = floquet_mode_margin(&to_mode, kind);
+                if !margin_from.is_finite() || !margin_to.is_finite() {
+                    continue;
+                }
+                let crosses = (margin_from <= 0.0 && margin_to > 0.0)
+                    || (margin_to <= 0.0 && margin_from > 0.0);
+                if !crosses {
+                    continue;
+                }
+                let denom = margin_to - margin_from;
+                let t = if denom.abs() < 1.0e-12 {
+                    0.5
+                } else {
+                    (-margin_from / denom).clamp(0.0, 1.0)
+                };
+                candidates.push(RuleFloquetBoundaryCandidate {
+                    kind,
+                    evidence: "sign_change",
+                    beta_cycles: from_mode.beta_cycles
+                        + (to_mode.beta_cycles - from_mode.beta_cycles) * t,
+                    axis: "beta",
+                    period_ms: point.period_ms,
+                    amplitude: point.amplitude,
+                    stim_i_fraction: point.stim_i_fraction,
+                    from_period_ms: point.period_ms,
+                    from_amplitude: point.amplitude,
+                    from_beta_cycles: from_mode.beta_cycles,
+                    to_period_ms: point.period_ms,
+                    to_amplitude: point.amplitude,
+                    to_beta_cycles: to_mode.beta_cycles,
+                    margin_from,
+                    margin_to,
+                    confidence: (margin_to - margin_from).abs().min(1.0),
+                });
+            }
         }
     }
     candidates
@@ -4270,8 +4380,10 @@ fn rule_floquet_nearest_boundary_candidates(
                         stim_i_fraction: point.stim_i_fraction,
                         from_period_ms: point.period_ms,
                         from_amplitude: point.amplitude,
+                        from_beta_cycles: mode.beta_cycles,
                         to_period_ms: point.period_ms,
                         to_amplitude: point.amplitude,
+                        to_beta_cycles: mode.beta_cycles,
                         margin_from: margin,
                         margin_to: margin,
                         confidence: (1.0 - margin.abs().min(1.0)).max(0.0),
@@ -4304,31 +4416,10 @@ fn max_floquet_margin(modes: &[RuleFloquetMode], kind: &'static str) -> f64 {
 
 fn floquet_mode_margin(mode: &RuleFloquetMode, kind: &'static str) -> f64 {
     match kind {
-        "minus_period_doubling" => real_multiplier_margin(mode, -1.0),
-        "plus_one_to_one" => real_multiplier_margin(mode, 1.0),
-        "unstable_complex" => {
-            if mode.multiplier_1_imag.abs() > 1.0e-9 || mode.multiplier_2_imag.abs() > 1.0e-9 {
-                mode.max_abs_multiplier - 1.0
-            } else {
-                -1.0
-            }
-        }
+        "minus_period_doubling" => -mode.minus_condition,
+        "plus_one_to_one" => -mode.plus_condition,
+        "unstable_complex" => -mode.determinant_condition,
         _ => mode.max_abs_multiplier - 1.0,
-    }
-}
-
-fn real_multiplier_margin(mode: &RuleFloquetMode, sign: f64) -> f64 {
-    let mut margin = f64::NEG_INFINITY;
-    if mode.multiplier_1_imag.abs() < 1.0e-9 {
-        margin = margin.max(sign * mode.multiplier_1_real - 1.0);
-    }
-    if mode.multiplier_2_imag.abs() < 1.0e-9 {
-        margin = margin.max(sign * mode.multiplier_2_real - 1.0);
-    }
-    if margin.is_finite() {
-        margin
-    } else {
-        -1.0
     }
 }
 
@@ -4430,11 +4521,19 @@ fn rule_floquet_mode(
         m11 = next11;
     }
 
-    floquet_mode_from_matrix(beta_cycles, m00, m01, m10, m11)
+    floquet_mode_from_matrix(
+        beta_cycles,
+        rule_wave_number_for_cycles(beta_cycles, params.n),
+        m00,
+        m01,
+        m10,
+        m11,
+    )
 }
 
 fn floquet_mode_from_matrix(
     beta_cycles: f64,
+    wave_number_radians: f64,
     m00: f64,
     m01: f64,
     m10: f64,
@@ -4453,25 +4552,31 @@ fn floquet_mode_from_matrix(
     };
     let abs_1 = (l1_real * l1_real + l1_imag * l1_imag).sqrt();
     let abs_2 = (l2_real * l2_real + l2_imag * l2_imag).sqrt();
-    let crossing_hint = if (l1_imag.abs() < 1.0e-9 && l1_real < -1.0)
-        || (l2_imag.abs() < 1.0e-9 && l2_real < -1.0)
-    {
+    let plus_condition = 1.0 - trace + determinant;
+    let minus_condition = 1.0 + trace + determinant;
+    let determinant_condition = 1.0 - determinant;
+    let crossing_hint = if minus_condition < 0.0 {
         "minus_period_doubling"
-    } else if (l1_imag.abs() < 1.0e-9 && l1_real > 1.0) || (l2_imag.abs() < 1.0e-9 && l2_real > 1.0)
-    {
+    } else if plus_condition < 0.0 {
         "plus_one_to_one"
-    } else if abs_1.max(abs_2) > 1.0 {
+    } else if determinant_condition < 0.0 {
         "unstable_complex"
     } else {
         "stable"
     };
     RuleFloquetMode {
         beta_cycles,
+        wave_number_radians,
         multiplier_1_real: l1_real,
         multiplier_1_imag: l1_imag,
         multiplier_2_real: l2_real,
         multiplier_2_imag: l2_imag,
         max_abs_multiplier: abs_1.max(abs_2),
+        monodromy_trace: trace,
+        monodromy_determinant: determinant,
+        plus_condition,
+        minus_condition,
+        determinant_condition,
         crossing_hint,
     }
 }
@@ -4483,9 +4588,14 @@ fn rule_sigmoid_derivative(input: f64) -> f64 {
 
 fn rule_kernel_mode_gain(sigma: f64, beta_cycles: f64, angle: f64, n: usize) -> f64 {
     let kernel = rule_gaussian_kernel(sigma);
-    let qx = 2.0 * PI * beta_cycles * angle.cos() / n as f64;
-    let qy = 2.0 * PI * beta_cycles * angle.sin() / n as f64;
+    let q = rule_wave_number_for_cycles(beta_cycles, n);
+    let qx = q * angle.cos();
+    let qy = q * angle.sin();
     rule_kernel_1d_gain(&kernel, qx) * rule_kernel_1d_gain(&kernel, qy)
+}
+
+fn rule_wave_number_for_cycles(beta_cycles: f64, n: usize) -> f64 {
+    2.0 * PI * beta_cycles / n as f64
 }
 
 fn rule_kernel_1d_gain(kernel: &RuleGaussianKernel, q: f64) -> f64 {
@@ -6743,6 +6853,8 @@ mod tests {
         assert_eq!(report.modes.len(), 2);
         assert!(report.orbit.samples > 0);
         assert!(report.strongest_mode.max_abs_multiplier.is_finite());
+        assert!(report.strongest_mode.monodromy_trace.is_finite());
+        assert!(report.strongest_mode.plus_condition.is_finite());
     }
 
     #[test]
@@ -6784,6 +6896,26 @@ mod tests {
     }
 
     #[test]
+    fn rule_floquet_boundary_candidates_detect_beta_sign_changes() {
+        let point = RuleFloquetGridPoint {
+            modes: vec![test_floquet_mode(1.0, 0.98), test_floquet_mode(1.5, 1.04)],
+            ..test_floquet_grid_point(60.0, 0.8, 0.9)
+        };
+        let candidates = rule_floquet_boundary_candidates(&[point], &[60.0], &[0.8], &[0.0]);
+        let plus = candidates
+            .iter()
+            .find(|candidate| {
+                candidate.kind == "plus_one_to_one"
+                    && candidate.evidence == "sign_change"
+                    && candidate.axis == "beta"
+            })
+            .expect("expected beta-axis +1 boundary candidate");
+        assert!(plus.beta_cycles > 1.0 && plus.beta_cycles < 1.5);
+        assert_eq!(plus.from_beta_cycles, 1.0);
+        assert_eq!(plus.to_beta_cycles, 1.5);
+    }
+
+    #[test]
     fn rule_sweep_dense_grid_has_expected_dimensions() {
         let grid = rule_sweep_grid_defaults("dense");
         assert_eq!(grid.preset, "dense");
@@ -6801,19 +6933,7 @@ mod tests {
         amplitude: f64,
         plus_multiplier: f64,
     ) -> RuleFloquetGridPoint {
-        let mode = RuleFloquetMode {
-            beta_cycles: 4.0,
-            multiplier_1_real: plus_multiplier,
-            multiplier_1_imag: 0.0,
-            multiplier_2_real: 0.2,
-            multiplier_2_imag: 0.0,
-            max_abs_multiplier: plus_multiplier.abs().max(0.2),
-            crossing_hint: if plus_multiplier > 1.0 {
-                "plus_one_to_one"
-            } else {
-                "stable"
-            },
-        };
+        let mode = test_floquet_mode(4.0, plus_multiplier);
         RuleFloquetGridPoint {
             period_ms,
             amplitude,
@@ -6836,5 +6956,16 @@ mod tests {
             },
             modes: vec![mode],
         }
+    }
+
+    fn test_floquet_mode(beta_cycles: f64, plus_multiplier: f64) -> RuleFloquetMode {
+        floquet_mode_from_matrix(
+            beta_cycles,
+            rule_wave_number_for_cycles(beta_cycles, 32),
+            plus_multiplier,
+            0.0,
+            0.0,
+            0.2,
+        )
     }
 }

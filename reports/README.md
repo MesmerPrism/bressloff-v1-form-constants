@@ -78,8 +78,19 @@ The dedicated first-pass Rule Floquet calibration surface is generated with:
 
 It uses `format: rule-2011-floquet-calibration-v1` and
 `model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
-margins over the dense grid plus `boundary_candidates`. Candidates marked
-`evidence: sign_change` are strict grid-edge crossings; candidates marked
-`evidence: nearest_margin` are closest-to-threshold markers for the current
-coarse calibration and should be read as visual guidance, not final Rule
-Figure 8 boundaries.
+margins over the dense grid plus `boundary_candidates`. The mode grid defaults
+to 0.5-4.0 cycles, which is low enough to expose first-pass Rule Figure 8-style
+boundary crossings.
+
+Each mode row exports the 2x2 monodromy trace, determinant, and the three
+source-style threshold conditions:
+
+- `plus_condition = 1 - trace + determinant`
+- `minus_condition = 1 + trace + determinant`
+- `determinant_condition = 1 - determinant`
+
+Candidates marked `evidence: sign_change` are adjacent beta, period, or
+amplitude grid edges where one of those conditions changes sign. Candidates
+marked `evidence: nearest_margin` are closest-to-threshold markers for the
+current coarse calibration and should be read as visual guidance, not final
+Rule Figure 8 boundaries.

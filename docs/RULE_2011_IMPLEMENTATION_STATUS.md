@@ -43,8 +43,10 @@ through a separate Rule preset registry.
   - first-pass 2x2 monodromy multipliers for representative spatial modes
 - Dedicated `rule-floquet` report with:
   - dense homogeneous-orbit monodromy grid points
-  - per-mode +1, -1, and complex-instability margins
-  - strict `sign_change` boundary candidates when a grid edge crosses threshold
+  - per-mode 2x2 monodromy trace and determinant
+  - source-style +1, -1, and determinant threshold conditions
+  - first-pass `sign_change` boundary candidates along beta, period, and
+    amplitude grid edges
   - `nearest_margin` candidates that mark closest-to-threshold points for the
     current coarse calibration
 
@@ -84,6 +86,11 @@ Generate the dedicated first-pass Floquet calibration surface with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
+The default Floquet scan now includes 0.5-4.0 spatial cycles, which produces
+first-pass +1 and -1 sign-change boundary crossings. Use `--modes` for an
+explicit wave-number list, or `--mode-min`, `--mode-max`, and `--mode-steps`
+for regular refinement around an observed crossing.
+
 The sweep command also accepts explicit lists and regular grids:
 
 ```powershell
@@ -107,7 +114,8 @@ bressloff-paper-calibration-v4
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
 - Figure-level Floquet phase-boundary calibration for Rule Figure 8 against the
-  published axes and parameter set.
+  published axes and parameter set, including curve refinement beyond the
+  current first-pass sign-change grid.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.

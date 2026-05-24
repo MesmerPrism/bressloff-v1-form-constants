@@ -119,6 +119,10 @@ Generate the first dedicated Rule Floquet calibration surface:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
+Use `--mode-min`, `--mode-max`, and `--mode-steps` to refine the Figure
+8-style wave-number scan. The default mode grid covers 0.5-4.0 cycles and is
+dense enough to expose first-pass +1 and -1 sign-change crossings.
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is

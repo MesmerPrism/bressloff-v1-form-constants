@@ -14,7 +14,7 @@ flicker model separate from the Bressloff orientation-hypercolumn registry.
 | Figure 4 pattern islands | First qualitative frequency/amplitude map | `reports/rule-2011-sweep-dense.json` | Calibrate island boundaries and add source-figure comparison metrics. |
 | Figure 5 period examples | Seeded high-frequency stripe and low-frequency hexagonal examples | `reports/rule-2011-regimes.json`, `reports/rule-2011-sweep.json` | Tighten exact periods/amplitudes and initial-condition sensitivity. |
 | Figure 6 frequency-amplitude map | Dense first-pass sweep grid with spatial and temporal classifiers | `reports/rule-2011-sweep-dense.json` | Increase resolution, tune thresholds, and compare to published map. |
-| Figure 8 Floquet boundaries | Dedicated first-pass homogeneous-orbit monodromy grid with threshold-margin candidates | `reports/rule-2011-floquet.json` | Calibrate exact phase-boundary curves against the published axes and parameter set. |
+| Figure 8 Floquet boundaries | Dedicated first-pass homogeneous-orbit monodromy grid with true +1/-1 sign-change candidates | `reports/rule-2011-floquet.json` | Refine curves against the published axes and parameter set. |
 | Figure 9 feed-forward inhibition | CLI supports `--stim-i-fractions` grids, but no dedicated report yet | `rule-sweep --stim-i-fraction-*` | Generate inhibition-specific report and website panel. |
 | Figure 10 hexagonal-lattice normal form | Deferred | None | Implement lattice-reduced normal-form analysis after Floquet boundaries stabilize. |
 | Figure 11 two-hemifield coupling | Deferred | None | Add a coupled-domain model only after the one-field Rule track is calibrated. |
@@ -31,9 +31,11 @@ rule-spatial-temporal-diagnostics-v2`.
   period-doubled, or mixed response estimate.
 - Weak spatial contrast is explicitly marked in `classification_note` so a
   strong temporal repeat is not overstated as a strong visible pattern.
-- The Floquet report exports +1, -1, and complex-instability margins. Boundary
-  candidates marked `sign_change` are strict grid-edge crossings; candidates
-  marked `nearest_margin` show the closest coarse-grid approach to a threshold.
+- The Floquet report exports the 2x2 monodromy trace, determinant, +1, -1, and
+  determinant threshold conditions. Boundary candidates marked `sign_change`
+  are adjacent beta, period, or amplitude grid edges where one of those
+  conditions changes sign; candidates marked `nearest_margin` show the closest
+  coarse-grid approach to a threshold.
 
 These diagnostics are implementation tools. They should not be read as a final
 reproduction of the paper's stability boundaries until the figure-level
