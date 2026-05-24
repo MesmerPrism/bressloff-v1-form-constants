@@ -8,6 +8,18 @@ Regenerate the current paper-preset calibration report with:
 .\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
 ```
 
+Generate public-safe Bressloff figure-geometry still targets with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
+```
+
+This writes `format: bressloff-generated-figure-stills-v1` under
+`reports/figure-targets/`. The report contains generated-only normalized still
+frames for Figures 29-36 plus radial, angular, and edge metrics. It deliberately
+does not contain source paper scans or crops; private/source-derived masks can
+be matched to these generated still IDs in a later calibration pass.
+
 Orientation-channel payloads are intentionally generated on demand because they
 can become large. Example:
 
@@ -70,17 +82,19 @@ confidence diagnostics, homogeneous-orbit summaries, and first-pass monodromy
 multipliers. It is still a qualitative implementation report, not an exact
 reproduction of Rule's published stability boundary figures.
 
-The dedicated first-pass Rule Floquet calibration surface is generated with:
+The dedicated Rule Floquet calibration surface is generated with:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
-It uses `format: rule-2011-floquet-calibration-v1` and
+It uses `format: rule-2011-floquet-calibration-v2` and
 `model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
 margins over the dense grid plus `boundary_candidates`. The mode grid defaults
 to 0.5-4.0 cycles, which is low enough to expose first-pass Rule Figure 8-style
-boundary crossings.
+boundary crossings. It also exports `boundary_curves`: beta-axis roots refined
+from adjacent mode sign changes and grouped as wave-number-versus-period curves
+for each amplitude and inhibitory-drive setting.
 
 Each mode row exports the 2x2 monodromy trace, determinant, and the three
 source-style threshold conditions:

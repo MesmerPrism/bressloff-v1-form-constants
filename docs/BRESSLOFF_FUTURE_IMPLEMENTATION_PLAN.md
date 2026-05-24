@@ -1,6 +1,6 @@
 # Bressloff Future Implementation Plan
 
-Updated: 2026-05-23
+Updated: 2026-05-24
 
 This plan starts from the current Bressloff implementation state:
 
@@ -13,6 +13,10 @@ This plan starts from the current Bressloff implementation state:
   stability reports, and 1 stability review item.
 - The remaining work is calibration and model fidelity, not basic source
   incorporation.
+- Workstream 1 now has a generated-only report scaffold:
+  `reports/figure-targets/bressloff-generated-stills.json` exports stable
+  Figures 29-36 stills and public-safe derived metrics. Private/source-derived
+  masks remain the next step.
 
 The implementation deliberately separates three claims:
 
@@ -45,10 +49,12 @@ only as named pattern families. It covers the non-contoured single-map figures
 1. Create a `reports/figure-targets/` convention for public-safe derived
    calibration data. Do not commit original figure scans unless reuse permission
    or a compatible license is confirmed.
+   Status: started with generated-only still targets and metrics.
 2. Add a local/private extraction path for source-page screenshots and derived
    binary/edge masks.
 3. Add a calibration command mode that exports fixed-size rendered stills for
    each preset with stable viewport, scale, phase, and threshold settings.
+   Status: started as `bressloff-geometry`.
 4. Add image metrics:
    - orientation-independent structural similarity for scalar figures,
    - edge/contour overlap for contoured figures,

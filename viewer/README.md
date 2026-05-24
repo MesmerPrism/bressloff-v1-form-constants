@@ -96,6 +96,12 @@ Run the paper-preset calibration suite:
 .\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
 ```
 
+Run the generated Bressloff figure-geometry still export for Figures 29-36:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
+```
+
 Run the Rule qualitative regime report:
 
 ```powershell
@@ -122,7 +128,8 @@ Run the dedicated Rule Floquet calibration grid used for boundary hints:
 
 The default Floquet mode grid scans 0.5-4.0 cycles. Use `--modes` for an
 explicit list or `--mode-min`, `--mode-max`, and `--mode-steps` for a regular
-wave-number scan when tightening the Rule Figure 8 boundary crossings.
+wave-number scan when tightening the Rule Figure 8 boundary crossings. The
+report refines beta-axis crossings into first-pass boundary curve points.
 
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for
 analysis. Use `--solver accurate` if you need the slower fixed-step RK4 solve.

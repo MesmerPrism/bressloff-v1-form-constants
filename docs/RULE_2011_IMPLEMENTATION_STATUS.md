@@ -47,6 +47,8 @@ through a separate Rule preset registry.
   - source-style +1, -1, and determinant threshold conditions
   - first-pass `sign_change` boundary candidates along beta, period, and
     amplitude grid edges
+  - refined beta-axis `boundary_curves` grouped as wave-number-versus-period
+    curves for each amplitude and inhibitory-drive setting
   - `nearest_margin` candidates that mark closest-to-threshold points for the
     current coarse calibration
 
@@ -80,16 +82,17 @@ Generate the denser frequency/amplitude map with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
 ```
 
-Generate the dedicated first-pass Floquet calibration surface with:
+Generate the dedicated Floquet calibration surface with:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
 The default Floquet scan now includes 0.5-4.0 spatial cycles, which produces
-first-pass +1 and -1 sign-change boundary crossings. Use `--modes` for an
-explicit wave-number list, or `--mode-min`, `--mode-max`, and `--mode-steps`
-for regular refinement around an observed crossing.
+first-pass +1 and -1 sign-change boundary crossings and refined beta-axis curve
+points. Use `--modes` for an explicit wave-number list, or `--mode-min`,
+`--mode-max`, and `--mode-steps` for regular refinement around an observed
+crossing.
 
 The sweep command also accepts explicit lists and regular grids:
 
@@ -101,7 +104,7 @@ The sweep and Floquet report formats are:
 
 ```text
 rule-2011-sweep-report-v1
-rule-2011-floquet-calibration-v1
+rule-2011-floquet-calibration-v2
 ```
 
 This is intentionally separate from:
@@ -114,8 +117,8 @@ bressloff-paper-calibration-v4
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
 - Figure-level Floquet phase-boundary calibration for Rule Figure 8 against the
-  published axes and parameter set, including curve refinement beyond the
-  current first-pass sign-change grid.
+  published axes and parameter set, including curve fitting and source-axis
+  normalization beyond the current refined beta-root points.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.

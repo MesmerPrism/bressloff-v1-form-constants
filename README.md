@@ -95,6 +95,12 @@ Generate a side-by-side JSON calibration report for the named paper presets:
 .\rust-v1-sim\target\release\bressloff-v1.exe calibrate --out reports\paper-calibration.json
 ```
 
+Generate public-safe Bressloff figure-geometry still targets for Figures 29-36:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
+```
+
 Generate the first Rule 2011 qualitative regime report:
 
 ```powershell
@@ -121,7 +127,9 @@ Generate the first dedicated Rule Floquet calibration surface:
 
 Use `--mode-min`, `--mode-max`, and `--mode-steps` to refine the Figure
 8-style wave-number scan. The default mode grid covers 0.5-4.0 cycles and is
-dense enough to expose first-pass +1 and -1 sign-change crossings.
+dense enough to expose first-pass +1 and -1 sign-change crossings. The report
+also refines beta-axis crossings into `boundary_curves` for Figure 8-style
+wave-number versus forcing-period calibration.
 
 ## Viewer Workflow
 

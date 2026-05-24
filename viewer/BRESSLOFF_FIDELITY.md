@@ -53,6 +53,9 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 - `calibrate` command that writes a v4 JSON side-by-side report comparing all 24
   named presets against rendered contour mode, parity, rendered planform,
   same-lattice branch selection, and global score winner.
+- `bressloff-geometry` command that writes generated-only still targets for
+  Figures 29-36, with normalized frame data plus radial, angular, and edge
+  metrics for later private source-mask comparison.
 - Non-rendering stability reports for the Fig 37-40 coefficient/bifurcation
   targets and the current rhombic-angle diagnostic.
 - Separate Rule 2011 scalar E/I flicker track under
@@ -81,8 +84,8 @@ Bressloff, Cowan, Golubitsky, Thomas, and Wiener geometric hallucination model.
 
 ## Still Missing
 
-- Calibration of the paper presets against exact digitized figure geometry and
-  parameter values.
+- Private/source-derived masks for exact digitized figure geometry and parameter
+  values. Generated comparison stills now exist; source masks are not committed.
 - Efficient compact-basis export for orientation channels when the full tensor is
   too large.
 - Dynamics-to-contour overlay from simulated orientation channels.
