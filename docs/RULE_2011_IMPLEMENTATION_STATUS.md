@@ -49,8 +49,14 @@ through a separate Rule preset registry.
     amplitude grid edges
   - refined beta-axis `boundary_curves` grouped as wave-number-versus-period
     curves for each amplitude and inhibitory-drive setting
+  - source-curve comparison fields with raw, scale-only, and affine beta-axis
+    normalization diagnostics
+  - a report-level Figure 8 fit objective that combines beta residuals, branch
+    coverage, continuity, underresolved branches, and +1/-1 period ordering
   - `nearest_margin` candidates that mark closest-to-threshold points for the
     current coarse calibration
+- Compact `rule-fit` report with one-parameter-at-a-time calibration trials
+  around `rule_fig8_source_like`, kept separate from named preset promotion.
 
 The low-frequency preset currently uses a 120 ms qualitative representative
 rather than claiming exact reproduction of Rule Figure 5B's 110 ms panel. This
@@ -110,9 +116,22 @@ report is written to `reports/rule-2011-floquet.json`. That file contains
 public-safe numeric coordinates digitized from the private Rule Figure 8C page
 render. The report-level `source_curve_comparison` summary and per-curve
 `source_comparison` fields are now the first quantitative validation surface
-against the published Figure 8C boundary geometry. The current comparison is a
-calibration diagnostic, not a claim of reproduction; remaining error is expected
-until the Rule constants and domain/wave-number normalization are tuned.
+against the published Figure 8C boundary geometry. The v4 report separates the
+identity beta-axis residual from scale-only and affine generated-beta to
+source-beta fits, then exposes a lower-is-better `fit_objective`. The current
+comparison is a calibration diagnostic, not a claim of reproduction; remaining
+error is expected until the Rule constants and domain/wave-number normalization
+are tuned.
+
+Generate the compact Figure 8 fit-search report with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-fit --out reports\rule-2011-fit-search.json --max-trials 25
+```
+
+The fit report keeps the baseline preset intact and ranks small perturbations
+of `tau_e`, `tau_i`, coupling strengths, kernel widths, thresholds, and stimulus
+threshold against the same source-curve objective.
 
 The sweep command also accepts explicit lists and regular grids:
 
@@ -124,7 +143,8 @@ The sweep and Floquet report formats are:
 
 ```text
 rule-2011-sweep-report-v1
-rule-2011-floquet-calibration-v3
+rule-2011-floquet-calibration-v4
+rule-2011-figure8-fit-search-v1
 ```
 
 This is intentionally separate from:

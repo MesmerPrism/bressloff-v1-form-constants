@@ -90,7 +90,7 @@ The dedicated Rule Floquet calibration surface is generated with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
 ```
 
-It uses `format: rule-2011-floquet-calibration-v3` and
+It uses `format: rule-2011-floquet-calibration-v4` and
 `model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
 margins over the dense grid plus `boundary_candidates`. The default
 `parameter_set` is `rule_fig8_source_like`, which names the current Rule
@@ -117,6 +117,24 @@ committed source-curve file contains only public-safe numeric coordinates; the
 private page render and QA overlay remain under `private/`. Use
 `--source-curve-file <path>` to override the source data or
 `--no-source-curve-comparison` to disable this comparison.
+
+The v4 report-level `source_curve_comparison` also includes:
+
+- `raw_beta_mapping`: identity generated-beta to source-beta mismatch.
+- `scale_only_beta_mapping`: best scalar generated-beta normalization.
+- `affine_beta_mapping`: best affine generated-beta normalization.
+- `fit_objective`: a lower-is-better score combining beta residuals, source
+  branch coverage, generated curve coverage, continuity, underresolved branch
+  penalties, and `-1`/`+1` period ordering.
+
+Run the compact one-parameter fit search with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-fit --out reports\rule-2011-fit-search.json --max-trials 25
+```
+
+This writes `format: rule-2011-figure8-fit-search-v1`. It ranks trial constants
+around `rule_fig8_source_like` without promoting any trial into a named preset.
 
 Each mode row exports the 2x2 monodromy trace, determinant, and the three
 source-style threshold conditions:

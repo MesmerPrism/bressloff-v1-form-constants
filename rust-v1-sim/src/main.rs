@@ -1,7 +1,7 @@
 #![recursion_limit = "256"]
 
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap, HashSet},
     env, fs,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
@@ -1736,6 +1736,44 @@ struct RuleFloquetCalibrationReport {
     boundary_curves: Vec<RuleFloquetBoundaryCurve>,
 }
 
+struct RuleFloquetEvaluation {
+    points: Vec<RuleFloquetGridPoint>,
+    boundary_candidates: Vec<RuleFloquetBoundaryCandidate>,
+    boundary_curves: Vec<RuleFloquetBoundaryCurve>,
+    source_curve_comparison: RuleFloquetSourceCurveComparisonSummary,
+}
+
+#[derive(Serialize)]
+struct RuleFigure8FitSearchReport {
+    format: &'static str,
+    model_family: &'static str,
+    source_key: &'static str,
+    status: &'static str,
+    note: &'static str,
+    baseline_parameter_set: &'static str,
+    source_curve_file: Option<String>,
+    grid: RuleSweepGridDetails,
+    mode_cycles: Vec<f64>,
+    curve_refinement: RuleFloquetCurveRefinement,
+    trial_count: usize,
+    best_trial_id: Option<String>,
+    best_score: Option<f64>,
+    trials: Vec<RuleFigure8FitTrial>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFigure8FitTrial {
+    trial_id: String,
+    status: &'static str,
+    parameter_changes: BTreeMap<String, String>,
+    parameter_values: BTreeMap<String, String>,
+    floquet_point_count: usize,
+    boundary_candidate_count: usize,
+    boundary_curve_count: usize,
+    boundary_curve_point_count: usize,
+    source_curve_comparison: RuleFloquetSourceCurveComparisonSummary,
+}
+
 #[derive(Clone, Copy, Debug, Serialize)]
 struct RuleFloquetSourceAxes {
     x_axis: &'static str,
@@ -1827,6 +1865,42 @@ struct RuleFloquetSourceCurveComparisonSummary {
     compared_curve_count: usize,
     mean_rms_wave_number_error: Option<f64>,
     max_rms_wave_number_error: Option<f64>,
+    raw_beta_mapping: Option<RuleFloquetBetaAxisMapping>,
+    scale_only_beta_mapping: Option<RuleFloquetBetaAxisMapping>,
+    affine_beta_mapping: Option<RuleFloquetBetaAxisMapping>,
+    fit_objective: Option<RuleFigure8FitObjective>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFloquetBetaAxisMapping {
+    model: &'static str,
+    generated_axis: &'static str,
+    source_axis: &'static str,
+    scale: f64,
+    offset: f64,
+    sample_count: usize,
+    mean_abs_error: f64,
+    rms_error: f64,
+    max_abs_error: f64,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFigure8FitObjective {
+    status: &'static str,
+    score: f64,
+    raw_rms_beta_error: f64,
+    affine_rms_beta_error: f64,
+    scale_only_rms_beta_error: f64,
+    source_branch_coverage: f64,
+    generated_curve_coverage: f64,
+    overlap_point_coverage: f64,
+    continuity_score: f64,
+    ordering_score: f64,
+    underresolved_branch_fraction: f64,
+    compared_curve_count: usize,
+    source_curve_count: usize,
+    matched_source_curve_count: usize,
+    overlap_point_count: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1998,6 +2072,26 @@ struct BressloffFigureStill {
     image: BressloffStillImage,
     metrics: BressloffStillMetrics,
     source_comparison: BressloffSourceComparison,
+}
+
+#[derive(Clone, Debug)]
+struct RuleFigure8ComparisonSample {
+    generated_beta_cycles: f64,
+    source_beta: f64,
+}
+
+#[derive(Clone, Debug)]
+struct RuleFigure8FitTrialSpec {
+    trial_id: String,
+    parameter_changes: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RuleFigure8FitParameterScan {
+    key: &'static str,
+    factors: [f64; 2],
+    min: f64,
+    max: f64,
 }
 
 #[derive(Serialize)]
@@ -2178,6 +2272,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "rule-report" | "rule-calibrate" => rule_report_command(&args[2..])?,
         "rule-sweep" => rule_sweep_command(&args[2..])?,
         "rule-floquet" => rule_floquet_command(&args[2..])?,
+        "rule-fit" | "rule-figure8-fit" => rule_fit_command(&args[2..])?,
         "serve" => serve_command(&args[2..])?,
         "--help" | "-h" => print_usage(),
         other => {
@@ -2190,7 +2285,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 bressloff-geometry [--out reports/figure-targets/bressloff-generated-stills.json] [--preset-set figures29-36|all] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 0.5,0.75,...,4.0] [--mode-min 0.5 --mode-max 4.0 --mode-steps 15] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 bressloff-geometry [--out reports/figure-targets/bressloff-generated-stills.json] [--preset-set figures29-36|all] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 0.5,0.75,...,4.0] [--mode-min 0.5 --mode-max 4.0 --mode-steps 15] [model params]\n  bressloff-v1 rule-fit [--out reports/rule-2011-fit-search.json] [--max-trials 25] [rule-floquet options] [model params]"
     );
 }
 
@@ -3276,29 +3371,6 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         );
     }
 
-    let mut points = Vec::new();
-    for period in &grid.periods {
-        for amplitude in &grid.amplitudes {
-            for stim_i_fraction in &grid.stim_i_fractions {
-                let params = rule_sweep_params(&raw, &grid, *period, *amplitude, *stim_i_fraction);
-                points.push(rule_floquet_grid_point_for(params, &mode_cycles));
-            }
-        }
-    }
-
-    let boundary_candidates = rule_floquet_boundary_candidates(
-        &points,
-        &grid.periods,
-        &grid.amplitudes,
-        &grid.stim_i_fractions,
-    );
-    let mut boundary_curves = rule_floquet_beta_boundary_curves(
-        &points,
-        &raw,
-        &grid,
-        curve_refine_tolerance,
-        curve_refine_steps,
-    );
     let source_curve_file = if source_curve_comparison_enabled {
         Some(source_curve_file.unwrap_or_else(|| default_rule_figure8_source_curve_file(&out)))
     } else {
@@ -3308,19 +3380,24 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         Some(path) if path.exists() => Some(load_rule_figure8_source_curves(path)?),
         _ => None,
     };
-    let source_curve_comparison = apply_rule_figure8_source_comparison(
-        &mut boundary_curves,
+
+    let evaluation = rule_floquet_evaluation(
+        &raw,
+        &grid,
+        &mode_cycles,
+        curve_refine_tolerance,
+        curve_refine_steps,
         source_curves.as_ref(),
         source_curve_file.as_ref(),
     );
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent)?;
     }
-    let point_count = points.len();
-    let boundary_count = boundary_candidates.len();
-    let curve_count = boundary_curves.len();
+    let point_count = evaluation.points.len();
+    let boundary_count = evaluation.boundary_candidates.len();
+    let curve_count = evaluation.boundary_curves.len();
     let report = RuleFloquetCalibrationReport {
-        format: "rule-2011-floquet-calibration-v3",
+        format: "rule-2011-floquet-calibration-v4",
         model_family: MODEL_FAMILY_RULE,
         source_key: "rule-2011",
         parameter_set,
@@ -3341,12 +3418,12 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
             tolerance: curve_refine_tolerance,
             max_steps: curve_refine_steps,
         },
-        source_curve_comparison,
+        source_curve_comparison: evaluation.source_curve_comparison,
         grid: rule_sweep_grid_details(&grid),
         mode_cycles,
-        points,
-        boundary_candidates,
-        boundary_curves,
+        points: evaluation.points,
+        boundary_candidates: evaluation.boundary_candidates,
+        boundary_curves: evaluation.boundary_curves,
     };
     fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
     println!(
@@ -3356,11 +3433,570 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+fn rule_fit_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/rule-2011-fit-search.json");
+    let mut grid = rule_sweep_grid_defaults("dense");
+    let mut parameter_set = "rule_fig8_source_like";
+    let mut curve_refine_steps = 48usize;
+    let mut curve_refine_tolerance = 1.0e-6;
+    let mut source_curve_file: Option<PathBuf> = None;
+    let mut source_curve_comparison_enabled = true;
+    let mut max_trials = 25usize;
+    let mut periods_override: Option<Vec<f64>> = None;
+    let mut amplitudes_override: Option<Vec<f64>> = None;
+    let mut stim_i_fractions_override: Option<Vec<f64>> = None;
+    let mut period_min: Option<f64> = None;
+    let mut period_max: Option<f64> = None;
+    let mut period_steps: Option<usize> = None;
+    let mut amplitude_min: Option<f64> = None;
+    let mut amplitude_max: Option<f64> = None;
+    let mut amplitude_steps: Option<usize> = None;
+    let mut stim_i_fraction_min: Option<f64> = None;
+    let mut stim_i_fraction_max: Option<f64> = None;
+    let mut stim_i_fraction_steps: Option<usize> = None;
+    let mut mode_cycles = rule_floquet_mode_defaults();
+    let mut mode_min: Option<f64> = None;
+    let mut mode_max: Option<f64> = None;
+    let mut mode_steps: Option<usize> = None;
+    let mut raw = HashMap::new();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--max-trials" => {
+                max_trials = parse_clamped_usize(
+                    iter.next().ok_or("--max-trials requires a value")?,
+                    1,
+                    101,
+                )?;
+            }
+            "--preset-grid" | "--grid" => {
+                grid =
+                    rule_sweep_grid_defaults(iter.next().ok_or("--preset-grid requires a value")?);
+            }
+            "--rule-parameter-set" | "--parameter-set" => {
+                parameter_set = parse_rule_parameter_set(
+                    iter.next().ok_or("--rule-parameter-set requires a value")?,
+                )?;
+            }
+            "--curve-refine-steps" => {
+                curve_refine_steps = parse_clamped_usize(
+                    iter.next().ok_or("--curve-refine-steps requires a value")?,
+                    1,
+                    128,
+                )?;
+            }
+            "--curve-refine-tolerance" => {
+                curve_refine_tolerance = parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--curve-refine-tolerance requires a value")?,
+                    1.0e-12,
+                    1.0e-2,
+                )?;
+            }
+            "--source-curve-file" => {
+                source_curve_file = Some(PathBuf::from(
+                    iter.next().ok_or("--source-curve-file requires a value")?,
+                ));
+            }
+            "--no-source-curve-comparison" => {
+                source_curve_comparison_enabled = false;
+            }
+            "--periods" => {
+                periods_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--periods requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-min" => {
+                period_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-min requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-max" => {
+                period_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-max requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-steps" => {
+                period_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--period-steps requires a value")?,
+                    1,
+                    61,
+                )?);
+            }
+            "--amplitudes" => {
+                amplitudes_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--amplitudes requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-min" => {
+                amplitude_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-min requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-max" => {
+                amplitude_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-max requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-steps" => {
+                amplitude_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--amplitude-steps requires a value")?,
+                    1,
+                    41,
+                )?);
+            }
+            "--stim-i-fractions" | "--inhibitory-drive" => {
+                stim_i_fractions_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--stim-i-fractions requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-min" | "--inhibitory-drive-min" => {
+                stim_i_fraction_min = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-min requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-max" | "--inhibitory-drive-max" => {
+                stim_i_fraction_max = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-max requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-steps" | "--inhibitory-drive-steps" => {
+                stim_i_fraction_steps = Some(parse_clamped_usize(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-steps requires a value")?,
+                    1,
+                    21,
+                )?);
+            }
+            "--modes" | "--mode-cycles" => {
+                mode_cycles =
+                    parse_f64_csv(iter.next().ok_or("--modes requires a value")?, 0.5, 32.0)?;
+            }
+            "--mode-min" => {
+                mode_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--mode-min requires a value")?,
+                    0.05,
+                    32.0,
+                )?);
+            }
+            "--mode-max" => {
+                mode_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--mode-max requires a value")?,
+                    0.05,
+                    32.0,
+                )?);
+            }
+            "--mode-steps" => {
+                mode_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--mode-steps requires a value")?,
+                    1,
+                    257,
+                )?);
+            }
+            "--no-trim-warmup" => {
+                raw.insert("trim_warmup".to_string(), "false".to_string());
+            }
+            flag if flag.starts_with("--") => {
+                let key = flag.trim_start_matches("--").replace('-', "_");
+                let value = iter.next().ok_or("flag requires a value")?;
+                raw.insert(key, value.clone());
+            }
+            _ => {}
+        }
+    }
+
+    apply_rule_parameter_set(&mut raw, parameter_set);
+
+    if mode_min.is_some() || mode_max.is_some() || mode_steps.is_some() {
+        mode_cycles = linspace_values(
+            mode_min.unwrap_or_else(|| *mode_cycles.first().unwrap_or(&0.5)),
+            mode_max.unwrap_or_else(|| *mode_cycles.last().unwrap_or(&4.0)),
+            mode_steps.unwrap_or(mode_cycles.len()),
+        );
+    }
+    if let Some(periods) = periods_override {
+        grid.periods = periods;
+    } else if period_min.is_some() || period_max.is_some() || period_steps.is_some() {
+        grid.periods = linspace_values(
+            period_min.unwrap_or_else(|| *grid.periods.first().unwrap_or(&40.0)),
+            period_max.unwrap_or_else(|| *grid.periods.last().unwrap_or(&160.0)),
+            period_steps.unwrap_or(grid.periods.len()),
+        );
+    }
+    if let Some(amplitudes) = amplitudes_override {
+        grid.amplitudes = amplitudes;
+    } else if amplitude_min.is_some() || amplitude_max.is_some() || amplitude_steps.is_some() {
+        grid.amplitudes = linspace_values(
+            amplitude_min.unwrap_or_else(|| *grid.amplitudes.first().unwrap_or(&0.4)),
+            amplitude_max.unwrap_or_else(|| *grid.amplitudes.last().unwrap_or(&1.2)),
+            amplitude_steps.unwrap_or(grid.amplitudes.len()),
+        );
+    }
+    if let Some(stim_i_fractions) = stim_i_fractions_override {
+        grid.stim_i_fractions = stim_i_fractions;
+    } else if stim_i_fraction_min.is_some()
+        || stim_i_fraction_max.is_some()
+        || stim_i_fraction_steps.is_some()
+    {
+        grid.stim_i_fractions = linspace_values(
+            stim_i_fraction_min.unwrap_or_else(|| *grid.stim_i_fractions.first().unwrap_or(&0.0)),
+            stim_i_fraction_max.unwrap_or_else(|| *grid.stim_i_fractions.last().unwrap_or(&0.0)),
+            stim_i_fraction_steps.unwrap_or(grid.stim_i_fractions.len()),
+        );
+    }
+
+    let source_curve_file = if source_curve_comparison_enabled {
+        Some(source_curve_file.unwrap_or_else(|| default_rule_figure8_source_curve_file(&out)))
+    } else {
+        None
+    };
+    let source_curves = match source_curve_file.as_ref() {
+        Some(path) if path.exists() => Some(load_rule_figure8_source_curves(path)?),
+        _ => None,
+    };
+
+    let trial_specs = default_rule_figure8_fit_trials(&raw, max_trials);
+    let mut trials = trial_specs
+        .iter()
+        .map(|spec| {
+            rule_figure8_fit_trial(
+                spec,
+                &raw,
+                &grid,
+                &mode_cycles,
+                curve_refine_tolerance,
+                curve_refine_steps,
+                source_curves.as_ref(),
+                source_curve_file.as_ref(),
+            )
+        })
+        .collect::<Vec<_>>();
+    trials.sort_by(|a, b| {
+        trial_score(a)
+            .unwrap_or(f64::INFINITY)
+            .total_cmp(&trial_score(b).unwrap_or(f64::INFINITY))
+    });
+    let best_trial_id = trials.first().and_then(|trial| {
+        trial
+            .source_curve_comparison
+            .fit_objective
+            .as_ref()
+            .map(|_| trial.trial_id.clone())
+    });
+    let best_score = trials.first().and_then(trial_score);
+    let report = RuleFigure8FitSearchReport {
+        format: "rule-2011-figure8-fit-search-v1",
+        model_family: MODEL_FAMILY_RULE,
+        source_key: "rule-2011",
+        status: if best_score.is_some() {
+            "scored-parameter-trials"
+        } else {
+            "source-comparison-unavailable"
+        },
+        note: "Small one-parameter-at-a-time Rule Figure 8 calibration search. Trials are scored against digitized source curves with identity, scale-only, and affine generated-beta-to-source-beta diagnostics; the baseline preset is not modified by this report.",
+        baseline_parameter_set: parameter_set,
+        source_curve_file: source_curve_file
+            .as_ref()
+            .map(|path| path.display().to_string()),
+        grid: rule_sweep_grid_details(&grid),
+        mode_cycles,
+        curve_refinement: RuleFloquetCurveRefinement {
+            method: "bisection_on_beta_sign_change",
+            tolerance: curve_refine_tolerance,
+            max_steps: curve_refine_steps,
+        },
+        trial_count: trials.len(),
+        best_trial_id,
+        best_score,
+        trials,
+    };
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
+    println!(
+        "wrote {} trials={} best_score={}",
+        out.display(),
+        report.trial_count,
+        report
+            .best_score
+            .map(|score| format!("{score:.6}"))
+            .unwrap_or_else(|| "n/a".to_string())
+    );
+    Ok(())
+}
+
 fn default_rule_figure8_source_curve_file(out: &Path) -> PathBuf {
     out.parent()
         .unwrap_or_else(|| Path::new("."))
         .join("source-curves")
         .join("rule-2011-fig8-source-curves.json")
+}
+
+fn rule_floquet_evaluation(
+    raw: &HashMap<String, String>,
+    grid: &RuleSweepGridConfig,
+    mode_cycles: &[f64],
+    curve_refine_tolerance: f64,
+    curve_refine_steps: usize,
+    source_curves: Option<&RuleFigure8SourceCurves>,
+    source_curve_file: Option<&PathBuf>,
+) -> RuleFloquetEvaluation {
+    let mut points = Vec::new();
+    for period in &grid.periods {
+        for amplitude in &grid.amplitudes {
+            for stim_i_fraction in &grid.stim_i_fractions {
+                let params = rule_sweep_params(raw, grid, *period, *amplitude, *stim_i_fraction);
+                points.push(rule_floquet_grid_point_for(params, mode_cycles));
+            }
+        }
+    }
+
+    let boundary_candidates = rule_floquet_boundary_candidates(
+        &points,
+        &grid.periods,
+        &grid.amplitudes,
+        &grid.stim_i_fractions,
+    );
+    let mut boundary_curves = rule_floquet_beta_boundary_curves(
+        &points,
+        raw,
+        grid,
+        curve_refine_tolerance,
+        curve_refine_steps,
+    );
+    let source_curve_comparison = apply_rule_figure8_source_comparison(
+        &mut boundary_curves,
+        source_curves,
+        source_curve_file,
+    );
+
+    RuleFloquetEvaluation {
+        points,
+        boundary_candidates,
+        boundary_curves,
+        source_curve_comparison,
+    }
+}
+
+fn default_rule_figure8_fit_trials(
+    baseline_raw: &HashMap<String, String>,
+    max_trials: usize,
+) -> Vec<RuleFigure8FitTrialSpec> {
+    let mut trials = vec![RuleFigure8FitTrialSpec {
+        trial_id: "baseline".to_string(),
+        parameter_changes: BTreeMap::new(),
+    }];
+    for scan in rule_figure8_fit_parameter_scans() {
+        let Some(base_value) = raw_f64(baseline_raw, scan.key) else {
+            continue;
+        };
+        for factor in scan.factors {
+            let value = (base_value * factor).clamp(scan.min, scan.max);
+            if (value - base_value).abs() <= 1.0e-9 {
+                continue;
+            }
+            let mut parameter_changes = BTreeMap::new();
+            parameter_changes.insert(scan.key.to_string(), format_rule_fit_value(value));
+            trials.push(RuleFigure8FitTrialSpec {
+                trial_id: format!(
+                    "{}_x{}",
+                    scan.key.trim_start_matches("rule_"),
+                    format_rule_fit_factor(factor)
+                ),
+                parameter_changes,
+            });
+            if trials.len() >= max_trials {
+                return trials;
+            }
+        }
+    }
+    trials
+}
+
+fn rule_figure8_fit_parameter_scans() -> Vec<RuleFigure8FitParameterScan> {
+    vec![
+        RuleFigure8FitParameterScan {
+            key: "rule_tau_e_ms",
+            factors: [0.85, 1.15],
+            min: 2.0,
+            max: 80.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_tau_i_ms",
+            factors: [0.85, 1.15],
+            min: 2.0,
+            max: 120.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_aee",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 30.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_aei",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 30.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_aie",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 30.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_aii",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 30.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_sigma_e",
+            factors: [0.85, 1.15],
+            min: 0.25,
+            max: 20.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_sigma_i",
+            factors: [0.85, 1.15],
+            min: 0.25,
+            max: 25.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_theta_e",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 10.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_theta_i",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 10.0,
+        },
+        RuleFigure8FitParameterScan {
+            key: "rule_stim_threshold",
+            factors: [0.9, 1.1],
+            min: 0.0,
+            max: 0.98,
+        },
+    ]
+}
+
+fn rule_figure8_fit_trial(
+    spec: &RuleFigure8FitTrialSpec,
+    baseline_raw: &HashMap<String, String>,
+    grid: &RuleSweepGridConfig,
+    mode_cycles: &[f64],
+    curve_refine_tolerance: f64,
+    curve_refine_steps: usize,
+    source_curves: Option<&RuleFigure8SourceCurves>,
+    source_curve_file: Option<&PathBuf>,
+) -> RuleFigure8FitTrial {
+    let mut trial_raw = baseline_raw.clone();
+    for (key, value) in &spec.parameter_changes {
+        trial_raw.insert(key.clone(), value.clone());
+    }
+    let evaluation = rule_floquet_evaluation(
+        &trial_raw,
+        grid,
+        mode_cycles,
+        curve_refine_tolerance,
+        curve_refine_steps,
+        source_curves,
+        source_curve_file,
+    );
+    let boundary_curve_point_count = evaluation
+        .boundary_curves
+        .iter()
+        .map(|curve| curve.point_count)
+        .sum::<usize>();
+    let status = if evaluation.source_curve_comparison.fit_objective.is_some() {
+        "scored"
+    } else {
+        evaluation.source_curve_comparison.status
+    };
+    RuleFigure8FitTrial {
+        trial_id: spec.trial_id.clone(),
+        status,
+        parameter_changes: spec.parameter_changes.clone(),
+        parameter_values: tracked_rule_fit_parameter_values(&trial_raw),
+        floquet_point_count: evaluation.points.len(),
+        boundary_candidate_count: evaluation.boundary_candidates.len(),
+        boundary_curve_count: evaluation.boundary_curves.len(),
+        boundary_curve_point_count,
+        source_curve_comparison: evaluation.source_curve_comparison,
+    }
+}
+
+fn trial_score(trial: &RuleFigure8FitTrial) -> Option<f64> {
+    trial
+        .source_curve_comparison
+        .fit_objective
+        .as_ref()
+        .map(|objective| objective.score)
+}
+
+fn tracked_rule_fit_parameter_values(raw: &HashMap<String, String>) -> BTreeMap<String, String> {
+    [
+        "rule_tau_e_ms",
+        "rule_tau_i_ms",
+        "rule_aee",
+        "rule_aei",
+        "rule_aie",
+        "rule_aii",
+        "rule_sigma_e",
+        "rule_sigma_i",
+        "rule_theta_e",
+        "rule_theta_i",
+        "rule_stim_threshold",
+        "rule_stim_smoothing",
+    ]
+    .into_iter()
+    .filter_map(|key| raw.get(key).map(|value| (key.to_string(), value.clone())))
+    .collect()
+}
+
+fn raw_f64(raw: &HashMap<String, String>, key: &str) -> Option<f64> {
+    raw.get(key)?.parse::<f64>().ok()
+}
+
+fn format_rule_fit_value(value: f64) -> String {
+    let mut out = format!("{value:.6}");
+    while out.contains('.') && out.ends_with('0') {
+        out.pop();
+    }
+    if out.ends_with('.') {
+        out.pop();
+    }
+    out
+}
+
+fn format_rule_fit_factor(factor: f64) -> String {
+    format!("{factor:.2}").replace('.', "p")
 }
 
 fn parse_rule_parameter_set(value: &str) -> Result<&'static str, Box<dyn std::error::Error>> {
@@ -3436,7 +4072,7 @@ fn apply_rule_figure8_source_comparison(
     source_curve_file: Option<&PathBuf>,
 ) -> RuleFloquetSourceCurveComparisonSummary {
     let Some(source) = source_curves else {
-        for curve in curves {
+        for curve in &mut *curves {
             curve.source_comparison = if source_curve_file.is_some() {
                 RuleFloquetBoundarySourceComparison::missing()
             } else {
@@ -3455,11 +4091,15 @@ fn apply_rule_figure8_source_comparison(
             compared_curve_count: 0,
             mean_rms_wave_number_error: None,
             max_rms_wave_number_error: None,
+            raw_beta_mapping: None,
+            scale_only_beta_mapping: None,
+            affine_beta_mapping: None,
+            fit_objective: None,
         };
     };
 
     let mut rms_values = Vec::new();
-    for curve in curves {
+    for curve in &mut *curves {
         curve.source_comparison = best_rule_source_curve_comparison(curve, &source.curves);
         if let Some(rms) = curve.source_comparison.rms_wave_number_error {
             rms_values.push(rms);
@@ -3469,6 +4109,17 @@ fn apply_rule_figure8_source_comparison(
     let mean_rms_wave_number_error =
         (!rms_values.is_empty()).then(|| rms_values.iter().sum::<f64>() / rms_values.len() as f64);
     let max_rms_wave_number_error = rms_values.iter().copied().reduce(f64::max);
+    let samples = rule_figure8_comparison_samples(curves, &source.curves);
+    let raw_beta_mapping = rule_beta_axis_mapping("identity", &samples, 1.0, 0.0);
+    let scale_only_beta_mapping = fit_rule_beta_scale_only_mapping(&samples);
+    let affine_beta_mapping = fit_rule_beta_affine_mapping(&samples);
+    let fit_objective = rule_figure8_fit_objective(
+        curves,
+        &source.curves,
+        raw_beta_mapping.as_ref(),
+        scale_only_beta_mapping.as_ref(),
+        affine_beta_mapping.as_ref(),
+    );
 
     RuleFloquetSourceCurveComparisonSummary {
         status: if compared_curve_count > 0 {
@@ -3481,6 +4132,10 @@ fn apply_rule_figure8_source_comparison(
         compared_curve_count,
         mean_rms_wave_number_error,
         max_rms_wave_number_error,
+        raw_beta_mapping,
+        scale_only_beta_mapping,
+        affine_beta_mapping,
+        fit_objective,
     }
 }
 
@@ -3561,6 +4216,245 @@ fn interpolate_rule_source_wave_number(
         return Some(from.wave_number_beta + t * (to.wave_number_beta - from.wave_number_beta));
     }
     None
+}
+
+fn rule_figure8_comparison_samples(
+    curves: &[RuleFloquetBoundaryCurve],
+    source_curves: &[RuleFigure8SourceCurve],
+) -> Vec<RuleFigure8ComparisonSample> {
+    let mut samples = Vec::new();
+    for curve in curves {
+        let Some(source_curve_id) = curve.source_comparison.source_curve_id.as_deref() else {
+            continue;
+        };
+        let Some(source) = source_curves
+            .iter()
+            .find(|candidate| candidate.curve_id == source_curve_id)
+        else {
+            continue;
+        };
+        let mut source_points = source.points.clone();
+        source_points.sort_by(|a, b| a.period_ms.total_cmp(&b.period_ms));
+        let Some(source_min) = source_points.first().map(|point| point.period_ms) else {
+            continue;
+        };
+        let Some(source_max) = source_points.last().map(|point| point.period_ms) else {
+            continue;
+        };
+        for point in &curve.points {
+            if point.period_ms < source_min || point.period_ms > source_max {
+                continue;
+            }
+            if let Some(source_beta) =
+                interpolate_rule_source_wave_number(&source_points, point.period_ms)
+            {
+                samples.push(RuleFigure8ComparisonSample {
+                    generated_beta_cycles: point.beta_cycles,
+                    source_beta,
+                });
+            }
+        }
+    }
+    samples
+}
+
+fn rule_beta_axis_mapping(
+    model: &'static str,
+    samples: &[RuleFigure8ComparisonSample],
+    scale: f64,
+    offset: f64,
+) -> Option<RuleFloquetBetaAxisMapping> {
+    if samples.is_empty() {
+        return None;
+    }
+    let mut abs_sum = 0.0;
+    let mut square_sum = 0.0;
+    let mut max_abs = 0.0;
+    for sample in samples {
+        let predicted = scale * sample.generated_beta_cycles + offset;
+        let error = predicted - sample.source_beta;
+        let abs = error.abs();
+        abs_sum += abs;
+        square_sum += error * error;
+        max_abs = f64::max(max_abs, abs);
+    }
+    let sample_count = samples.len();
+    Some(RuleFloquetBetaAxisMapping {
+        model,
+        generated_axis: "generated_beta_cycles",
+        source_axis: "source_figure_beta",
+        scale,
+        offset,
+        sample_count,
+        mean_abs_error: abs_sum / sample_count as f64,
+        rms_error: (square_sum / sample_count as f64).sqrt(),
+        max_abs_error: max_abs,
+    })
+}
+
+fn fit_rule_beta_scale_only_mapping(
+    samples: &[RuleFigure8ComparisonSample],
+) -> Option<RuleFloquetBetaAxisMapping> {
+    let denominator = samples
+        .iter()
+        .map(|sample| sample.generated_beta_cycles * sample.generated_beta_cycles)
+        .sum::<f64>();
+    if denominator.abs() <= 1.0e-12 {
+        return rule_beta_axis_mapping("scale_only", samples, 1.0, 0.0);
+    }
+    let numerator = samples
+        .iter()
+        .map(|sample| sample.generated_beta_cycles * sample.source_beta)
+        .sum::<f64>();
+    rule_beta_axis_mapping("scale_only", samples, numerator / denominator, 0.0)
+}
+
+fn fit_rule_beta_affine_mapping(
+    samples: &[RuleFigure8ComparisonSample],
+) -> Option<RuleFloquetBetaAxisMapping> {
+    if samples.is_empty() {
+        return None;
+    }
+    let sample_count = samples.len() as f64;
+    let mean_x = samples
+        .iter()
+        .map(|sample| sample.generated_beta_cycles)
+        .sum::<f64>()
+        / sample_count;
+    let mean_y = samples.iter().map(|sample| sample.source_beta).sum::<f64>() / sample_count;
+    let variance_x = samples
+        .iter()
+        .map(|sample| {
+            let dx = sample.generated_beta_cycles - mean_x;
+            dx * dx
+        })
+        .sum::<f64>();
+    if variance_x.abs() <= 1.0e-12 {
+        return rule_beta_axis_mapping("affine", samples, 1.0, mean_y - mean_x);
+    }
+    let covariance_xy = samples
+        .iter()
+        .map(|sample| {
+            let dx = sample.generated_beta_cycles - mean_x;
+            let dy = sample.source_beta - mean_y;
+            dx * dy
+        })
+        .sum::<f64>();
+    let scale = covariance_xy / variance_x;
+    let offset = mean_y - scale * mean_x;
+    rule_beta_axis_mapping("affine", samples, scale, offset)
+}
+
+fn rule_figure8_fit_objective(
+    curves: &[RuleFloquetBoundaryCurve],
+    source_curves: &[RuleFigure8SourceCurve],
+    raw_mapping: Option<&RuleFloquetBetaAxisMapping>,
+    scale_only_mapping: Option<&RuleFloquetBetaAxisMapping>,
+    affine_mapping: Option<&RuleFloquetBetaAxisMapping>,
+) -> Option<RuleFigure8FitObjective> {
+    let raw = raw_mapping?;
+    let scale_only = scale_only_mapping.unwrap_or(raw);
+    let affine = affine_mapping.unwrap_or(raw);
+    let compared_curves = curves
+        .iter()
+        .filter(|curve| curve.source_comparison.status == "compared")
+        .collect::<Vec<_>>();
+    let matched_source_curve_count = compared_curves
+        .iter()
+        .filter_map(|curve| curve.source_comparison.source_curve_id.as_deref())
+        .collect::<HashSet<_>>()
+        .len();
+    let source_curve_count = source_curves.len();
+    let compared_curve_count = compared_curves.len();
+    let generated_curve_coverage = if curves.is_empty() {
+        0.0
+    } else {
+        compared_curve_count as f64 / curves.len() as f64
+    };
+    let source_branch_coverage = if source_curve_count == 0 {
+        0.0
+    } else {
+        matched_source_curve_count as f64 / source_curve_count as f64
+    };
+    let total_curve_points = curves.iter().map(|curve| curve.point_count).sum::<usize>();
+    let overlap_point_count = compared_curves
+        .iter()
+        .map(|curve| curve.source_comparison.overlap_point_count)
+        .sum::<usize>();
+    let overlap_point_coverage = if total_curve_points == 0 {
+        0.0
+    } else {
+        overlap_point_count as f64 / total_curve_points as f64
+    };
+    let continuity_score = if compared_curves.is_empty() {
+        0.0
+    } else {
+        compared_curves
+            .iter()
+            .map(|curve| curve.continuity_score.clamp(0.0, 1.0))
+            .sum::<f64>()
+            / compared_curves.len() as f64
+    };
+    let underresolved_branch_count = curves.iter().filter(|curve| curve.point_count < 2).count();
+    let underresolved_branch_fraction = if curves.is_empty() {
+        1.0
+    } else {
+        underresolved_branch_count as f64 / curves.len() as f64
+    };
+    let ordering_score = rule_figure8_kind_ordering_score(curves);
+    let coverage_score = (0.45 * source_branch_coverage
+        + 0.35 * generated_curve_coverage
+        + 0.20 * overlap_point_coverage)
+        .clamp(0.0, 1.0);
+    let score = 0.35 * raw.rms_error
+        + 0.45 * affine.rms_error
+        + 0.20 * scale_only.rms_error
+        + 0.85 * (1.0 - coverage_score)
+        + 0.35 * (1.0 - continuity_score)
+        + 0.45 * (1.0 - ordering_score)
+        + 0.25 * underresolved_branch_fraction;
+
+    Some(RuleFigure8FitObjective {
+        status: "scored",
+        score,
+        raw_rms_beta_error: raw.rms_error,
+        affine_rms_beta_error: affine.rms_error,
+        scale_only_rms_beta_error: scale_only.rms_error,
+        source_branch_coverage,
+        generated_curve_coverage,
+        overlap_point_coverage,
+        continuity_score,
+        ordering_score,
+        underresolved_branch_fraction,
+        compared_curve_count,
+        source_curve_count,
+        matched_source_curve_count,
+        overlap_point_count,
+    })
+}
+
+fn rule_figure8_kind_ordering_score(curves: &[RuleFloquetBoundaryCurve]) -> f64 {
+    let minus_mean = mean_curve_period_for_kind(curves, "minus_period_doubling");
+    let plus_mean = mean_curve_period_for_kind(curves, "plus_one_to_one");
+    match (minus_mean, plus_mean) {
+        (Some(minus), Some(plus)) if minus < plus => 1.0,
+        (Some(_), Some(_)) => 0.25,
+        _ => 0.0,
+    }
+}
+
+fn mean_curve_period_for_kind(curves: &[RuleFloquetBoundaryCurve], kind: &str) -> Option<f64> {
+    let mut count = 0usize;
+    let mut sum = 0.0;
+    for point in curves
+        .iter()
+        .filter(|curve| curve.kind == kind)
+        .flat_map(|curve| curve.points.iter())
+    {
+        sum += point.period_ms;
+        count += 1;
+    }
+    (count > 0).then(|| sum / count as f64)
 }
 
 fn parse_f64_csv(value: &str, min: f64, max: f64) -> Result<Vec<f64>, Box<dyn std::error::Error>> {
@@ -8408,6 +9302,15 @@ mod tests {
 
         assert_eq!(summary.status, "compared");
         assert_eq!(summary.compared_curve_count, 1);
+        assert!(summary.fit_objective.as_ref().unwrap().score.is_finite());
+        assert!(
+            summary
+                .affine_beta_mapping
+                .as_ref()
+                .unwrap()
+                .rms_error
+                < 1.0e-9
+        );
         assert_eq!(
             curves[0].source_comparison.source_curve_id.as_deref(),
             Some("source-plus")

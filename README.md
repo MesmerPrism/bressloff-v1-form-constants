@@ -133,6 +133,17 @@ also refines beta-axis crossings into source-axis `boundary_curves` for Figure
 `rule_fig8_source_like` parameter set names the current source-like constants
 from the paper extraction; explicit CLI flags still override individual values.
 
+Generate the first Rule Figure 8 fit-search report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-fit --out reports\rule-2011-fit-search.json --max-trials 25 --curve-refine-steps 48 --curve-refine-tolerance 0.000001
+```
+
+This keeps `rule_fig8_source_like` unchanged and records one-parameter
+calibration trials against the digitized Figure 8C source curves. The objective
+separates raw beta mismatch from scale-only and affine beta-axis mappings so
+normalization errors do not get confused with dynamical-branch errors.
+
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 
 ```powershell

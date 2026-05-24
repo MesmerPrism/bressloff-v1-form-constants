@@ -1,5 +1,5 @@
 {
-  "format": "rule-2011-floquet-calibration-v3",
+  "format": "rule-2011-floquet-calibration-v4",
   "model_family": "rule_flicker_ei",
   "source_key": "rule-2011",
   "parameter_set": "rule_fig8_source_like",
@@ -26,7 +26,57 @@
     "source_curve_count": 4,
     "compared_curve_count": 16,
     "mean_rms_wave_number_error": 0.8544413001642374,
-    "max_rms_wave_number_error": 1.1107381911045668
+    "max_rms_wave_number_error": 1.1107381911045668,
+    "raw_beta_mapping": {
+      "model": "identity",
+      "generated_axis": "generated_beta_cycles",
+      "source_axis": "source_figure_beta",
+      "scale": 1.0,
+      "offset": 0.0,
+      "sample_count": 41,
+      "mean_abs_error": 0.7948943152776083,
+      "rms_error": 0.8560404333336237,
+      "max_abs_error": 1.200883382252985
+    },
+    "scale_only_beta_mapping": {
+      "model": "scale_only",
+      "generated_axis": "generated_beta_cycles",
+      "source_axis": "source_figure_beta",
+      "scale": 0.42868451880191133,
+      "offset": 0.0,
+      "sample_count": 41,
+      "mean_abs_error": 0.11884058459996241,
+      "rms_error": 0.15531862993579876,
+      "max_abs_error": 0.42491529038418474
+    },
+    "affine_beta_mapping": {
+      "model": "affine",
+      "generated_axis": "generated_beta_cycles",
+      "source_axis": "source_figure_beta",
+      "scale": 0.024287671148517508,
+      "offset": 0.6118100069153425,
+      "sample_count": 41,
+      "mean_abs_error": 0.05052384662722831,
+      "rms_error": 0.06987739150862583,
+      "max_abs_error": 0.17028739123665343
+    },
+    "fit_objective": {
+      "status": "scored",
+      "score": 0.7784671805769957,
+      "raw_rms_beta_error": 0.8560404333336237,
+      "affine_rms_beta_error": 0.06987739150862583,
+      "scale_only_rms_beta_error": 0.15531862993579876,
+      "source_branch_coverage": 0.5,
+      "generated_curve_coverage": 1.0,
+      "overlap_point_coverage": 0.9534883720930233,
+      "continuity_score": 0.46875000000000006,
+      "ordering_score": 1.0,
+      "underresolved_branch_fraction": 0.125,
+      "compared_curve_count": 16,
+      "source_curve_count": 4,
+      "matched_source_curve_count": 2,
+      "overlap_point_count": 41
+    }
   },
   "grid": {
     "preset": "dense",
