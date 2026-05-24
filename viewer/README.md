@@ -114,6 +114,12 @@ Run the denser Rule sweep map used by the public deep-dive page:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
 ```
 
+Run the dedicated Rule Floquet calibration grid used for boundary hints:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
+```
+
 Use `--no-trim-warmup` if you need the dynamic model's onset transient for
 analysis. Use `--solver accurate` if you need the slower fixed-step RK4 solve.
 

@@ -113,6 +113,12 @@ Generate the denser website/analysis map:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
 ```
 
+Generate the first dedicated Rule Floquet calibration surface:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
+```
+
 ## Viewer Workflow
 
 Use `Generator -> Planform` for direct Bressloff-style pattern families. This is

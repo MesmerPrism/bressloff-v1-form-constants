@@ -1712,6 +1712,52 @@ struct RuleFloquetMode {
     crossing_hint: &'static str,
 }
 
+#[derive(Serialize)]
+struct RuleFloquetCalibrationReport {
+    format: &'static str,
+    model_family: &'static str,
+    source_key: &'static str,
+    status: &'static str,
+    note: &'static str,
+    grid: RuleSweepGridDetails,
+    mode_cycles: Vec<f64>,
+    points: Vec<RuleFloquetGridPoint>,
+    boundary_candidates: Vec<RuleFloquetBoundaryCandidate>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RuleFloquetGridPoint {
+    period_ms: f64,
+    amplitude: f64,
+    stim_i_fraction: f64,
+    dominant_beta_cycles: f64,
+    max_abs_multiplier: f64,
+    crossing_hint: &'static str,
+    plus_margin: f64,
+    minus_margin: f64,
+    complex_margin: f64,
+    orbit: RuleOrbitSummary,
+    modes: Vec<RuleFloquetMode>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+struct RuleFloquetBoundaryCandidate {
+    kind: &'static str,
+    evidence: &'static str,
+    beta_cycles: f64,
+    axis: &'static str,
+    period_ms: f64,
+    amplitude: f64,
+    stim_i_fraction: f64,
+    from_period_ms: f64,
+    from_amplitude: f64,
+    to_period_ms: f64,
+    to_amplitude: f64,
+    margin_from: f64,
+    margin_to: f64,
+    confidence: f64,
+}
+
 #[derive(Clone, Debug)]
 struct RuleSweepGridConfig {
     preset: &'static str,
@@ -1871,6 +1917,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "export" => export_command(&args[2..])?,
         "rule-report" | "rule-calibrate" => rule_report_command(&args[2..])?,
         "rule-sweep" => rule_sweep_command(&args[2..])?,
+        "rule-floquet" => rule_floquet_command(&args[2..])?,
         "serve" => serve_command(&args[2..])?,
         "--help" | "-h" => print_usage(),
         other => {
@@ -1883,7 +1930,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_usage() {
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]"
+        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 2,3,4,5,6,8,10] [model params]"
     );
 }
 
@@ -2343,6 +2390,207 @@ fn rule_sweep_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>>
     };
     fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
     println!("wrote {} sweep_points={point_count}", out.display());
+    Ok(())
+}
+
+fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/rule-2011-floquet.json");
+    let mut grid = rule_sweep_grid_defaults("dense");
+    let mut periods_override: Option<Vec<f64>> = None;
+    let mut amplitudes_override: Option<Vec<f64>> = None;
+    let mut stim_i_fractions_override: Option<Vec<f64>> = None;
+    let mut period_min: Option<f64> = None;
+    let mut period_max: Option<f64> = None;
+    let mut period_steps: Option<usize> = None;
+    let mut amplitude_min: Option<f64> = None;
+    let mut amplitude_max: Option<f64> = None;
+    let mut amplitude_steps: Option<usize> = None;
+    let mut stim_i_fraction_min: Option<f64> = None;
+    let mut stim_i_fraction_max: Option<f64> = None;
+    let mut stim_i_fraction_steps: Option<usize> = None;
+    let mut mode_cycles = vec![2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0];
+    let mut raw = HashMap::new();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--preset-grid" | "--grid" => {
+                grid =
+                    rule_sweep_grid_defaults(iter.next().ok_or("--preset-grid requires a value")?);
+            }
+            "--periods" => {
+                periods_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--periods requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-min" => {
+                period_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-min requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-max" => {
+                period_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--period-max requires a value")?,
+                    20.0,
+                    180.0,
+                )?);
+            }
+            "--period-steps" => {
+                period_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--period-steps requires a value")?,
+                    1,
+                    61,
+                )?);
+            }
+            "--amplitudes" => {
+                amplitudes_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--amplitudes requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-min" => {
+                amplitude_min = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-min requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-max" => {
+                amplitude_max = Some(parse_clamped_f64(
+                    iter.next().ok_or("--amplitude-max requires a value")?,
+                    0.0,
+                    1.5,
+                )?);
+            }
+            "--amplitude-steps" => {
+                amplitude_steps = Some(parse_clamped_usize(
+                    iter.next().ok_or("--amplitude-steps requires a value")?,
+                    1,
+                    41,
+                )?);
+            }
+            "--stim-i-fractions" | "--inhibitory-drive" => {
+                stim_i_fractions_override = Some(parse_f64_csv(
+                    iter.next().ok_or("--stim-i-fractions requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-min" | "--inhibitory-drive-min" => {
+                stim_i_fraction_min = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-min requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-max" | "--inhibitory-drive-max" => {
+                stim_i_fraction_max = Some(parse_clamped_f64(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-max requires a value")?,
+                    0.0,
+                    1.0,
+                )?);
+            }
+            "--stim-i-fraction-steps" | "--inhibitory-drive-steps" => {
+                stim_i_fraction_steps = Some(parse_clamped_usize(
+                    iter.next()
+                        .ok_or("--stim-i-fraction-steps requires a value")?,
+                    1,
+                    21,
+                )?);
+            }
+            "--modes" | "--mode-cycles" => {
+                mode_cycles =
+                    parse_f64_csv(iter.next().ok_or("--modes requires a value")?, 0.5, 32.0)?;
+            }
+            "--no-trim-warmup" => {
+                raw.insert("trim_warmup".to_string(), "false".to_string());
+            }
+            flag if flag.starts_with("--") => {
+                let key = flag.trim_start_matches("--").replace('-', "_");
+                let value = iter.next().ok_or("flag requires a value")?;
+                raw.insert(key, value.clone());
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(periods) = periods_override {
+        grid.periods = periods;
+    } else if period_min.is_some() || period_max.is_some() || period_steps.is_some() {
+        grid.periods = linspace_values(
+            period_min.unwrap_or_else(|| *grid.periods.first().unwrap_or(&40.0)),
+            period_max.unwrap_or_else(|| *grid.periods.last().unwrap_or(&160.0)),
+            period_steps.unwrap_or(grid.periods.len()),
+        );
+    }
+
+    if let Some(amplitudes) = amplitudes_override {
+        grid.amplitudes = amplitudes;
+    } else if amplitude_min.is_some() || amplitude_max.is_some() || amplitude_steps.is_some() {
+        grid.amplitudes = linspace_values(
+            amplitude_min.unwrap_or_else(|| *grid.amplitudes.first().unwrap_or(&0.4)),
+            amplitude_max.unwrap_or_else(|| *grid.amplitudes.last().unwrap_or(&1.2)),
+            amplitude_steps.unwrap_or(grid.amplitudes.len()),
+        );
+    }
+
+    if let Some(stim_i_fractions) = stim_i_fractions_override {
+        grid.stim_i_fractions = stim_i_fractions;
+    } else if stim_i_fraction_min.is_some()
+        || stim_i_fraction_max.is_some()
+        || stim_i_fraction_steps.is_some()
+    {
+        grid.stim_i_fractions = linspace_values(
+            stim_i_fraction_min.unwrap_or_else(|| *grid.stim_i_fractions.first().unwrap_or(&0.0)),
+            stim_i_fraction_max.unwrap_or_else(|| *grid.stim_i_fractions.last().unwrap_or(&0.0)),
+            stim_i_fraction_steps.unwrap_or(grid.stim_i_fractions.len()),
+        );
+    }
+
+    let mut points = Vec::new();
+    for period in &grid.periods {
+        for amplitude in &grid.amplitudes {
+            for stim_i_fraction in &grid.stim_i_fractions {
+                let params = rule_sweep_params(&raw, &grid, *period, *amplitude, *stim_i_fraction);
+                points.push(rule_floquet_grid_point_for(params, &mode_cycles));
+            }
+        }
+    }
+
+    let boundary_candidates = rule_floquet_boundary_candidates(
+        &points,
+        &grid.periods,
+        &grid.amplitudes,
+        &grid.stim_i_fractions,
+    );
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let point_count = points.len();
+    let boundary_count = boundary_candidates.len();
+    let report = RuleFloquetCalibrationReport {
+        format: "rule-2011-floquet-calibration-v1",
+        model_family: MODEL_FAMILY_RULE,
+        source_key: "rule-2011",
+        status: "first-pass-homogeneous-orbit",
+        note: "Homogeneous-orbit monodromy grid for Rule et al. 2011 qualitative regimes; boundary candidates are first-pass numerical hints, not a published-figure calibration.",
+        grid: rule_sweep_grid_details(&grid),
+        mode_cycles,
+        points,
+        boundary_candidates,
+    };
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
+    println!(
+        "wrote {} floquet_points={point_count} boundary_candidates={boundary_count}",
+        out.display()
+    );
     Ok(())
 }
 
@@ -3838,6 +4086,249 @@ fn rule_floquet_report(params: FrameParams, mode_cycles: &[f64]) -> RuleFloquetR
         strongest_mode,
         plus_crossing_modes,
         minus_crossing_modes,
+    }
+}
+
+fn rule_floquet_grid_point_for(params: FrameParams, mode_cycles: &[f64]) -> RuleFloquetGridPoint {
+    let report = rule_floquet_report(params, mode_cycles);
+    let plus_margin = max_floquet_margin(&report.modes, "plus_one_to_one");
+    let minus_margin = max_floquet_margin(&report.modes, "minus_period_doubling");
+    let complex_margin = max_floquet_margin(&report.modes, "unstable_complex");
+    let crossing_hint = if minus_margin > 0.0 {
+        "minus_period_doubling"
+    } else if plus_margin > 0.0 {
+        "plus_one_to_one"
+    } else if complex_margin > 0.0 {
+        "unstable_complex"
+    } else {
+        "stable"
+    };
+
+    RuleFloquetGridPoint {
+        period_ms: report.period_ms,
+        amplitude: report.amplitude,
+        stim_i_fraction: report.stim_i_fraction,
+        dominant_beta_cycles: report.strongest_mode.beta_cycles,
+        max_abs_multiplier: report.strongest_mode.max_abs_multiplier,
+        crossing_hint,
+        plus_margin,
+        minus_margin,
+        complex_margin,
+        orbit: report.orbit,
+        modes: report.modes,
+    }
+}
+
+fn rule_floquet_boundary_candidates(
+    points: &[RuleFloquetGridPoint],
+    periods: &[f64],
+    amplitudes: &[f64],
+    stim_i_fractions: &[f64],
+) -> Vec<RuleFloquetBoundaryCandidate> {
+    let periods = sorted_unique_f64(periods);
+    let amplitudes = sorted_unique_f64(amplitudes);
+    let stim_i_fractions = sorted_unique_f64(stim_i_fractions);
+    let mut candidates = Vec::new();
+    for stim_i_fraction in &stim_i_fractions {
+        for amplitude in &amplitudes {
+            for pair in periods.windows(2) {
+                if let (Some(from), Some(to)) = (
+                    find_rule_floquet_point(points, pair[0], *amplitude, *stim_i_fraction),
+                    find_rule_floquet_point(points, pair[1], *amplitude, *stim_i_fraction),
+                ) {
+                    candidates.extend(rule_floquet_boundary_between(from, to, "period"));
+                }
+            }
+        }
+        for period in &periods {
+            for pair in amplitudes.windows(2) {
+                if let (Some(from), Some(to)) = (
+                    find_rule_floquet_point(points, *period, pair[0], *stim_i_fraction),
+                    find_rule_floquet_point(points, *period, pair[1], *stim_i_fraction),
+                ) {
+                    candidates.extend(rule_floquet_boundary_between(from, to, "amplitude"));
+                }
+            }
+        }
+    }
+    candidates.extend(rule_floquet_nearest_boundary_candidates(points, 6));
+    candidates.sort_by(|a, b| {
+        b.confidence
+            .total_cmp(&a.confidence)
+            .then_with(|| a.period_ms.total_cmp(&b.period_ms))
+            .then_with(|| a.amplitude.total_cmp(&b.amplitude))
+            .then_with(|| a.beta_cycles.total_cmp(&b.beta_cycles))
+    });
+    candidates
+}
+
+fn sorted_unique_f64(values: &[f64]) -> Vec<f64> {
+    let mut values = values.to_vec();
+    values.sort_by(|a, b| a.total_cmp(b));
+    values.dedup_by(|a, b| (*a - *b).abs() < 1.0e-9);
+    values
+}
+
+fn find_rule_floquet_point<'a>(
+    points: &'a [RuleFloquetGridPoint],
+    period_ms: f64,
+    amplitude: f64,
+    stim_i_fraction: f64,
+) -> Option<&'a RuleFloquetGridPoint> {
+    points.iter().find(|point| {
+        (point.period_ms - period_ms).abs() < 1.0e-6
+            && (point.amplitude - amplitude).abs() < 1.0e-6
+            && (point.stim_i_fraction - stim_i_fraction).abs() < 1.0e-6
+    })
+}
+
+fn rule_floquet_boundary_between(
+    from: &RuleFloquetGridPoint,
+    to: &RuleFloquetGridPoint,
+    axis: &'static str,
+) -> Vec<RuleFloquetBoundaryCandidate> {
+    const KINDS: [&str; 3] = [
+        "minus_period_doubling",
+        "plus_one_to_one",
+        "unstable_complex",
+    ];
+    let mut candidates = Vec::new();
+    for from_mode in &from.modes {
+        let Some(to_mode) = to
+            .modes
+            .iter()
+            .find(|mode| (mode.beta_cycles - from_mode.beta_cycles).abs() < 1.0e-6)
+        else {
+            continue;
+        };
+        for kind in KINDS {
+            let margin_from = floquet_mode_margin(from_mode, kind);
+            let margin_to = floquet_mode_margin(to_mode, kind);
+            if !margin_from.is_finite() || !margin_to.is_finite() {
+                continue;
+            }
+            let crosses =
+                (margin_from <= 0.0 && margin_to > 0.0) || (margin_to <= 0.0 && margin_from > 0.0);
+            if !crosses {
+                continue;
+            }
+            let denom = margin_to - margin_from;
+            let t = if denom.abs() < 1.0e-12 {
+                0.5
+            } else {
+                (-margin_from / denom).clamp(0.0, 1.0)
+            };
+            candidates.push(RuleFloquetBoundaryCandidate {
+                kind,
+                evidence: "sign_change",
+                beta_cycles: from_mode.beta_cycles,
+                axis,
+                period_ms: from.period_ms + (to.period_ms - from.period_ms) * t,
+                amplitude: from.amplitude + (to.amplitude - from.amplitude) * t,
+                stim_i_fraction: from.stim_i_fraction
+                    + (to.stim_i_fraction - from.stim_i_fraction) * t,
+                from_period_ms: from.period_ms,
+                from_amplitude: from.amplitude,
+                to_period_ms: to.period_ms,
+                to_amplitude: to.amplitude,
+                margin_from,
+                margin_to,
+                confidence: (margin_to - margin_from).abs().min(1.0),
+            });
+        }
+    }
+    candidates
+}
+
+fn rule_floquet_nearest_boundary_candidates(
+    points: &[RuleFloquetGridPoint],
+    limit_per_kind: usize,
+) -> Vec<RuleFloquetBoundaryCandidate> {
+    const KINDS: [&str; 3] = [
+        "minus_period_doubling",
+        "plus_one_to_one",
+        "unstable_complex",
+    ];
+    let mut candidates = Vec::new();
+    for kind in KINDS {
+        let mut scored = Vec::new();
+        for point in points {
+            for mode in &point.modes {
+                let margin = floquet_mode_margin(mode, kind);
+                if !margin.is_finite() {
+                    continue;
+                }
+                scored.push((
+                    margin.abs(),
+                    RuleFloquetBoundaryCandidate {
+                        kind,
+                        evidence: "nearest_margin",
+                        beta_cycles: mode.beta_cycles,
+                        axis: "nearest",
+                        period_ms: point.period_ms,
+                        amplitude: point.amplitude,
+                        stim_i_fraction: point.stim_i_fraction,
+                        from_period_ms: point.period_ms,
+                        from_amplitude: point.amplitude,
+                        to_period_ms: point.period_ms,
+                        to_amplitude: point.amplitude,
+                        margin_from: margin,
+                        margin_to: margin,
+                        confidence: (1.0 - margin.abs().min(1.0)).max(0.0),
+                    },
+                ));
+            }
+        }
+        scored.sort_by(|a, b| {
+            a.0.total_cmp(&b.0)
+                .then_with(|| b.1.confidence.total_cmp(&a.1.confidence))
+                .then_with(|| a.1.period_ms.total_cmp(&b.1.period_ms))
+                .then_with(|| a.1.amplitude.total_cmp(&b.1.amplitude))
+        });
+        candidates.extend(
+            scored
+                .into_iter()
+                .take(limit_per_kind)
+                .map(|(_, candidate)| candidate),
+        );
+    }
+    candidates
+}
+
+fn max_floquet_margin(modes: &[RuleFloquetMode], kind: &'static str) -> f64 {
+    modes
+        .iter()
+        .map(|mode| floquet_mode_margin(mode, kind))
+        .fold(f64::NEG_INFINITY, f64::max)
+}
+
+fn floquet_mode_margin(mode: &RuleFloquetMode, kind: &'static str) -> f64 {
+    match kind {
+        "minus_period_doubling" => real_multiplier_margin(mode, -1.0),
+        "plus_one_to_one" => real_multiplier_margin(mode, 1.0),
+        "unstable_complex" => {
+            if mode.multiplier_1_imag.abs() > 1.0e-9 || mode.multiplier_2_imag.abs() > 1.0e-9 {
+                mode.max_abs_multiplier - 1.0
+            } else {
+                -1.0
+            }
+        }
+        _ => mode.max_abs_multiplier - 1.0,
+    }
+}
+
+fn real_multiplier_margin(mode: &RuleFloquetMode, sign: f64) -> f64 {
+    let mut margin = f64::NEG_INFINITY;
+    if mode.multiplier_1_imag.abs() < 1.0e-9 {
+        margin = margin.max(sign * mode.multiplier_1_real - 1.0);
+    }
+    if mode.multiplier_2_imag.abs() < 1.0e-9 {
+        margin = margin.max(sign * mode.multiplier_2_real - 1.0);
+    }
+    if margin.is_finite() {
+        margin
+    } else {
+        -1.0
     }
 }
 
@@ -6255,6 +6746,44 @@ mod tests {
     }
 
     #[test]
+    fn rule_floquet_grid_point_exports_boundary_margins() {
+        let grid = rule_sweep_grid_defaults("quick");
+        let params = rule_sweep_params(&HashMap::new(), &grid, 55.0, 0.8, 0.0);
+        let point = rule_floquet_grid_point_for(
+            FrameParams {
+                n: 32,
+                preview_step: 0.1,
+                ..params
+            },
+            &[3.0, 4.0],
+        );
+        assert_eq!(point.period_ms, 55.0);
+        assert_eq!(point.amplitude, 0.8);
+        assert_eq!(point.modes.len(), 2);
+        assert!(point.plus_margin.is_finite());
+        assert!(point.minus_margin.is_finite());
+        assert!(point.max_abs_multiplier.is_finite());
+    }
+
+    #[test]
+    fn rule_floquet_boundary_candidates_detect_sign_changes() {
+        let stable = test_floquet_grid_point(40.0, 0.8, 0.98);
+        let unstable = test_floquet_grid_point(50.0, 0.8, 1.04);
+        let candidates =
+            rule_floquet_boundary_candidates(&[stable, unstable], &[40.0, 50.0], &[0.8], &[0.0]);
+        let plus = candidates
+            .iter()
+            .find(|candidate| {
+                candidate.kind == "plus_one_to_one" && candidate.evidence == "sign_change"
+            })
+            .expect("expected +1 boundary candidate");
+        assert_eq!(plus.axis, "period");
+        assert_eq!(plus.beta_cycles, 4.0);
+        assert!(plus.period_ms > 40.0 && plus.period_ms < 50.0);
+        assert!(plus.confidence > 0.0);
+    }
+
+    #[test]
     fn rule_sweep_dense_grid_has_expected_dimensions() {
         let grid = rule_sweep_grid_defaults("dense");
         assert_eq!(grid.preset, "dense");
@@ -6265,5 +6794,47 @@ mod tests {
         assert_eq!(details.period_steps, 13);
         assert_eq!(details.amplitude_steps, 5);
         assert_eq!(details.n, 32);
+    }
+
+    fn test_floquet_grid_point(
+        period_ms: f64,
+        amplitude: f64,
+        plus_multiplier: f64,
+    ) -> RuleFloquetGridPoint {
+        let mode = RuleFloquetMode {
+            beta_cycles: 4.0,
+            multiplier_1_real: plus_multiplier,
+            multiplier_1_imag: 0.0,
+            multiplier_2_real: 0.2,
+            multiplier_2_imag: 0.0,
+            max_abs_multiplier: plus_multiplier.abs().max(0.2),
+            crossing_hint: if plus_multiplier > 1.0 {
+                "plus_one_to_one"
+            } else {
+                "stable"
+            },
+        };
+        RuleFloquetGridPoint {
+            period_ms,
+            amplitude,
+            stim_i_fraction: 0.0,
+            dominant_beta_cycles: mode.beta_cycles,
+            max_abs_multiplier: mode.max_abs_multiplier,
+            crossing_hint: mode.crossing_hint,
+            plus_margin: floquet_mode_margin(&mode, "plus_one_to_one"),
+            minus_margin: floquet_mode_margin(&mode, "minus_period_doubling"),
+            complex_margin: floquet_mode_margin(&mode, "unstable_complex"),
+            orbit: RuleOrbitSummary {
+                period_ms,
+                samples: 1,
+                e_min: 0.0,
+                e_max: 0.0,
+                e_mean: 0.0,
+                i_min: 0.0,
+                i_max: 0.0,
+                i_mean: 0.0,
+            },
+            modes: vec![mode],
+        }
     }
 }

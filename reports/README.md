@@ -69,3 +69,17 @@ website thumbnail frames, Fourier-family scores, top spatial modes, temporal
 confidence diagnostics, homogeneous-orbit summaries, and first-pass monodromy
 multipliers. It is still a qualitative implementation report, not an exact
 reproduction of Rule's published stability boundary figures.
+
+The dedicated first-pass Rule Floquet calibration surface is generated with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
+```
+
+It uses `format: rule-2011-floquet-calibration-v1` and
+`model_family: rule_flicker_ei`. It exports homogeneous-orbit monodromy
+margins over the dense grid plus `boundary_candidates`. Candidates marked
+`evidence: sign_change` are strict grid-edge crossings; candidates marked
+`evidence: nearest_margin` are closest-to-threshold markers for the current
+coarse calibration and should be read as visual guidance, not final Rule
+Figure 8 boundaries.

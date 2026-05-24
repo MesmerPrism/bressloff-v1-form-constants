@@ -41,6 +41,12 @@ through a separate Rule preset registry.
   - `T`, `2T`, and `3T` temporal correlations with response-period confidence
   - homogeneous periodic-orbit summaries
   - first-pass 2x2 monodromy multipliers for representative spatial modes
+- Dedicated `rule-floquet` report with:
+  - dense homogeneous-orbit monodromy grid points
+  - per-mode +1, -1, and complex-instability margins
+  - strict `sign_change` boundary candidates when a grid edge crosses threshold
+  - `nearest_margin` candidates that mark closest-to-threshold points for the
+    current coarse calibration
 
 The low-frequency preset currently uses a 120 ms qualitative representative
 rather than claiming exact reproduction of Rule Figure 5B's 110 ms panel. This
@@ -72,16 +78,23 @@ Generate the denser frequency/amplitude map with:
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --preset-grid dense --out reports\rule-2011-sweep-dense.json
 ```
 
+Generate the dedicated first-pass Floquet calibration surface with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe rule-floquet --out reports\rule-2011-floquet.json
+```
+
 The sweep command also accepts explicit lists and regular grids:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe rule-sweep --period-min 40 --period-max 160 --period-steps 13 --amplitude-min 0.4 --amplitude-max 1.2 --amplitude-steps 5
 ```
 
-The sweep report format is:
+The sweep and Floquet report formats are:
 
 ```text
 rule-2011-sweep-report-v1
+rule-2011-floquet-calibration-v1
 ```
 
 This is intentionally separate from:
@@ -93,7 +106,8 @@ bressloff-paper-calibration-v4
 ## Deferred
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
-- Figure-level Floquet phase-boundary calibration for Rule Figure 8.
+- Figure-level Floquet phase-boundary calibration for Rule Figure 8 against the
+  published axes and parameter set.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.
