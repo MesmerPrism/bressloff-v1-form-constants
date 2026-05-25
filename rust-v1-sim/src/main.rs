@@ -3443,12 +3443,12 @@ mod tests {
     fn nicks_report_exports_orthogonal_response_diagnostics() {
         let report = crate::models::driven::nicks_orthogonal_response_report(NicksReportConfig {
             n: 32,
-            forcing_strengths: vec![0.02, 0.08],
-            detuning_fractions: vec![0.0, 0.5, 0.9],
+            forcing_strengths: vec![0.1, 0.65],
+            detuning_fractions: vec![0.0, 0.25, 1.0],
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v2");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v3");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
         assert_eq!(report.examples.len(), 3);
         assert_eq!(report.parameter_sweep.len(), 6);
@@ -3464,6 +3464,19 @@ mod tests {
             assert!(row.source_target.source_target_comparison);
             assert!(row.source_target.classification_matches);
             assert!(row.source_target.angle_error_degrees < 1.0e-9);
+            assert!(row.source_target.amplitude_coefficients.beta_c.is_finite());
+            assert!(row.source_target.amplitude_coefficients.gamma_p.is_finite());
+            assert!(!row.source_target.amplitude_coefficients.calibrated);
+            assert!(row.source_target.figure8_region.source_parameter_match);
+            assert!(row.source_target.figure8_region.gamma_on_source_grid);
+            assert!(row.source_target.figure8_region.detuning_on_source_grid);
+            assert!(row.source_target.figure8_region.region_label_matches);
+            assert!(
+                row.source_target
+                    .figure8_region
+                    .boundary_comparison_available
+            );
+            assert!(!row.source_target.figure8_region.calibrated);
             assert!(!row.metrics.calibrated);
         }
         let example = &report.examples[2];

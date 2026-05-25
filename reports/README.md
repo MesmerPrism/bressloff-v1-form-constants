@@ -205,12 +205,13 @@ with:
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
 ```
 
-It writes `format: nicks-orthogonal-response-report-v2` and includes generated
+It writes `format: nicks-orthogonal-response-report-v3` and includes generated
 cortical forcing/response frames, an inverse-log-polar response frame,
 wavevector detuning metrics, orthogonality error, amplitude-equation residuals,
-equation-derived 2:1 wavevector target comparisons, and validation flags. It is
-a source-target diagnostic report, not a calibrated source-figure reproduction
-claim.
+equation-derived 2:1 wavevector target comparisons, report-normalized
+source-equation coefficient diagnostics, Figure 8-style parameter-grid region
+checks, and validation flags. It is a source-target diagnostic report, not a
+calibrated source-figure reproduction claim.
 
 Driven-input reports should contain generated outputs and derived numeric
 metrics only. PDFs, paper figure crops, page renders, and private extraction

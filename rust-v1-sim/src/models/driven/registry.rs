@@ -109,15 +109,15 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         kernel_family: "normalized mode-gain abstraction from a neural-field kernel",
         input_type: "spatially periodic forcing",
         parameter_summary:
-            "generated default uses sigma=0.5, h=0, epsilon^2 delta=0.3, normalized Phi coefficients, gamma and detuning sweeps",
-        method: "normalized symmetric-branch amplitude-equation solve and generated field diagnostics",
+            "generated default uses source Figure 8-style sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}, and report-normalized Phi coefficients",
+        method: "source-equation symmetric-branch amplitude solve with generated field diagnostics and Figure 8-style region comparison",
         report_target: "reports/nicks-orthogonal-response.json",
-        expected_behavior: "orthogonal-response region labels, wavevector metrics, and representative generated fields",
+        expected_behavior: "orthogonal-response region labels, wavevector metrics, source-grid checks, coefficient diagnostics, and representative generated fields",
         implementation_status: "implemented",
         public_claim_level: "source-target comparison",
         rights_status: "generated outputs only; source figures remain private",
         difficulty: "medium",
-        missing_evidence: "source-derived coefficient normalization and calibrated source-region acceptance criteria",
+        missing_evidence: "Appendix-B kernel-derived Phi values, digitized source-region curves, and calibrated source-region acceptance criteria",
     },
     DrivenExampleDetails {
         id: "nicks_billock_tsou_generated_map",
@@ -131,7 +131,7 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         symmetry_assumption: "localized or grating-driven response modes after Rule",
         kernel_family: "paper-specific neural-field kernel or reduced mode-gain surrogate",
         input_type: "stimulus-derived spatial forcing",
-        parameter_summary: "generated default uses inverse log-polar visual-field frame from the orthogonal-response diagnostic",
+        parameter_summary: "generated default uses inverse log-polar visual-field frame from the source-grid orthogonal-response diagnostic",
         method: "generated map diagnostic using reduced amplitude-equation response fields",
         report_target: "reports/nicks-orthogonal-response.json",
         expected_behavior:
@@ -140,7 +140,7 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         public_claim_level: "first-pass diagnostic",
         rights_status: "generated outputs only; source figures remain private",
         difficulty: "hard",
-        missing_evidence: "localized half-space forcing, source-derived target geometry, parameter normalization, and acceptance thresholds",
+        missing_evidence: "localized half-space forcing, source-derived target geometry, nonlinear/full-field coefficient normalization, and acceptance thresholds",
     },
     DrivenExampleDetails {
         id: "bolelli_periodic_attractor",

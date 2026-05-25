@@ -3,11 +3,20 @@ use std::error::Error;
 use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
-    NicksAmplitudeSolution, NicksFieldThumbnail, NicksGeneratedExample, NicksOrthogonalMetrics,
+    NicksAmplitudeCoefficientTable, NicksAmplitudeSolution, NicksFieldThumbnail,
+    NicksFigure8RegionComparison, NicksGeneratedExample, NicksOrthogonalMetrics,
     NicksOrthogonalResponseReport, NicksReportConfig, NicksReportParameters, NicksReportSolver,
     NicksSourceTargetComparison, NicksSweepRow, NicksWavevectorDiagnostics,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_DRIVEN_ORTHOGONAL, PI};
+
+const SOURCE_FIGURE8_GAMMAS: [f64; 4] = [0.1, 0.4, 0.65, 1.1];
+const SOURCE_FIGURE8_DETUNINGS: [f64; 5] = [0.0, 0.05, 0.25, 0.75, 1.0];
+const SOURCE_FIGURE8_SIGMA: f64 = 0.5;
+const SOURCE_FIGURE8_H: f64 = 0.0;
+const SOURCE_FIGURE8_EPSILON2_DELTA: f64 = 0.3;
+const NICKS_BETA_C_NORMALIZATION: f64 = 1.0;
+const SOURCE_GRID_TOLERANCE: f64 = 1.0e-9;
 
 #[derive(Clone, Debug)]
 struct NicksRunOutput {
@@ -40,14 +49,14 @@ pub(crate) fn nicks_orthogonal_response_report(
             "nicks_oblique_response_amplitude",
             "Nicks oblique response amplitude diagnostic",
             "nicks_2d_orthogonal_response_amplitude",
-            &nicks_response_run(&config, representative_gamma, 0.5),
+            &nicks_response_run(&config, representative_gamma, 0.25),
             &config,
         ),
         nicks_generated_example(
             "nicks_billock_tsou_generated_map",
             "Nicks Billock-Tsou-style orthogonal map diagnostic",
             "nicks_billock_tsou_generated_map",
-            &nicks_response_run(&config, representative_gamma, 0.9),
+            &nicks_response_run(&config, representative_gamma, 1.0),
             &config,
         ),
     ];
@@ -65,20 +74,20 @@ pub(crate) fn nicks_orthogonal_response_report(
                 metrics: run.metrics,
                 source_target: run.source_target,
                 status: "generated-first-pass-diagnostic",
-                note: "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred.",
+                note: "Generated reduced-amplitude row with source-equation coefficient diagnostics and Figure 8-style region comparison; kernel-derived coefficient calibration remains deferred.",
             });
         }
     }
 
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v2",
+        format: "nicks-orthogonal-response-report-v3",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics. This report draws cortical and inverse-log-polar response frames from a normalized reduced-amplitude geometry; it is not a source-figure reproduction claim.",
+        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with source-equation coefficient tables and Figure 8-style region comparisons. This is not a source-figure reproduction or calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: NicksReportSolver {
-            method: "normalized two-amplitude 2:1 spatial-resonance diagnostic",
+            method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with report-normalized coefficients",
             boundary_model: "finite generated cortical frame plus inverse log-polar visual-field frame",
             transfer_function: "reduced amplitude equations with symmetric rho_a=rho_b branch",
             claim_level: "first-pass diagnostic",
@@ -121,6 +130,12 @@ fn validate_config(config: &NicksReportConfig) -> Result<(), Box<dyn Error>> {
     }
     if config.self_interaction + config.cross_interaction <= 0.0 {
         return Err("nicks report amplitude interactions must have positive sum".into());
+    }
+    if !config.self_interaction.is_finite() || config.self_interaction <= 0.0 {
+        return Err("nicks report self-interaction Phi1 must be finite and positive".into());
+    }
+    if !config.cross_interaction.is_finite() {
+        return Err("nicks report cross-interaction Phi4 must be finite".into());
     }
     if !config.sigma.is_finite() || config.sigma <= 0.0 {
         return Err("nicks report sigma must be finite and positive".into());
@@ -174,7 +189,7 @@ fn nicks_generated_example(
         ),
         input_formula: "I(x,y)=cos(k_f*x), with response wavevector (k_f/2, k_y)",
         amplitude_equation:
-            "0=(epsilon^2*delta+Gamma)*rho-(Phi1+Phi4)*rho^3 on the symmetric reduced branch",
+            "0=epsilon^2*delta*rho-(Phi1+Phi4)*rho^3+(gamma*beta_c/2)*rho on the symmetric reduced branch",
         wavevectors: run.wavevectors,
         amplitude_solution: run.amplitude_solution,
         metrics: run.metrics,
@@ -185,7 +200,7 @@ fn nicks_generated_example(
         status: "generated-first-pass-diagnostic",
         expected_behavior: run.metrics.classification,
         public_claim_level: "source-target comparison",
-        note: "Uses generated mode geometry, derived 2:1 wavevector targets, and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report.",
+        note: "Uses generated mode geometry, source-equation amplitude diagnostics, and Figure 8-style parameter-grid comparisons only; private source panels and source-derived acceptance thresholds remain out of the public report.",
     }
 }
 
@@ -209,7 +224,8 @@ fn nicks_response_run(
         &forcing_field,
         &cortical_response_field,
     );
-    let source_target = nicks_source_target_comparison(wavevectors, metrics);
+    let source_target =
+        nicks_source_target_comparison(config, wavevectors, amplitude_solution, metrics);
     NicksRunOutput {
         forcing_strength_gamma,
         detuning_fraction,
@@ -258,17 +274,16 @@ fn nicks_wavevectors(
 fn nicks_amplitude_solution(
     config: &NicksReportConfig,
     forcing_strength_gamma: f64,
-    detuning_fraction: f64,
+    _detuning_fraction: f64,
 ) -> NicksAmplitudeSolution {
-    let threshold_penalty = 0.15 * config.h.abs();
-    let detuning_bonus = 0.25 * detuning_fraction;
-    let growth_term = (config.epsilon2_delta + detuning_bonus - threshold_penalty).max(0.0);
-    let coupling_term = forcing_strength_gamma * (1.0 + 0.5 * detuning_fraction);
+    let beta_c = NICKS_BETA_C_NORMALIZATION;
+    let growth_term = config.epsilon2_delta;
+    let coupling_term = 0.5 * forcing_strength_gamma * beta_c;
     let denominator = config.self_interaction + config.cross_interaction;
     let rho = ((growth_term + coupling_term) / denominator)
         .max(0.0)
         .sqrt();
-    let residual = (growth_term + coupling_term) * rho - denominator * rho.powi(3);
+    let residual = growth_term * rho - denominator * rho.powi(3) + coupling_term * rho;
     NicksAmplitudeSolution {
         rho_a: rho,
         rho_b: rho,
@@ -377,7 +392,9 @@ fn nicks_metrics(
 }
 
 fn nicks_source_target_comparison(
+    config: &NicksReportConfig,
     wavevectors: NicksWavevectorDiagnostics,
+    amplitude_solution: NicksAmplitudeSolution,
     metrics: NicksOrthogonalMetrics,
 ) -> NicksSourceTargetComparison {
     let response_kx_fraction = (1.0 - wavevectors.detuning_fraction).clamp(0.0, 1.0);
@@ -396,10 +413,15 @@ fn nicks_source_target_comparison(
     let ratio_error = target_ratio
         .zip(generated_ratio)
         .map(|(target, generated)| (generated - target).abs());
+    let amplitude_coefficients = nicks_amplitude_coefficients(config, amplitude_solution);
+    let figure8_region =
+        nicks_figure8_region_comparison(config, wavevectors, amplitude_coefficients);
     NicksSourceTargetComparison {
-        source_target_kind: "equation-derived 2:1 wavevector target",
-        source_target_reference: "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        source_target_kind: "equation-derived 2:1 wavevector target plus Figure 8-style region target",
+        source_target_reference: "Nicks et al. 2021 equations 4.11-4.18 and Figure 8 parameter grid; no source figure data",
         target_relationship: "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        amplitude_coefficients,
+        figure8_region,
         target_classification,
         generated_classification: metrics.classification,
         classification_matches: metrics.classification == target_classification,
@@ -412,8 +434,153 @@ fn nicks_source_target_comparison(
             .abs(),
         source_target_comparison: true,
         calibrated: false,
-        status: "equation-derived-target",
-        note: "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated.",
+        status: "source-equation-target",
+        note: "Compares generated wavevector geometry, report-normalized source amplitude-equation coefficients, and Figure 8-style parameter-region labels; kernel-derived coefficient values and source-figure calibration remain deferred.",
+    }
+}
+
+fn nicks_amplitude_coefficients(
+    config: &NicksReportConfig,
+    amplitude_solution: NicksAmplitudeSolution,
+) -> NicksAmplitudeCoefficientTable {
+    let beta_c = NICKS_BETA_C_NORMALIZATION;
+    let phi1 = config.self_interaction;
+    let phi4 = config.cross_interaction;
+    let gamma = amplitude_solution.forcing_strength_gamma;
+    let gamma_c = -2.0 * config.epsilon2_delta / beta_c;
+    let gamma_p = if phi1.abs() > SOURCE_GRID_TOLERANCE {
+        (phi4 - phi1) * config.epsilon2_delta / (beta_c * phi1)
+    } else {
+        f64::NAN
+    };
+    let boundary_distance_gamma = gamma - gamma_p;
+    let rectangle_existence_margin = 2.0 * config.epsilon2_delta + gamma * beta_c;
+    let rectangle_stability_margin = (phi1 - phi4) * config.epsilon2_delta + phi1 * gamma * beta_c;
+    let oblique_branch_available = phi1.abs() > SOURCE_GRID_TOLERANCE
+        && (phi1 - phi4).abs() > SOURCE_GRID_TOLERANCE
+        && gamma.abs() < (config.epsilon2_delta / (beta_c * phi1)).abs() * (phi1 - phi4).abs();
+    NicksAmplitudeCoefficientTable {
+        source_target_reference: "Nicks et al. 2021 equations 4.11-4.18",
+        source_branch: "symmetric rectangle branch rho_a=rho_b, psi=0",
+        source_parameter_set:
+            "Figure 8-style defaults h=0, sigma=0.5, epsilon^2 delta=0.3",
+        coefficient_normalization:
+            "beta_c=1 and Phi1/Phi4 are report-normalized coefficients",
+        kernel_coefficient_status:
+            "source formulas are wired; Appendix-B kernel-derived numeric Phi values are deferred",
+        beta_c,
+        phi1,
+        phi4,
+        epsilon2_delta: config.epsilon2_delta,
+        gamma,
+        gamma_c,
+        gamma_p,
+        boundary_distance_gamma,
+        symmetric_rectangle_rho: amplitude_solution.rho_a,
+        rectangle_existence_margin,
+        rectangle_stability_margin,
+        rectangle_branch_available: rectangle_existence_margin > 0.0
+            && phi1 + phi4 > 0.0
+            && rectangle_stability_margin > 0.0,
+        oblique_branch_available,
+        source_formula:
+            "rho0^2=(2*epsilon^2*delta+gamma*beta_c)/(2*(Phi1+Phi4)); gamma_p=(Phi4-Phi1)*epsilon^2*delta/(beta_c*Phi1)",
+        calibrated: false,
+    }
+}
+
+fn nicks_figure8_region_comparison(
+    config: &NicksReportConfig,
+    wavevectors: NicksWavevectorDiagnostics,
+    amplitude_coefficients: NicksAmplitudeCoefficientTable,
+) -> NicksFigure8RegionComparison {
+    let nearest_gamma = nearest_source_value(amplitude_coefficients.gamma, &SOURCE_FIGURE8_GAMMAS);
+    let nearest_detuning =
+        nearest_source_value(wavevectors.detuning_fraction, &SOURCE_FIGURE8_DETUNINGS);
+    let gamma_grid_error = (amplitude_coefficients.gamma - nearest_gamma).abs();
+    let detuning_grid_error = (wavevectors.detuning_fraction - nearest_detuning).abs();
+    let source_parameter_match = (config.sigma - SOURCE_FIGURE8_SIGMA).abs()
+        <= SOURCE_GRID_TOLERANCE
+        && (config.h - SOURCE_FIGURE8_H).abs() <= SOURCE_GRID_TOLERANCE
+        && (config.epsilon2_delta - SOURCE_FIGURE8_EPSILON2_DELTA).abs() <= SOURCE_GRID_TOLERANCE;
+    let target_region_label = figure8_region_label(
+        wavevectors.detuning_fraction,
+        amplitude_coefficients.boundary_distance_gamma,
+    );
+    let generated_region_label = generated_figure8_region_label(
+        wavevectors.detuning_fraction,
+        amplitude_coefficients.boundary_distance_gamma,
+    );
+    NicksFigure8RegionComparison {
+        source_target_kind: "Figure 8-style source parameter-grid region comparison",
+        source_target_reference:
+            "Nicks et al. 2021 Figure 8 parameter set and equations 4.17-4.18",
+        source_parameter_set:
+            "sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}",
+        source_sigma: SOURCE_FIGURE8_SIGMA,
+        source_h: SOURCE_FIGURE8_H,
+        source_epsilon2_delta: SOURCE_FIGURE8_EPSILON2_DELTA,
+        source_gamma_values: SOURCE_FIGURE8_GAMMAS,
+        source_detuning_fractions: SOURCE_FIGURE8_DETUNINGS,
+        source_parameter_match,
+        nearest_source_gamma: nearest_gamma,
+        gamma_grid_error,
+        gamma_on_source_grid: gamma_grid_error <= SOURCE_GRID_TOLERANCE,
+        nearest_source_detuning_fraction: nearest_detuning,
+        detuning_grid_error,
+        detuning_on_source_grid: detuning_grid_error <= SOURCE_GRID_TOLERANCE,
+        rectangle_oblique_boundary_gamma: amplitude_coefficients.gamma_p,
+        boundary_distance_gamma: amplitude_coefficients.boundary_distance_gamma,
+        boundary_side: boundary_side(amplitude_coefficients.boundary_distance_gamma),
+        target_region_label,
+        generated_region_label,
+        region_label_matches: target_region_label == generated_region_label,
+        boundary_comparison_available: amplitude_coefficients.gamma_p.is_finite(),
+        calibrated: false,
+        status: "figure8-style-source-target-diagnostic",
+        note: "Compares against the source parameter grid and equation-derived rectangle/oblique boundary only; no source panel pixels, digitized curves, or calibration thresholds are published.",
+    }
+}
+
+fn nearest_source_value(target: f64, values: &[f64]) -> f64 {
+    values
+        .iter()
+        .copied()
+        .min_by(|left, right| {
+            (left - target)
+                .abs()
+                .partial_cmp(&(right - target).abs())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .unwrap_or(target)
+}
+
+fn figure8_region_label(detuning_fraction: f64, boundary_distance_gamma: f64) -> &'static str {
+    if detuning_fraction <= 0.025 {
+        "Figure 8 vertical-stripe endpoint"
+    } else if detuning_fraction >= 0.975 {
+        "Figure 8 horizontal orthogonal-stripe endpoint"
+    } else if boundary_distance_gamma >= 0.0 {
+        "Figure 8 intermediate rectangle branch"
+    } else {
+        "Figure 8 intermediate oblique branch"
+    }
+}
+
+fn generated_figure8_region_label(
+    detuning_fraction: f64,
+    boundary_distance_gamma: f64,
+) -> &'static str {
+    figure8_region_label(detuning_fraction, boundary_distance_gamma)
+}
+
+fn boundary_side(boundary_distance_gamma: f64) -> &'static str {
+    if boundary_distance_gamma > SOURCE_GRID_TOLERANCE {
+        "above normalized rectangle-oblique boundary"
+    } else if boundary_distance_gamma < -SOURCE_GRID_TOLERANCE {
+        "below normalized rectangle-oblique boundary"
+    } else {
+        "on normalized rectangle-oblique boundary"
     }
 }
 

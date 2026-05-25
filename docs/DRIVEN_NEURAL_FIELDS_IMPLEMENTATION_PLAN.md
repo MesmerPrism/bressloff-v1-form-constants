@@ -28,7 +28,7 @@ Current tracked outputs:
 - `reports/bolelli-time-periodic-input.json` uses
   `format: bolelli-time-periodic-input-report-v3`.
 - `reports/nicks-orthogonal-response.json` uses
-  `format: nicks-orthogonal-response-report-v2`.
+  `format: nicks-orthogonal-response-report-v3`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
   include equation-derived source-target comparison layers while still reporting
   `calibrated=false`.
@@ -71,10 +71,11 @@ not all should become simulator code at the same depth.
    source-target diagnostic until source-backed acceptance thresholds exist.
 
 5. `nicks_2d_orthogonal_response_amplitude`
-   Source: Nicks et al. 2021. Implemented as a normalized reduced 2:1 resonance
-   amplitude diagnostic with forcing wavevector, response wavevector,
-   rectangle/oblique/orthogonal response family, orthogonality error, and an
-   equation-derived 2:1 geometry comparison.
+   Source: Nicks et al. 2021. Implemented as a reduced 2:1 resonance amplitude
+   diagnostic with forcing wavevector, response wavevector,
+   rectangle/oblique/orthogonal response family, orthogonality error,
+   report-normalized source-equation coefficient diagnostics, and a Figure
+   8-style parameter-grid/region comparison.
 
 6. `nicks_billock_tsou_generated_map`
    Partially implemented as a source-safe inverse-log-polar generated response
@@ -153,7 +154,7 @@ Initial implemented/planned model-family names:
 | Example id | Equation or reduction | Domain and symmetry | Kernel/connectivity | Input/forcing | Source parameters | Method | Output target | Difficulty | Missing evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `nicks_1d_resonance_tongues` | 1D forced scalar neural field and n:1 amplitude equation | Cortical line, weak forcing near Turing instability | Balanced Wizard-hat/Mexican-hat kernel | `cos(kf x)` multiplicative drive | Example uses `sigma = 0.8`, threshold `h = 0`, small detuning/distance-from-threshold constants | Amplitude-equation scan | Resonance tongue report; dominant 2:1 band | Medium | Needs source curve digitization for quantitative tongue comparison. |
-| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Normalized mode-gain abstraction from the isotropic kernel | Spatial stripe forcing | Generated default uses `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, normalized `Phi` coefficients, and gamma/detuning sweeps | Symmetric-branch amplitude solve, generated fields, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as an equation-derived source-target geometry diagnostic; source-derived coefficient normalization and calibrated region thresholds are still missing. |
+| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Normalized mode-gain abstraction from the isotropic kernel | Spatial stripe forcing | Generated default uses source Figure 8-style `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, `gamma = {0.1,0.4,0.65,1.1}`, `v2/k0 = {0,0.05,0.25,0.75,1}`, and report-normalized `Phi` coefficients | Symmetric-branch amplitude solve, generated fields, source-grid checks, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as source-equation and Figure 8-style diagnostics; Appendix-B coefficient values, digitized region curves, and calibrated thresholds are still missing. |
 | `nicks_billock_tsou_generated_map` | Reduced-amplitude response mapped through an inverse log-polar visual-field frame | 2D cortical diagnostic frame plus generated retinal/log-polar frame | Same normalized mode-gain abstraction | Stripe forcing with orthogonal response mode | Uses the same generated Nicks defaults | Generated map diagnostic | `reports/nicks-orthogonal-response.json` | Medium/hard | Partially implemented; localized source-target geometry and source metrics remain missing. |
 | `nicks_halfspace_billock_tsou_full_field` | Full neural field with adaptation | 2D cortical half-space plus inverse log-polar retinal view | Isotropic local kernel plus adaptation | Half-space stripe/ring/fan forcing, optional flicker | Numerical method uses regular square mesh and FFT in source; repo can start smaller | Time stepping | Future Billock-Tsou-style ring/fan response report | Hard | Needs grid/boundary choices and private source-target metrics. |
 | `tamekue_plain_funnel_tunnel_negative_control` | Stationary Amari fixed point `a = I + mu omega * f(a)` | 2D cortical plane; funnel/tunnel remain symmetric | 2D DoG | Pure `PF` or `PT` cosine input | DoG constraints and `mu < mu0`; generated defaults can use source-like DoG | Fixed-point iteration | Negative-control report showing no induced MacKay contours | Easy | Needs acceptance metric for "same zero-level structure." |
@@ -328,8 +329,10 @@ Remaining work:
 
 Status: implemented as a generated source-target diagnostic for the 2D
 orthogonal-response amplitude example. The report compares generated wavevector
-geometry with the equation-derived 2:1 response target, while coefficient
-normalization and full half-space simulations remain deferred.
+geometry with the equation-derived 2:1 response target and now records
+source-equation coefficient tables plus Figure 8-style region comparisons.
+Kernel-derived coefficient calibration and full half-space simulations remain
+deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
@@ -338,7 +341,7 @@ normalization and full half-space simulations remain deferred.
 Report format:
 
 ```text
-nicks-orthogonal-response-report-v2
+nicks-orthogonal-response-report-v3
 ```
 
 Delivered fields:
@@ -351,6 +354,12 @@ Delivered fields:
 - generated inverse-log-polar visual-field frame,
 - symmetric-branch amplitude-equation residual,
 - equation-derived 2:1 wavevector target comparison,
+- source Figure 8-style parameter grid checks for
+  `sigma=0.5`, `h=0`, `epsilon^2 delta=0.3`,
+  `gamma={0.1,0.4,0.65,1.1}`, and
+  `v2/k0={0,0.05,0.25,0.75,1}`,
+- report-normalized `beta_c`, `Phi1`, `Phi4`, `gamma_c`, and `gamma_p`
+  coefficient diagnostics from equations 4.11-4.18,
 - validation flags for rendered target coverage, diagnostic metric availability,
   source-target comparison, and calibration.
 
@@ -367,10 +376,10 @@ Remaining work:
 Only after these reduced examples are stable should the repo add a full
 half-space driven neural-field simulation.
 
-- Replace normalized amplitude coefficients with source-derived public-safe
-  coefficient tables before any calibrated source-match claim.
-- Add a private/source-target comparison layer for Figure 8-style region
-  boundaries beyond the current equation-derived geometry check.
+- Replace report-normalized `Phi1`/`Phi4` values with kernel-derived
+  Appendix-B coefficient values before any calibrated source-match claim.
+- Add private digitized/source-derived Figure 8 region curves before any
+  accepted region-boundary residual is reported.
 - Add localized half-space Billock-Tsou geometry and adaptation only after the
   reduced diagnostic has stable acceptance thresholds.
 
@@ -415,8 +424,10 @@ Current report status:
   calibration remains false because generated half-max widths are explicitly
   non-comparable to the source pole-width convention.
 - Nicks: 2:1 wavevector geometry source-target comparisons are present;
-  calibration remains false because coefficient normalization and region
-  thresholds are not source calibrated.
+  report-normalized coefficient tables and Figure 8-style region comparisons
+  are present; calibration remains false because Appendix-B coefficient values,
+  digitized source-region curves, and acceptance thresholds are not source
+  calibrated.
 
 ### Phase D7 - Deferred High-Risk Work
 

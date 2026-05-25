@@ -387,12 +387,12 @@ impl Default for NicksReportConfig {
     fn default() -> Self {
         Self {
             n: 96,
-            domain_min: -2.0 * std::f64::consts::PI,
-            domain_max: 2.0 * std::f64::consts::PI,
+            domain_min: 0.0,
+            domain_max: 10.0 * std::f64::consts::PI,
             turing_wavenumber: 1.0,
             epsilon2_delta: 0.3,
-            forcing_strengths: vec![0.02, 0.08, 0.16],
-            detuning_fractions: vec![0.0, 0.25, 0.5, 0.75, 0.9],
+            forcing_strengths: vec![0.1, 0.4, 0.65, 1.1],
+            detuning_fractions: vec![0.0, 0.05, 0.25, 0.75, 1.0],
             self_interaction: 1.0,
             cross_interaction: 1.3,
             h: 0.0,
@@ -491,6 +491,59 @@ pub(crate) struct NicksAmplitudeSolution {
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct NicksAmplitudeCoefficientTable {
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) source_branch: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) coefficient_normalization: &'static str,
+    pub(crate) kernel_coefficient_status: &'static str,
+    pub(crate) beta_c: f64,
+    pub(crate) phi1: f64,
+    pub(crate) phi4: f64,
+    pub(crate) epsilon2_delta: f64,
+    pub(crate) gamma: f64,
+    pub(crate) gamma_c: f64,
+    pub(crate) gamma_p: f64,
+    pub(crate) boundary_distance_gamma: f64,
+    pub(crate) symmetric_rectangle_rho: f64,
+    pub(crate) rectangle_existence_margin: f64,
+    pub(crate) rectangle_stability_margin: f64,
+    pub(crate) rectangle_branch_available: bool,
+    pub(crate) oblique_branch_available: bool,
+    pub(crate) source_formula: &'static str,
+    pub(crate) calibrated: bool,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct NicksFigure8RegionComparison {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) source_sigma: f64,
+    pub(crate) source_h: f64,
+    pub(crate) source_epsilon2_delta: f64,
+    pub(crate) source_gamma_values: [f64; 4],
+    pub(crate) source_detuning_fractions: [f64; 5],
+    pub(crate) source_parameter_match: bool,
+    pub(crate) nearest_source_gamma: f64,
+    pub(crate) gamma_grid_error: f64,
+    pub(crate) gamma_on_source_grid: bool,
+    pub(crate) nearest_source_detuning_fraction: f64,
+    pub(crate) detuning_grid_error: f64,
+    pub(crate) detuning_on_source_grid: bool,
+    pub(crate) rectangle_oblique_boundary_gamma: f64,
+    pub(crate) boundary_distance_gamma: f64,
+    pub(crate) boundary_side: &'static str,
+    pub(crate) target_region_label: &'static str,
+    pub(crate) generated_region_label: &'static str,
+    pub(crate) region_label_matches: bool,
+    pub(crate) boundary_comparison_available: bool,
+    pub(crate) calibrated: bool,
+    pub(crate) status: &'static str,
+    pub(crate) note: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
 pub(crate) struct NicksOrthogonalMetrics {
     pub(crate) classification: &'static str,
     pub(crate) amplitude_norm: f64,
@@ -511,6 +564,8 @@ pub(crate) struct NicksSourceTargetComparison {
     pub(crate) source_target_kind: &'static str,
     pub(crate) source_target_reference: &'static str,
     pub(crate) target_relationship: &'static str,
+    pub(crate) amplitude_coefficients: NicksAmplitudeCoefficientTable,
+    pub(crate) figure8_region: NicksFigure8RegionComparison,
     pub(crate) target_classification: &'static str,
     pub(crate) generated_classification: &'static str,
     pub(crate) classification_matches: bool,

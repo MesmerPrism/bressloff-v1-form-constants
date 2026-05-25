@@ -188,8 +188,10 @@ Generate the first Nicks orthogonal-response amplitude diagnostic:
 
 The Nicks report contains generated cortical/log-polar frames, wavevector
 detuning metrics, orthogonality error, amplitude-equation residuals, and an
-equation-derived 2:1 wavevector target comparison. It is a source-target
-diagnostic, not a calibrated source-figure reproduction claim.
+equation-derived 2:1 wavevector target comparison. It now also records
+report-normalized source-equation coefficient diagnostics and Figure 8-style
+parameter-grid region checks. It is a source-target diagnostic, not a
+calibrated source-figure reproduction claim.
 
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 
