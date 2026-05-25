@@ -26,7 +26,7 @@ Current tracked outputs:
 - `reports/mackay-localized-input.json` uses
   `format: mackay-localized-input-report-v2`.
 - `reports/bolelli-time-periodic-input.json` uses
-  `format: bolelli-time-periodic-input-report-v2`.
+  `format: bolelli-time-periodic-input-report-v3`.
 - `reports/nicks-orthogonal-response.json` uses
   `format: nicks-orthogonal-response-report-v2`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
@@ -162,7 +162,7 @@ Initial implemented/planned model-family names:
 | `tamekue_nonlinear_mackay_stationary` | Nonlinear Amari fixed point | 2D cortex and retinal view | 2D DoG | Same MacKay inputs | Source examples include odd saturating functions such as `s/(1 + |s|)` | Fixed-point iteration | Linear-vs-nonlinear comparison | Medium | Convergence and threshold choices need report fields. |
 | `mackay_gaussian_kernel_negative_check` | Same fixed point with excitatory Gaussian-only kernel | 2D finite cortical diagnostic grid | Gaussian-only comparator | Same localized input | No source reproduction expected | Negative-control report | Kernel-family diagnostic in `reports/mackay-localized-input.json` | Easy | Implemented as a diagnostic control, not a figure match. |
 | `bolelli_periodic_attractor` | Neural field with T-periodic input and unique periodic state under contraction assumptions | 1D/2D cortical domain, depending on input | Even kernel with `||omega||_1 < 1`; linear case explicit | Generic T-periodic input | Repo defines period/frequency grid | Time stepping plus period residual | `reports/bolelli-time-periodic-input.json` | Easy/medium | The theorem is broad; example-specific metrics must be defined. |
-| `bolelli_heaviside_flicker_stripes` | Linear periodic solution with kernel expansion | 1D cortical coordinate lifted to 2D display | 1D DoG | `H(x1) cos(lambda t)` or center/periphery variant | Source examples use `k = 1` and DoG pairs including `(0.4/sqrt(2 pi), 0.8/sqrt(2 pi))` | Periodic-state solver | Moving-stripe/contour-width diagnostic | Medium | Needs pole solver or numerical width estimate. |
+| `bolelli_heaviside_flicker_stripes` | Linear periodic solution with kernel expansion | 1D cortical coordinate lifted to 2D display | 1D DoG | `H(x1) cos(lambda t)` or center/periphery variant | Source examples use `k = 1` and DoG pairs including `(0.4/sqrt(2 pi), 0.8/sqrt(2 pi))` | Periodic-state solver plus source-convention pole diagnostic | Moving-stripe/contour-width diagnostic | Medium | Implemented as source-target diagnostic; generated renderer width is not yet in the source stripe-width convention. |
 | `bolelli_contour_width_frequency_sweep` | Principal-pole/stripe-width dependence | 1D cortical coordinate | DoG inhibitory scale | Frequency sweep `lambda` | Source sweep range includes `lambda` from about `2` to `100` in examples | Numeric pole/root search plus generated simulation metric | `reports/bolelli-time-periodic-input.json` | Medium/hard | Implemented as an equation-derived source-target diagnostic; source-figure thresholds and nonlinear examples remain missing. |
 | `bolelli_mackay_flicker_persistence` | Static MacKay input plus localized flicker | 1D cortical effective input, retinal display | DoG | Center localized flicker replacing static localized information | Frequency examples include `lambda = 0` and high-frequency comparison | Time stepping and width metric | MacKay flicker report row | Medium | Source examples are visual, not table-calibrated. |
 | `bolelli_billock_tsou_nonlinear_flicker` | Nonlinear periodic field | 2D display with effective 1D input | DoG | Static radial/fan term plus peripheral flicker | Source example uses clipped linear nonlinearity, `lambda = 60`, `k = 1`, source-like DoG pair | Time stepping over one period after convergence | Animated generated report frames | Hard | Nonlinear parameter calibration and source comparison are deferred. |
@@ -262,8 +262,9 @@ remains first-pass diagnostic until source-derived numeric targets exist.
 
 Status: implemented as a generated source-target diagnostic for the
 periodic-state, Heaviside-flicker, and frequency-sweep examples. The report now
-compares generated half-max widths with the equation-derived principal-pole
-width target, but it remains uncalibrated against source figures.
+validates the source-side principal-pole width target under the paper Fourier
+convention, while keeping generated half-max support as an auxiliary renderer
+metric rather than a calibration residual.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
@@ -272,7 +273,7 @@ width target, but it remains uncalibrated against source figures.
 Report format:
 
 ```text
-bolelli-time-periodic-input-report-v2
+bolelli-time-periodic-input-report-v3
 ```
 
 Delivered fields:
@@ -282,7 +283,8 @@ Delivered fields:
 - periodic-state residual over one period,
 - response phase relative to input,
 - contour or stripe width,
-- equation-derived principal-pole width comparison,
+- equation-derived principal-pole width comparison with source-parameter,
+  lambda-range, residual, and asymptotic-width quality flags,
 - frequency sweep rows,
 - generated thumbnails or row-major compact frames.
 
@@ -301,22 +303,24 @@ Implemented numerical target:
 
 - 1D finite cortical coordinate with zero or periodic boundary option recorded
   in the report.
-- Linear DoG kernel using source-like pairs such as
-  `(0.4/sqrt(2*pi), 0.8/sqrt(2*pi))`.
+- Linear DoG kernel using source Fig. 5 pairs such as
+  `k=1`, `(0.4/sqrt(2*pi), 0.8/sqrt(2*pi))`.
 - Localized Heaviside or center/periphery periodic input with frequency rows.
 - Warmup over several periods, then compare the last two periods by residual and
   phase.
 - Stripe/contour width measured from generated threshold crossings or
-  half-maximum support.
+  half-maximum support and explicitly labeled non-comparable to the pole-width
+  convention.
 - Principal-pole target width from the public-safe equation relation
-  `1 +/- i*lambda = omega_hat(z)`.
+  `1 +/- i*lambda = omega_hat(z)` with the source Fourier convention
+  `omega_hat(z)=exp(-2*pi^2*sigma1^2*z^2)-k exp(-2*pi^2*sigma2^2*z^2)`.
 
 Remaining work:
 
 - Add source-figure-derived public-safe numeric targets before any calibrated
   source-match claim.
-- Replace or normalize the generated half-max width only if a source-backed
-  acceptance convention is established.
+- Add a generated metric that shares the source stripe-width convention before
+  any calibrated width residual is reported.
 - Add nonlinear Billock-Tsou-style flicker only after the linear periodic-state
   report has stable validation thresholds.
 
@@ -408,8 +412,8 @@ Current report status:
 - MacKay: rendered target coverage and diagnostic metrics are present;
   source-target comparison is still false.
 - Bolelli: principal-pole width source-target comparisons are present;
-  calibration remains false because generated half-max widths are not accepted
-  source-figure matches.
+  calibration remains false because generated half-max widths are explicitly
+  non-comparable to the source pole-width convention.
 - Nicks: 2:1 wavevector geometry source-target comparisons are present;
   calibration remains false because coefficient normalization and region
   thresholds are not source calibrated.

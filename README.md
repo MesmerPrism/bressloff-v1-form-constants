@@ -176,8 +176,9 @@ Generate the first Bolelli-Prandi localized time-periodic input diagnostic:
 
 The Bolelli report contains generated 1D profiles, period residuals, response
 phase, stripe-width diagnostics, and an equation-derived principal-pole width
-comparison. It is a source-target diagnostic, not a calibrated source-figure
-reproduction claim.
+comparison using the paper's Fourier convention. It is a source-target
+diagnostic, not a calibrated source-figure reproduction claim; generated
+half-max support is kept as an auxiliary renderer metric.
 
 Generate the first Nicks orthogonal-response amplitude diagnostic:
 

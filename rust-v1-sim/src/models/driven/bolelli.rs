@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    ops::{Div, Mul, Sub},
+    ops::{Div, Mul, Neg, Sub},
 };
 
 use base64::{engine::general_purpose, Engine as _};
@@ -79,11 +79,11 @@ pub(crate) fn bolelli_time_periodic_report(
     )];
 
     Ok(BolelliTimePeriodicInputReport {
-        format: "bolelli-time-periodic-input-report-v2",
+        format: "bolelli-time-periodic-input-report-v3",
         model_family: MODEL_FAMILY_LOCALIZED_PERIODIC,
         source_key: "bolelli-prandi-2025",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, and generated stripe-width metrics; it is not a source-figure reproduction claim.",
+        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and source-normalized pole-width targets; it is not a source-figure reproduction claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: BolelliReportSolver {
             method: "explicit Euler integration to a periodic state after warmup",
@@ -362,37 +362,71 @@ fn bolelli_pole_width_comparison(
     frequency_lambda: f64,
     generated_width_half_max: f64,
 ) -> BolelliPoleWidthComparison {
+    let source_parameter_match = bolelli_source_parameter_match(config);
+    let lambda_in_source_range = (2.0..=100.0).contains(&frequency_lambda);
+    let pole_residual_tolerance = 1.0e-8;
     if let Some((pole, pole_residual)) = principal_pole_root(config, frequency_lambda) {
+        let pole = Complex::new(pole.re, pole.im.abs());
         let target_width = 1.0 / (2.0 * pole.re);
-        let absolute_width_error = (generated_width_half_max - target_width).abs();
+        let pole_residual_pass = pole_residual <= pole_residual_tolerance;
+        let asymptotic_width =
+            dominant_inhibitory_width_approximation(config, frequency_lambda, pole.im.signum());
+        let asymptotic_relative_width_error = asymptotic_width
+            .map(|width| (width - target_width).abs() / target_width.abs().max(1.0e-12));
         BolelliPoleWidthComparison {
             source_target_kind: "equation-derived principal-pole width",
             source_target_reference:
-                "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+                "Bolelli-Prandi 2025 Section 4.3.1 / Proposition 4.17; no source figure data",
             pole_equation: "1 +/- i*lambda = omega_hat(z)",
+            fourier_convention: "source convention: omega_hat(z)=exp(-2*pi^2*sigma_exc^2*z^2)-k*exp(-2*pi^2*sigma_inh^2*z^2)",
+            source_parameter_set: "Figure 5 source families with k=1 and (sigma_exc,sigma_inh) in {(0.2,0.4),(1,2),(0.4,0.8)}/sqrt(2*pi)",
+            source_parameter_match,
+            source_lambda_range: [2.0, 100.0],
+            lambda_in_source_range,
+            pole_residual_tolerance,
+            pole_residual_pass,
             pole_real: Some(pole.re),
             pole_imaginary: Some(pole.im),
             pole_residual: Some(pole_residual),
             target_width_principal_pole: Some(target_width),
+            asymptotic_width_principal_pole: asymptotic_width,
+            asymptotic_relative_width_error,
             generated_width_half_max,
-            absolute_width_error: Some(absolute_width_error),
-            relative_width_error: Some(absolute_width_error / target_width.abs().max(1.0e-12)),
+            generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
+            generated_width_comparable: false,
+            absolute_width_error: None,
+            relative_width_error: None,
             source_target_comparison: true,
             calibrated: false,
-            status: "equation-derived-target",
-            note: "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match.",
+            status: if source_parameter_match && lambda_in_source_range && pole_residual_pass {
+                "source-pole-target-valid"
+            } else {
+                "source-pole-target-outside-validation-window"
+            },
+            note: "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual.",
         }
     } else {
         BolelliPoleWidthComparison {
             source_target_kind: "equation-derived principal-pole width",
             source_target_reference:
-                "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+                "Bolelli-Prandi 2025 Section 4.3.1 / Proposition 4.17; no source figure data",
             pole_equation: "1 +/- i*lambda = omega_hat(z)",
+            fourier_convention: "source convention: omega_hat(z)=exp(-2*pi^2*sigma_exc^2*z^2)-k*exp(-2*pi^2*sigma_inh^2*z^2)",
+            source_parameter_set: "Figure 5 source families with k=1 and (sigma_exc,sigma_inh) in {(0.2,0.4),(1,2),(0.4,0.8)}/sqrt(2*pi)",
+            source_parameter_match,
+            source_lambda_range: [2.0, 100.0],
+            lambda_in_source_range,
+            pole_residual_tolerance,
+            pole_residual_pass: false,
             pole_real: None,
             pole_imaginary: None,
             pole_residual: None,
             target_width_principal_pole: None,
+            asymptotic_width_principal_pole: None,
+            asymptotic_relative_width_error: None,
             generated_width_half_max,
+            generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
+            generated_width_comparable: false,
             absolute_width_error: None,
             relative_width_error: None,
             source_target_comparison: false,
@@ -400,6 +434,51 @@ fn bolelli_pole_width_comparison(
             status: "root-unresolved",
             note: "The report generated the periodic state, but the principal-pole root finder did not converge for this frequency.",
         }
+    }
+}
+
+fn bolelli_source_parameter_match(config: &BolelliReportConfig) -> bool {
+    if (config.inhibition - 1.0).abs() > 1.0e-10 {
+        return false;
+    }
+    let source_pairs = [(0.2, 0.4), (1.0, 2.0), (0.4, 0.8)];
+    source_pairs.iter().any(|(exc, inh)| {
+        (config.sigma_exc - source_sigma(*exc)).abs() <= 1.0e-10
+            && (config.sigma_inh - source_sigma(*inh)).abs() <= 1.0e-10
+    })
+}
+
+fn source_sigma(scale: f64) -> f64 {
+    scale / (2.0 * PI).sqrt()
+}
+
+fn dominant_inhibitory_width_approximation(
+    config: &BolelliReportConfig,
+    frequency_lambda: f64,
+    imaginary_sign: f64,
+) -> Option<f64> {
+    dominant_inhibitory_pole_approximation(config, frequency_lambda, imaginary_sign)
+        .filter(|pole| pole.re > 1.0e-12)
+        .map(|pole| 1.0 / (2.0 * pole.re))
+}
+
+fn dominant_inhibitory_pole_approximation(
+    config: &BolelliReportConfig,
+    frequency_lambda: f64,
+    imaginary_sign: f64,
+) -> Option<Complex> {
+    if config.inhibition <= 0.0 || !config.inhibition.is_finite() {
+        return None;
+    }
+    let target = Complex::new(-1.0, -imaginary_sign.signum() * frequency_lambda)
+        .scale(1.0 / config.inhibition);
+    let log_target = Complex::new(target.abs().ln(), target.im.atan2(target.re));
+    let z_squared = (-log_target).scale(1.0 / source_fourier_coefficient(config.sigma_inh));
+    let root = z_squared.sqrt();
+    if root.is_finite() {
+        Some(Complex::new(root.re.abs(), root.im.abs()))
+    } else {
+        None
     }
 }
 
@@ -417,6 +496,19 @@ fn principal_pole_root(
     for sign in [-1.0, 1.0] {
         let target = Complex::new(1.0, sign * frequency_lambda);
         let mut seeds = Vec::new();
+        if let Some(approx_seed) =
+            dominant_inhibitory_pole_approximation(config, frequency_lambda, sign)
+        {
+            seeds.push((
+                approx_seed,
+                bolelli_pole_residual(config, approx_seed, target),
+            ));
+            let reflected_seed = Complex::new(approx_seed.re, -approx_seed.im);
+            seeds.push((
+                reflected_seed,
+                bolelli_pole_residual(config, reflected_seed, target),
+            ));
+        }
         for xi in 0..x_samples {
             let fraction = xi as f64 / x_samples.saturating_sub(1).max(1) as f64;
             let x = x_min * (x_max / x_min).powf(fraction);
@@ -497,13 +589,17 @@ fn bolelli_kernel_hat(config: &BolelliReportConfig, z: Complex) -> Complex {
 fn bolelli_kernel_hat_derivative(config: &BolelliReportConfig, z: Complex) -> Complex {
     let exc = gaussian_hat_complex(config.sigma_exc, z);
     let inh = gaussian_hat_complex(config.sigma_inh, z);
-    let exc_derivative = z.scale(-config.sigma_exc * config.sigma_exc) * exc;
-    let inh_derivative = z.scale(-config.sigma_inh * config.sigma_inh) * inh;
+    let exc_derivative = z.scale(-2.0 * source_fourier_coefficient(config.sigma_exc)) * exc;
+    let inh_derivative = z.scale(-2.0 * source_fourier_coefficient(config.sigma_inh)) * inh;
     exc_derivative - inh_derivative.scale(config.inhibition)
 }
 
 fn gaussian_hat_complex(sigma: f64, z: Complex) -> Complex {
-    (z * z).scale(-0.5 * sigma * sigma).exp()
+    (z * z).scale(-source_fourier_coefficient(sigma)).exp()
+}
+
+fn source_fourier_coefficient(sigma: f64) -> f64 {
+    2.0 * PI * PI * sigma * sigma
 }
 
 fn masked_period_phase(
@@ -642,6 +738,13 @@ impl Complex {
         let magnitude = self.re.exp();
         Self::new(magnitude * self.im.cos(), magnitude * self.im.sin())
     }
+
+    fn sqrt(self) -> Self {
+        let magnitude = self.abs();
+        let re = ((magnitude + self.re) * 0.5).sqrt();
+        let im = self.im.signum() * ((magnitude - self.re) * 0.5).sqrt();
+        Self::new(re, im)
+    }
 }
 
 impl Sub for Complex {
@@ -672,6 +775,14 @@ impl Div for Complex {
             (self.re * rhs.re + self.im * rhs.im) / denom,
             (self.im * rhs.re - self.re * rhs.im) / denom,
         )
+    }
+}
+
+impl Neg for Complex {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self::new(-self.re, -self.im)
     }
 }
 

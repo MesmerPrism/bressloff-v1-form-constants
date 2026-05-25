@@ -190,11 +190,13 @@ generated with:
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
 ```
 
-It writes `format: bolelli-time-periodic-input-report-v2` and includes generated
+It writes `format: bolelli-time-periodic-input-report-v3` and includes generated
 1D profiles, period-lock residuals, response phase, half-max stripe-width
 metrics, equation-derived principal-pole width comparisons, and frequency-sweep
 rows for localized Heaviside flicker. It is a source-target diagnostic report,
-not a calibrated source-figure reproduction claim.
+not a calibrated source-figure reproduction claim. The pole comparison uses the
+source Fourier convention and records that generated half-max support is an
+auxiliary renderer metric, not an accepted pole-width residual.
 
 The first generated Nicks orthogonal-response amplitude diagnostic is generated
 with:
