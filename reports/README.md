@@ -159,3 +159,39 @@ amplitude grid edges where one of those conditions changes sign. Candidates
 marked `evidence: nearest_margin` are closest-to-threshold markers for the
 current coarse calibration and should be read as visual guidance, not final
 Rule Figure 8 boundaries.
+
+Driven-input neural-field reports are generated separately from the Bressloff
+and Rule formats. The public-safe registry is generated with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe driven-registry --out reports\driven-neural-fields-registry.json
+```
+
+It writes `format: driven-neural-fields-registry-v1` and records implementable
+examples for `mackay_localized_input`,
+`spatial_forcing_orthogonal_response`, and
+`localized_time_periodic_input`.
+
+The first generated MacKay localized-input diagnostic report is generated with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe mackay-report --out reports\mackay-localized-input.json --n 112 --iterations 48
+```
+
+It writes `format: mackay-localized-input-report-v1` and includes generated
+input/output thumbnails, fixed-point residuals, zero-crossing metrics, and a
+Gaussian-only diagnostic control. It is a first-pass diagnostic report, not a
+source-figure reproduction claim.
+
+See
+[`docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md`](../docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md)
+for the remaining public-safe report targets:
+
+```text
+bolelli-time-periodic-input-report-v1
+nicks-orthogonal-response-report-v1
+```
+
+Driven-input reports should contain generated outputs and derived numeric
+metrics only. PDFs, paper figure crops, page renders, and private extraction
+notes remain under ignored `private/papers/`.

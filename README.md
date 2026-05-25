@@ -33,6 +33,9 @@ calibration, not for claiming a calibrated flicker-frequency prediction.
   the rendered planform, same-lattice branch readout, and source metadata.
 - A separate Rule-Stoffregen-Ermentrout 2011 scalar E/I flicker generator with
   qualitative high-frequency stripe and low-frequency hexagonal presets.
+- A separate driven-input neural-field registry plus first-pass generated
+  MacKay localized-input diagnostics. These stay distinct from both the
+  Bressloff orientation-hypercolumn and Rule flicker model families.
 
 ## What It Does Not Claim
 
@@ -149,6 +152,21 @@ calibration trials against the digitized Figure 8C source curves. The objective
 uses the configured domain-normalized beta residual while preserving raw,
 scale-only, and affine beta-axis mappings as diagnostics.
 
+Generate the public-safe driven neural-field example registry:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe driven-registry --out reports\driven-neural-fields-registry.json
+```
+
+Generate the first MacKay localized-input diagnostic report:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe mackay-report --out reports\mackay-localized-input.json --n 112 --iterations 48
+```
+
+The MacKay report contains generated fields and numeric diagnostics only. It is
+a first-pass diagnostic, not a source-figure reproduction claim.
+
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 
 ```powershell
@@ -196,6 +214,8 @@ need the heavier `[frame,row,col,orientation]` payload for downstream analysis.
 
 ```text
 rust-v1-sim/          Rust server, payload generator, and model implementation
+  src/models/         Driven implementation plus Bressloff/Rule module roots
+  src/numeric/        Shared numeric helpers for convolution and metrics
 viewer/               Browser viewer, controls, and model notes
 docs/                 Public implementation roadmaps and future work plans
 tools/                Legacy Python helpers for exporting/serving frames
@@ -218,6 +238,10 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
 - [`docs/RULE_2011_IMPLEMENTATION_STATUS.md`](docs/RULE_2011_IMPLEMENTATION_STATUS.md)
   tracks the separate Rule flicker E/I implementation and deferred Floquet/sweep
   work.
+- [`docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md`](docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md)
+  audits the post-Rule driven-input neural-field papers and turns them into a
+  public-safe implementation plan for localized input, time-periodic input,
+  MacKay/Billock-Tsou-style targets, and deferred architecture/color extensions.
 - [`docs/WEB_HOSTING_PLAN.md`](docs/WEB_HOSTING_PLAN.md) describes the
   server-backed container deployment path for a public interactive version.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.

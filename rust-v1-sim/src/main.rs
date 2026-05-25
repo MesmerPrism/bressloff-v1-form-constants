@@ -3,8 +3,6 @@
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     env, fs,
-    io::{Read, Write},
-    net::{TcpListener, TcpStream},
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::Instant,
@@ -14,6 +12,13 @@ use base64::{engine::general_purpose, Engine as _};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
+mod cli;
+mod models;
+mod numeric;
+mod server;
+
+use models::driven::{driven_registry_report, mackay_localized_input_report, MackayReportConfig};
+
 const PI: f64 = std::f64::consts::PI;
 const DYNAMIC_CELL_MM: f64 = 0.7;
 const RETINO_EPS: f64 = 0.051;
@@ -22,6 +27,9 @@ const RETINO_ALPHA: f64 = 3.0 / PI;
 const RETINO_BETA: f64 = 1.589 / 2.0;
 const MODEL_FAMILY_BRESSLOFF: &str = "bressloff_orientation_hypercolumn";
 const MODEL_FAMILY_RULE: &str = "rule_flicker_ei";
+const MODEL_FAMILY_DRIVEN_ORTHOGONAL: &str = "spatial_forcing_orthogonal_response";
+const MODEL_FAMILY_MACKAY: &str = "mackay_localized_input";
+const MODEL_FAMILY_LOCALIZED_PERIODIC: &str = "localized_time_periodic_input";
 const RULE_FIGURE8_SOURCE_BETA_PER_MODEL_CYCLE: f64 = 0.42868451880191133;
 
 #[derive(Clone, Copy, Debug)]
@@ -1211,7 +1219,7 @@ impl Default for FrameParams {
             pattern: PatternPreset::Cobweb,
             contour_mode: ContourMode::Contoured,
             parity: Parity::Even,
-            n: 64,
+            n: 128,
             m: 12,
             t: 60.0,
             frames: 120,
@@ -1567,6 +1575,19 @@ struct StabilityCalibrationRun {
     checks: Vec<CalibrationCheck>,
 }
 
+struct StabilityReportSpec {
+    id: &'static str,
+    label: &'static str,
+    source_key: &'static str,
+    source_page: &'static str,
+    paper_figure: &'static str,
+    target: &'static str,
+    params: FrameParams,
+    expected_branch: &'static str,
+    expected_family: &'static str,
+    expected_pattern: &'static str,
+}
+
 #[derive(Serialize)]
 struct RuleCalibrationRun {
     preset: RulePresetDetails,
@@ -1746,6 +1767,16 @@ struct RuleFloquetEvaluation {
     source_curve_comparison: RuleFloquetSourceCurveComparisonSummary,
 }
 
+struct RuleFloquetEvaluationConfig<'a> {
+    raw: &'a HashMap<String, String>,
+    grid: &'a RuleSweepGridConfig,
+    mode_cycles: &'a [f64],
+    curve_refinement: RuleFloquetCurveRefinement,
+    wave_number_normalization: RuleFigure8WaveNumberNormalization,
+    source_curves: Option<&'a RuleFigure8SourceCurves>,
+    source_curve_file: Option<&'a PathBuf>,
+}
+
 #[derive(Serialize)]
 struct RuleFigure8FitSearchReport {
     format: &'static str,
@@ -1777,6 +1808,17 @@ struct RuleFigure8FitTrial {
     boundary_curve_count: usize,
     boundary_curve_point_count: usize,
     source_curve_comparison: RuleFloquetSourceCurveComparisonSummary,
+}
+
+struct RuleFigure8FitTrialConfig<'a> {
+    spec: &'a RuleFigure8FitTrialSpec,
+    baseline_raw: &'a HashMap<String, String>,
+    grid: &'a RuleSweepGridConfig,
+    mode_cycles: &'a [f64],
+    curve_refinement: RuleFloquetCurveRefinement,
+    wave_number_normalization: RuleFigure8WaveNumberNormalization,
+    source_curves: Option<&'a RuleFigure8SourceCurves>,
+    source_curve_file: Option<&'a PathBuf>,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -2237,6 +2279,20 @@ struct BranchCandidate {
     note: &'static str,
 }
 
+struct BranchCandidateSpec {
+    family: &'static str,
+    pattern: &'static str,
+    mode_count: usize,
+    theta_rad: f64,
+    gamma0: f64,
+    gamma_cross: f64,
+    lambda: f64,
+    denominator: f64,
+    eta: f64,
+    stable: bool,
+    note: &'static str,
+}
+
 #[derive(Serialize)]
 struct Timing {
     matrix_build_sec: f64,
@@ -2283,29 +2339,102 @@ struct RetinoParams {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    let command = args.get(1).map(String::as_str).unwrap_or("serve");
-    match command {
-        "calibrate" => calibrate_command(&args[2..])?,
-        "bressloff-geometry" | "figure-stills" => bressloff_geometry_command(&args[2..])?,
-        "export" => export_command(&args[2..])?,
-        "rule-report" | "rule-calibrate" => rule_report_command(&args[2..])?,
-        "rule-sweep" => rule_sweep_command(&args[2..])?,
-        "rule-floquet" => rule_floquet_command(&args[2..])?,
-        "rule-fit" | "rule-figure8-fit" => rule_fit_command(&args[2..])?,
-        "serve" => serve_command(&args[2..])?,
-        "--help" | "-h" => print_usage(),
-        other => {
-            eprintln!("unknown command: {other}");
-            print_usage();
+    cli::run(&args)
+}
+
+fn driven_registry_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/driven-neural-fields-registry.json");
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        if arg == "--out" {
+            out = PathBuf::from(iter.next().ok_or("--out requires a value")?);
         }
     }
+
+    let report = driven_registry_report();
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let example_count = report.examples.len();
+    let implemented_count = report.implemented_count;
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
+    println!(
+        "wrote {} driven_examples={} implemented={}",
+        out.display(),
+        example_count,
+        implemented_count
+    );
     Ok(())
 }
 
-fn print_usage() {
+fn mackay_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/mackay-localized-input.json");
+    let mut config = MackayReportConfig::default();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--n" => {
+                config.n =
+                    parse_clamped_usize(iter.next().ok_or("--n requires a value")?, 16, 256)?;
+            }
+            "--iterations" => {
+                config.iterations = parse_clamped_usize(
+                    iter.next().ok_or("--iterations requires a value")?,
+                    1,
+                    1000,
+                )?;
+            }
+            "--tolerance" => {
+                config.tolerance = parse_clamped_f64(
+                    iter.next().ok_or("--tolerance requires a value")?,
+                    1.0e-12,
+                    1.0e-2,
+                )?;
+            }
+            "--mu" => {
+                config.mu =
+                    parse_clamped_f64(iter.next().ok_or("--mu requires a value")?, 0.0, 4.0)?;
+            }
+            "--epsilon" => {
+                config.epsilon =
+                    parse_clamped_f64(iter.next().ok_or("--epsilon requires a value")?, 0.0, 1.0)?;
+            }
+            "--kappa" => {
+                config.kappa =
+                    parse_clamped_f64(iter.next().ok_or("--kappa requires a value")?, 0.0, 4.0)?;
+            }
+            "--domain-min" => {
+                config.domain_min = iter
+                    .next()
+                    .ok_or("--domain-min requires a value")?
+                    .parse::<f64>()?;
+            }
+            "--domain-max" => {
+                config.domain_max = iter
+                    .next()
+                    .ok_or("--domain-max requires a value")?
+                    .parse::<f64>()?;
+            }
+            _ => {}
+        }
+    }
+
+    let report = mackay_localized_input_report(config)?;
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let example_count = report.examples.len();
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
     println!(
-        "usage:\n  bressloff-v1 serve [--host 127.0.0.1] [--port 8892] [--root .]\n  bressloff-v1 export [--out viewer/frames.json] [--paper-preset fig31_square_even] [--rule-preset rule_fig4_high_freq_stripes] [--export-orientations] [model params]\n  bressloff-v1 calibrate [--out reports/paper-calibration.json] [model params]\n  bressloff-v1 bressloff-geometry [--out reports/figure-targets/bressloff-generated-stills.json] [--preset-set figures29-36|all] [model params]\n  bressloff-v1 rule-report [--out reports/rule-2011-regimes.json] [model params]\n  bressloff-v1 rule-sweep [--out reports/rule-2011-sweep.json] [--preset-grid quick|paper|dense] [--periods 140,120,85,65,55] [--period-min 40 --period-max 160 --period-steps 13] [--amplitudes 0.65,0.8,1.0] [model params]\n  bressloff-v1 rule-floquet [--out reports/rule-2011-floquet.json] [--preset-grid quick|paper|dense] [--modes 0.5,0.75,...,4.0] [--source-beta-modes 0.2,0.4,...,1.0] [--figure8-beta-scale 0.4286845] [model params]\n  bressloff-v1 rule-fit [--out reports/rule-2011-fit-search.json] [--max-trials 25] [rule-floquet options] [model params]"
+        "wrote {} mackay_examples={} grid={}x{} iterations={}",
+        out.display(),
+        example_count,
+        report.parameters.n,
+        report.parameters.n,
+        report.parameters.iterations
     );
+    Ok(())
 }
 
 fn export_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
@@ -3470,17 +3599,21 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
         Some(path) if path.exists() => Some(load_rule_figure8_source_curves(path)?),
         _ => None,
     };
+    let curve_refinement = RuleFloquetCurveRefinement {
+        method: "bisection_on_beta_sign_change",
+        tolerance: curve_refine_tolerance,
+        max_steps: curve_refine_steps,
+    };
 
-    let evaluation = rule_floquet_evaluation(
-        &raw,
-        &grid,
-        &mode_cycles,
-        curve_refine_tolerance,
-        curve_refine_steps,
+    let evaluation = rule_floquet_evaluation(RuleFloquetEvaluationConfig {
+        raw: &raw,
+        grid: &grid,
+        mode_cycles: &mode_cycles,
+        curve_refinement,
         wave_number_normalization,
-        source_curves.as_ref(),
-        source_curve_file.as_ref(),
-    );
+        source_curves: source_curves.as_ref(),
+        source_curve_file: source_curve_file.as_ref(),
+    });
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -3505,11 +3638,7 @@ fn rule_floquet_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
             y_secondary_units: "cycles_per_domain",
         },
         wave_number_normalization,
-        curve_refinement: RuleFloquetCurveRefinement {
-            method: "bisection_on_beta_sign_change",
-            tolerance: curve_refine_tolerance,
-            max_steps: curve_refine_steps,
-        },
+        curve_refinement,
         source_curve_comparison: evaluation.source_curve_comparison,
         grid: rule_sweep_grid_details(&grid),
         mode_source_betas: rule_source_betas_for_modes(&mode_cycles, wave_number_normalization),
@@ -3839,22 +3968,26 @@ fn rule_fit_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         Some(path) if path.exists() => Some(load_rule_figure8_source_curves(path)?),
         _ => None,
     };
+    let curve_refinement = RuleFloquetCurveRefinement {
+        method: "bisection_on_beta_sign_change",
+        tolerance: curve_refine_tolerance,
+        max_steps: curve_refine_steps,
+    };
 
     let trial_specs = default_rule_figure8_fit_trials(&raw, max_trials);
     let mut trials = trial_specs
         .iter()
         .map(|spec| {
-            rule_figure8_fit_trial(
+            rule_figure8_fit_trial(RuleFigure8FitTrialConfig {
                 spec,
-                &raw,
-                &grid,
-                &mode_cycles,
-                curve_refine_tolerance,
-                curve_refine_steps,
+                baseline_raw: &raw,
+                grid: &grid,
+                mode_cycles: &mode_cycles,
+                curve_refinement,
                 wave_number_normalization,
-                source_curves.as_ref(),
-                source_curve_file.as_ref(),
-            )
+                source_curves: source_curves.as_ref(),
+                source_curve_file: source_curve_file.as_ref(),
+            })
         })
         .collect::<Vec<_>>();
     trials.sort_by(|a, b| {
@@ -3888,11 +4021,7 @@ fn rule_fit_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         grid: rule_sweep_grid_details(&grid),
         mode_source_betas: rule_source_betas_for_modes(&mode_cycles, wave_number_normalization),
         mode_cycles,
-        curve_refinement: RuleFloquetCurveRefinement {
-            method: "bisection_on_beta_sign_change",
-            tolerance: curve_refine_tolerance,
-            max_steps: curve_refine_steps,
-        },
+        curve_refinement,
         trial_count: trials.len(),
         best_trial_id,
         best_score,
@@ -3972,44 +4101,41 @@ fn source_beta_values_to_model_cycles(
         .collect()
 }
 
-fn rule_floquet_evaluation(
-    raw: &HashMap<String, String>,
-    grid: &RuleSweepGridConfig,
-    mode_cycles: &[f64],
-    curve_refine_tolerance: f64,
-    curve_refine_steps: usize,
-    wave_number_normalization: RuleFigure8WaveNumberNormalization,
-    source_curves: Option<&RuleFigure8SourceCurves>,
-    source_curve_file: Option<&PathBuf>,
-) -> RuleFloquetEvaluation {
+fn rule_floquet_evaluation(config: RuleFloquetEvaluationConfig<'_>) -> RuleFloquetEvaluation {
     let mut points = Vec::new();
-    for period in &grid.periods {
-        for amplitude in &grid.amplitudes {
-            for stim_i_fraction in &grid.stim_i_fractions {
-                let params = rule_sweep_params(raw, grid, *period, *amplitude, *stim_i_fraction);
-                points.push(rule_floquet_grid_point_for(params, mode_cycles));
+    for period in &config.grid.periods {
+        for amplitude in &config.grid.amplitudes {
+            for stim_i_fraction in &config.grid.stim_i_fractions {
+                let params = rule_sweep_params(
+                    config.raw,
+                    config.grid,
+                    *period,
+                    *amplitude,
+                    *stim_i_fraction,
+                );
+                points.push(rule_floquet_grid_point_for(params, config.mode_cycles));
             }
         }
     }
 
     let boundary_candidates = rule_floquet_boundary_candidates(
         &points,
-        &grid.periods,
-        &grid.amplitudes,
-        &grid.stim_i_fractions,
+        &config.grid.periods,
+        &config.grid.amplitudes,
+        &config.grid.stim_i_fractions,
     );
     let mut boundary_curves = rule_floquet_beta_boundary_curves(
         &points,
-        raw,
-        grid,
-        curve_refine_tolerance,
-        curve_refine_steps,
+        config.raw,
+        config.grid,
+        config.curve_refinement.tolerance,
+        config.curve_refinement.max_steps,
     );
     let source_curve_comparison = apply_rule_figure8_source_comparison(
         &mut boundary_curves,
-        wave_number_normalization,
-        source_curves,
-        source_curve_file,
+        config.wave_number_normalization,
+        config.source_curves,
+        config.source_curve_file,
     );
 
     RuleFloquetEvaluation {
@@ -4126,31 +4252,20 @@ fn rule_figure8_fit_parameter_scans() -> Vec<RuleFigure8FitParameterScan> {
     ]
 }
 
-fn rule_figure8_fit_trial(
-    spec: &RuleFigure8FitTrialSpec,
-    baseline_raw: &HashMap<String, String>,
-    grid: &RuleSweepGridConfig,
-    mode_cycles: &[f64],
-    curve_refine_tolerance: f64,
-    curve_refine_steps: usize,
-    wave_number_normalization: RuleFigure8WaveNumberNormalization,
-    source_curves: Option<&RuleFigure8SourceCurves>,
-    source_curve_file: Option<&PathBuf>,
-) -> RuleFigure8FitTrial {
-    let mut trial_raw = baseline_raw.clone();
-    for (key, value) in &spec.parameter_changes {
+fn rule_figure8_fit_trial(config: RuleFigure8FitTrialConfig<'_>) -> RuleFigure8FitTrial {
+    let mut trial_raw = config.baseline_raw.clone();
+    for (key, value) in &config.spec.parameter_changes {
         trial_raw.insert(key.clone(), value.clone());
     }
-    let evaluation = rule_floquet_evaluation(
-        &trial_raw,
-        grid,
-        mode_cycles,
-        curve_refine_tolerance,
-        curve_refine_steps,
-        wave_number_normalization,
-        source_curves,
-        source_curve_file,
-    );
+    let evaluation = rule_floquet_evaluation(RuleFloquetEvaluationConfig {
+        raw: &trial_raw,
+        grid: config.grid,
+        mode_cycles: config.mode_cycles,
+        curve_refinement: config.curve_refinement,
+        wave_number_normalization: config.wave_number_normalization,
+        source_curves: config.source_curves,
+        source_curve_file: config.source_curve_file,
+    });
     let boundary_curve_point_count = evaluation
         .boundary_curves
         .iter()
@@ -4162,9 +4277,9 @@ fn rule_figure8_fit_trial(
         evaluation.source_curve_comparison.status
     };
     RuleFigure8FitTrial {
-        trial_id: spec.trial_id.clone(),
+        trial_id: config.spec.trial_id.clone(),
         status,
-        parameter_changes: spec.parameter_changes.clone(),
+        parameter_changes: config.spec.parameter_changes.clone(),
         parameter_values: tracked_rule_fit_parameter_values(&trial_raw),
         floquet_point_count: evaluation.points.len(),
         boundary_candidate_count: evaluation.boundary_candidates.len(),
@@ -4939,104 +5054,93 @@ fn rule_thumbnail_from_frame(frame: &[f32], n: usize) -> RuleThumbnail {
 
 fn bressloff_stability_reports() -> Vec<StabilityCalibrationRun> {
     vec![
-        stability_report_for(
-            "fig37_even_coefficients",
-            "Fig 37 even eigen/coefficient sign target",
-            "bressloff-2001",
-            "24",
-            "Figure 37",
-            "even perturbative eigenfunction coefficients and even marginal branch",
-            apply_paper_preset(FrameParams::default(), PaperPreset::Fig17Even),
-            "even",
-            "any",
-            "any",
-        ),
-        stability_report_for(
-            "fig38_even_hex_bifurcation",
-            "Fig 38 even hexagonal bifurcation target",
-            "bressloff-2001",
-            "24",
-            "Figure 38",
-            "even hexagonal branch and roll exchange diagnostic",
-            apply_paper_preset(FrameParams::default(), PaperPreset::Fig35HexZeroEven),
-            "even",
-            "hexagonal",
-            "honeycomb",
-        ),
-        stability_report_for(
-            "fig39_odd_coefficients",
-            "Fig 39 odd eigen/coefficient sign target",
-            "bressloff-2001",
-            "25",
-            "Figure 39",
-            "odd perturbative eigenfunction coefficients and odd marginal branch",
-            apply_paper_preset(FrameParams::default(), PaperPreset::Fig16Odd),
-            "odd",
-            "any",
-            "any",
-        ),
-        stability_report_for(
-            "fig40_odd_hex_bifurcation",
-            "Fig 40 odd hexagonal bifurcation target",
-            "bressloff-2001",
-            "25",
-            "Figure 40",
-            "odd hexagonal/triangular higher-order selection target",
-            apply_paper_preset(FrameParams::default(), PaperPreset::Fig36TriangleOdd),
-            "odd",
-            "hexagonal",
-            "triangle",
-        ),
-        stability_report_for(
-            "rhombic_stability_angle",
-            "Rhombic stability angle target",
-            "bressloff-2001",
-            "23",
-            "Rhombic stability discussion",
-            "rhombic branch check at the current representative angle",
-            apply_paper_preset(FrameParams::default(), PaperPreset::Fig33RhombicEven),
-            "even",
-            "rhombic",
-            "rhombic",
-        ),
+        stability_report_for(StabilityReportSpec {
+            id: "fig37_even_coefficients",
+            label: "Fig 37 even eigen/coefficient sign target",
+            source_key: "bressloff-2001",
+            source_page: "24",
+            paper_figure: "Figure 37",
+            target: "even perturbative eigenfunction coefficients and even marginal branch",
+            params: apply_paper_preset(FrameParams::default(), PaperPreset::Fig17Even),
+            expected_branch: "even",
+            expected_family: "any",
+            expected_pattern: "any",
+        }),
+        stability_report_for(StabilityReportSpec {
+            id: "fig38_even_hex_bifurcation",
+            label: "Fig 38 even hexagonal bifurcation target",
+            source_key: "bressloff-2001",
+            source_page: "24",
+            paper_figure: "Figure 38",
+            target: "even hexagonal branch and roll exchange diagnostic",
+            params: apply_paper_preset(FrameParams::default(), PaperPreset::Fig35HexZeroEven),
+            expected_branch: "even",
+            expected_family: "hexagonal",
+            expected_pattern: "honeycomb",
+        }),
+        stability_report_for(StabilityReportSpec {
+            id: "fig39_odd_coefficients",
+            label: "Fig 39 odd eigen/coefficient sign target",
+            source_key: "bressloff-2001",
+            source_page: "25",
+            paper_figure: "Figure 39",
+            target: "odd perturbative eigenfunction coefficients and odd marginal branch",
+            params: apply_paper_preset(FrameParams::default(), PaperPreset::Fig16Odd),
+            expected_branch: "odd",
+            expected_family: "any",
+            expected_pattern: "any",
+        }),
+        stability_report_for(StabilityReportSpec {
+            id: "fig40_odd_hex_bifurcation",
+            label: "Fig 40 odd hexagonal bifurcation target",
+            source_key: "bressloff-2001",
+            source_page: "25",
+            paper_figure: "Figure 40",
+            target: "odd hexagonal/triangular higher-order selection target",
+            params: apply_paper_preset(FrameParams::default(), PaperPreset::Fig36TriangleOdd),
+            expected_branch: "odd",
+            expected_family: "hexagonal",
+            expected_pattern: "triangle",
+        }),
+        stability_report_for(StabilityReportSpec {
+            id: "rhombic_stability_angle",
+            label: "Rhombic stability angle target",
+            source_key: "bressloff-2001",
+            source_page: "23",
+            paper_figure: "Rhombic stability discussion",
+            target: "rhombic branch check at the current representative angle",
+            params: apply_paper_preset(FrameParams::default(), PaperPreset::Fig33RhombicEven),
+            expected_branch: "even",
+            expected_family: "rhombic",
+            expected_pattern: "rhombic",
+        }),
     ]
 }
 
-fn stability_report_for(
-    id: &'static str,
-    label: &'static str,
-    source_key: &'static str,
-    source_page: &'static str,
-    paper_figure: &'static str,
-    target: &'static str,
-    params: FrameParams,
-    expected_branch: &'static str,
-    expected_family: &'static str,
-    expected_pattern: &'static str,
-) -> StabilityCalibrationRun {
-    let planform = planform_details(params, cell_mm_for(params));
+fn stability_report_for(spec: StabilityReportSpec) -> StabilityCalibrationRun {
+    let planform = planform_details(spec.params, cell_mm_for(spec.params));
     let branch = &planform.branch_selection;
     let mut checks = Vec::new();
     checks.push(CalibrationCheck {
         name: "critical-branch",
-        expected: expected_branch,
+        expected: spec.expected_branch,
         actual: planform.stability.critical_branch.to_string(),
-        passed: planform.stability.critical_branch == expected_branch,
+        passed: planform.stability.critical_branch == spec.expected_branch,
     });
-    if expected_family != "any" {
+    if spec.expected_family != "any" {
         checks.push(CalibrationCheck {
             name: "selected-family",
-            expected: expected_family,
+            expected: spec.expected_family,
             actual: branch.selected_family.to_string(),
-            passed: branch.selected_family == expected_family,
+            passed: branch.selected_family == spec.expected_family,
         });
     }
-    if expected_pattern != "any" {
+    if spec.expected_pattern != "any" {
         checks.push(CalibrationCheck {
             name: "selected-pattern",
-            expected: expected_pattern,
+            expected: spec.expected_pattern,
             actual: branch.selected_pattern.to_string(),
-            passed: branch.selected_pattern == expected_pattern,
+            passed: branch.selected_pattern == spec.expected_pattern,
         });
     }
     let status = if checks.iter().all(|check| check.passed) {
@@ -5045,12 +5149,12 @@ fn stability_report_for(
         "review"
     };
     StabilityCalibrationRun {
-        id,
-        label,
-        source_key,
-        source_page,
-        paper_figure,
-        target,
+        id: spec.id,
+        label: spec.label,
+        source_key: spec.source_key,
+        source_page: spec.source_page,
+        paper_figure: spec.paper_figure,
+        target: spec.target,
         status,
         rendered_parity: planform.parity,
         critical_q: planform.stability.critical_q,
@@ -5066,263 +5170,6 @@ fn stability_report_for(
         gamma_hex: branch.gamma_hex,
         checks,
     }
-}
-
-fn serve_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut host = "127.0.0.1".to_string();
-    let mut port = 8892_u16;
-    let mut root = env::current_dir()?;
-    let mut iter = args.iter();
-    while let Some(arg) = iter.next() {
-        match arg.as_str() {
-            "--host" => host = iter.next().ok_or("--host requires a value")?.clone(),
-            "--port" => port = iter.next().ok_or("--port requires a value")?.parse()?,
-            "--root" => root = PathBuf::from(iter.next().ok_or("--root requires a value")?),
-            _ => {}
-        }
-    }
-
-    let listener = TcpListener::bind((host.as_str(), port))?;
-    let state = Arc::new(ServerState::default());
-    println!("Serving Bressloff V1 viewer on http://{host}:{port}/viewer/index.html");
-    for stream in listener.incoming() {
-        let stream = stream?;
-        let root = root.clone();
-        let state = Arc::clone(&state);
-        std::thread::spawn(move || {
-            if let Err(error) = handle_connection(stream, &root, &state) {
-                eprintln!("request error: {error}");
-            }
-        });
-    }
-    Ok(())
-}
-
-fn handle_connection(
-    mut stream: TcpStream,
-    root: &Path,
-    state: &ServerState,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut buffer = [0_u8; 8192];
-    let size = stream.read(&mut buffer)?;
-    if size == 0 {
-        return Ok(());
-    }
-    let request = String::from_utf8_lossy(&buffer[..size]);
-    let Some(line) = request.lines().next() else {
-        return Ok(());
-    };
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.len() < 2 || parts[0] != "GET" {
-        write_response(&mut stream, 405, "text/plain", b"method not allowed")?;
-        return Ok(());
-    }
-
-    let (path, query) = split_query(parts[1]);
-    match path.as_str() {
-        "/api/defaults" => {
-            let body = serde_json::json!({
-                "defaults": default_params_json(),
-                "limits": {
-                    "n": [32, 96],
-                    "m": [4, 24],
-                    "t": [5.0, 800.0],
-                    "frames": [8, 240],
-                    "seed": [0, u32::MAX],
-                    "alpha": [0.1, 4.0],
-                    "beta": [0.1, 10.0],
-                    "mu": [1.0, 40.0],
-                    "r0": [0.02, 0.14],
-                    "low_percentile": [0.0, 20.0],
-                    "high_percentile": [80.0, 100.0],
-                    "trim_threshold": [0.0, 0.5],
-                    "preview_step": [0.02, 1.0],
-                    "wave_count": [1.0, 40.0],
-                    "drift": [-4.0, 4.0],
-                    "pattern_angle": [0.0, 90.0],
-                    "sharpness": [0.25, 8.0],
-                    "eigen_beta": [0.0, 1.5],
-                    "hypercolumn_mm": [0.1, 4.0],
-                    "local_sigma_deg": [1.0, 80.0],
-                    "local_wide_sigma_deg": [5.0, 120.0],
-                    "local_inhibition": [0.0, 3.0],
-                    "lateral_sigma": [0.1, 4.0],
-                    "lateral_wide_sigma": [0.1, 6.0],
-                    "lateral_inhibition": [0.0, 3.0],
-                    "lateral_spread_deg": [0.0, 90.0],
-                    "stability_q_min": [0.0, 2.0],
-                    "stability_q_max": [0.2, 8.0],
-                    "stability_samples": [16, 256],
-                    "export_orientation_channels": [false, true],
-                    "rule_tau_e_ms": [1.0, 80.0],
-                    "rule_tau_i_ms": [1.0, 120.0],
-                    "rule_aee": [0.0, 30.0],
-                    "rule_aei": [0.0, 30.0],
-                    "rule_aie": [0.0, 30.0],
-                    "rule_aii": [0.0, 30.0],
-                    "rule_theta_e": [0.0, 8.0],
-                    "rule_theta_i": [0.0, 8.0],
-                    "rule_sigma_e": [0.4, 10.0],
-                    "rule_sigma_i": [0.4, 16.0],
-                    "rule_stim_amplitude": [0.0, 1.5],
-                    "rule_stim_period_ms": [20.0, 180.0],
-                    "rule_stim_threshold": [-1.0, 1.0],
-                    "rule_stim_smoothing": [0.0, 100.0],
-                    "rule_stim_i_fraction": [0.0, 1.0],
-                    "rule_seed_strength": [0.0, 0.2]
-                },
-                "paper_presets": paper_preset_catalog(),
-                "rule_presets": rule_preset_catalog(),
-                "generator_options": ["dynamics", "planform", "rule_flicker"],
-                "pattern_options": ["auto", "rings", "rays", "spiral", "cobweb", "honeycomb", "rhombic", "hex_pi", "triangle"],
-                "contour_mode_options": ["contoured", "noncontoured"],
-                "parity_options": ["even", "odd"],
-                "resolution_options": [32, 40, 48, 64, 80, 96],
-                "orientation_options": [4, 8, 12, 16, 24],
-                "rule_seed_pattern_options": ["random", "stripes", "hexagonal"],
-                "solver_options": ["preview", "accurate"],
-                "colormaps": ["twilight", "viridis", "magma", "inferno", "turbo", "gray"],
-                "backend": "rust"
-            });
-            write_json(&mut stream, &body)?;
-        }
-        "/api/generate" => {
-            let params = coerce_params(&query);
-            let cache_key = payload_cache_key(params);
-            let cached = state.payloads.lock().unwrap().get(&cache_key).cloned();
-            let payload = if let Some(payload) = cached {
-                payload
-            } else {
-                let payload = Arc::new(generate_payload(params, state)?);
-                state
-                    .payloads
-                    .lock()
-                    .unwrap()
-                    .insert(cache_key, Arc::clone(&payload));
-                payload
-            };
-            write_json(&mut stream, payload.as_ref())?;
-        }
-        _ => serve_static(&mut stream, root, &path)?,
-    }
-    Ok(())
-}
-
-fn split_query(target: &str) -> (String, HashMap<String, String>) {
-    let mut pieces = target.splitn(2, '?');
-    let path = pieces.next().unwrap_or("/").to_string();
-    let query = pieces.next().map(parse_query).unwrap_or_else(HashMap::new);
-    (path, query)
-}
-
-fn parse_query(query: &str) -> HashMap<String, String> {
-    query
-        .split('&')
-        .filter_map(|pair| {
-            let mut pieces = pair.splitn(2, '=');
-            let key = pieces.next()?;
-            let value = pieces.next().unwrap_or("");
-            Some((decode_uri_component(key), decode_uri_component(value)))
-        })
-        .collect()
-}
-
-fn decode_uri_component(value: &str) -> String {
-    let bytes = value.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'+' => {
-                out.push(b' ');
-                i += 1;
-            }
-            b'%' if i + 2 < bytes.len() => {
-                if let Ok(hex) = std::str::from_utf8(&bytes[i + 1..i + 3]) {
-                    if let Ok(parsed) = u8::from_str_radix(hex, 16) {
-                        out.push(parsed);
-                        i += 3;
-                        continue;
-                    }
-                }
-                out.push(bytes[i]);
-                i += 1;
-            }
-            byte => {
-                out.push(byte);
-                i += 1;
-            }
-        }
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-fn serve_static(
-    stream: &mut TcpStream,
-    root: &Path,
-    path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let safe_path = path.trim_start_matches('/').replace('\\', "/");
-    if safe_path.contains("..") {
-        write_response(stream, 400, "text/plain", b"bad path")?;
-        return Ok(());
-    }
-    let path = if safe_path.is_empty() {
-        root.join("viewer/index.html")
-    } else {
-        root.join(safe_path)
-    };
-    match fs::read(&path) {
-        Ok(body) => write_response(stream, 200, content_type(&path), &body)?,
-        Err(_) => write_response(stream, 404, "text/plain", b"not found")?,
-    }
-    Ok(())
-}
-
-fn content_type(path: &Path) -> &'static str {
-    match path
-        .extension()
-        .and_then(|value| value.to_str())
-        .unwrap_or("")
-    {
-        "html" => "text/html; charset=utf-8",
-        "css" => "text/css; charset=utf-8",
-        "js" => "text/javascript; charset=utf-8",
-        "json" => "application/json; charset=utf-8",
-        "png" => "image/png",
-        _ => "application/octet-stream",
-    }
-}
-
-fn write_json<T: Serialize>(
-    stream: &mut TcpStream,
-    value: &T,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let body = serde_json::to_vec(value)?;
-    write_response(stream, 200, "application/json; charset=utf-8", &body)
-}
-
-fn write_response(
-    stream: &mut TcpStream,
-    status: u16,
-    content_type: &str,
-    body: &[u8],
-) -> Result<(), Box<dyn std::error::Error>> {
-    let status_text = match status {
-        200 => "OK",
-        400 => "Bad Request",
-        404 => "Not Found",
-        405 => "Method Not Allowed",
-        500 => "Internal Server Error",
-        _ => "OK",
-    };
-    write!(
-        stream,
-        "HTTP/1.1 {status} {status_text}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
-        body.len()
-    )?;
-    stream.write_all(body)?;
-    Ok(())
 }
 
 fn default_params_json() -> serde_json::Value {
@@ -6294,12 +6141,12 @@ fn sorted_unique_f64(values: &[f64]) -> Vec<f64> {
     values
 }
 
-fn find_rule_floquet_point<'a>(
-    points: &'a [RuleFloquetGridPoint],
+fn find_rule_floquet_point(
+    points: &[RuleFloquetGridPoint],
     period_ms: f64,
     amplitude: f64,
     stim_i_fraction: f64,
-) -> Option<&'a RuleFloquetGridPoint> {
+) -> Option<&RuleFloquetGridPoint> {
     points.iter().find(|point| {
         (point.period_ms - period_ms).abs() < 1.0e-6
             && (point.amplitude - amplitude).abs() < 1.0e-6
@@ -6844,17 +6691,23 @@ fn solve_linear_system(mut matrix: Vec<Vec<f64>>, mut rhs: Vec<f64>) -> Option<V
         matrix.swap(col, pivot);
         rhs.swap(col, pivot);
         let pivot_value = matrix[col][col];
-        for j in col..n {
-            matrix[col][j] /= pivot_value;
+        for value in matrix[col].iter_mut().take(n).skip(col) {
+            *value /= pivot_value;
         }
         rhs[col] /= pivot_value;
+        let pivot_row = matrix[col].clone();
         for row in 0..n {
             if row == col {
                 continue;
             }
             let factor = matrix[row][col];
-            for j in col..n {
-                matrix[row][j] -= factor * matrix[col][j];
+            for (cell, pivot_cell) in matrix[row]
+                .iter_mut()
+                .zip(pivot_row.iter())
+                .take(n)
+                .skip(col)
+            {
+                *cell -= factor * *pivot_cell;
             }
             rhs[row] -= factor * rhs[col];
         }
@@ -7921,65 +7774,65 @@ fn branch_selection_for(params: FrameParams, q: f64, growth: f64) -> BranchSelec
         && 2.0 * gamma_square > gamma0
         && 2.0 * gamma_rhombic > gamma0
         && 2.0 * gamma_hex > gamma0;
-    let roll = branch_candidate(
-        "roll",
-        "spiral",
-        1,
-        0.0,
+    let roll = branch_candidate(BranchCandidateSpec {
+        family: "roll",
+        pattern: "spiral",
+        mode_count: 1,
+        theta_rad: 0.0,
         gamma0,
-        0.0,
+        gamma_cross: 0.0,
         lambda,
+        denominator: gamma0,
+        eta: 0.0,
+        stable: roll_stable,
+        note: "single active wavevector",
+    });
+    let square = branch_candidate(BranchCandidateSpec {
+        family: "square",
+        pattern: "cobweb",
+        mode_count: 2,
+        theta_rad: square_theta,
         gamma0,
-        0.0,
-        roll_stable,
-        "single active wavevector",
-    );
-    let square = branch_candidate(
-        "square",
-        "cobweb",
-        2,
-        square_theta,
-        gamma0,
-        gamma_square,
+        gamma_cross: gamma_square,
         lambda,
-        gamma0 + 2.0 * gamma_square,
-        0.0,
-        gamma_square > 0.0 && 2.0 * gamma_square < gamma0,
-        "two equal amplitudes on a square lattice",
-    );
-    let rhombic = branch_candidate(
-        "rhombic",
-        "rhombic",
-        2,
-        rhombic_theta,
+        denominator: gamma0 + 2.0 * gamma_square,
+        eta: 0.0,
+        stable: gamma_square > 0.0 && 2.0 * gamma_square < gamma0,
+        note: "two equal amplitudes on a square lattice",
+    });
+    let rhombic = branch_candidate(BranchCandidateSpec {
+        family: "rhombic",
+        pattern: "rhombic",
+        mode_count: 2,
+        theta_rad: rhombic_theta,
         gamma0,
-        gamma_rhombic,
+        gamma_cross: gamma_rhombic,
         lambda,
-        gamma0 + 2.0 * gamma_rhombic,
-        0.0,
-        gamma_rhombic > 0.0 && 2.0 * gamma_rhombic < gamma0,
-        "two equal amplitudes on an oblique lattice",
-    );
+        denominator: gamma0 + 2.0 * gamma_rhombic,
+        eta: 0.0,
+        stable: gamma_rhombic > 0.0 && 2.0 * gamma_rhombic < gamma0,
+        note: "two equal amplitudes on an oblique lattice",
+    });
     let hex_pattern = if eta_hex < 0.0 { "hex_pi" } else { "honeycomb" };
     let hex_note = match params.parity {
         Parity::Even => "three-wave hexagonal branch with quadratic term",
         Parity::Odd => "odd hexagonal branch has zero quadratic term at cubic order",
     };
-    let hex = branch_candidate(
-        "hexagonal",
-        hex_pattern,
-        3,
-        hex_theta,
+    let hex = branch_candidate(BranchCandidateSpec {
+        family: "hexagonal",
+        pattern: hex_pattern,
+        mode_count: 3,
+        theta_rad: hex_theta,
         gamma0,
-        gamma_hex,
+        gamma_cross: gamma_hex,
         lambda,
-        gamma0 + 4.0 * gamma_hex,
-        eta_hex,
-        gamma_hex > 0.0
+        denominator: gamma0 + 4.0 * gamma_hex,
+        eta: eta_hex,
+        stable: gamma_hex > 0.0
             && (params.parity == Parity::Even || 2.0 * gamma_hex < gamma0)
             && gamma0 + 4.0 * gamma_hex > 0.0,
-        hex_note,
-    );
+        note: hex_note,
+    });
     let mut candidates = vec![roll, square, rhombic, hex];
     candidates.sort_by(|a, b| {
         b.stable
@@ -8107,49 +7960,38 @@ fn lattice_local_stable(
     }
 }
 
-fn branch_candidate(
-    family: &'static str,
-    pattern: &'static str,
-    mode_count: usize,
-    theta_rad: f64,
-    gamma0: f64,
-    gamma_cross: f64,
-    lambda: f64,
-    denominator: f64,
-    eta: f64,
-    stable: bool,
-    note: &'static str,
-) -> BranchCandidate {
-    let denominator = denominator.max(1.0e-9);
-    let lambda = lambda.max(0.0);
+fn branch_candidate(spec: BranchCandidateSpec) -> BranchCandidate {
+    let denominator = spec.denominator.max(1.0e-9);
+    let lambda = spec.lambda.max(0.0);
     let amplitude = if lambda <= 0.0 {
         0.0
-    } else if eta.abs() > 1.0e-9 {
-        ((eta.abs() + (eta * eta + 4.0 * denominator * lambda).sqrt()) / (2.0 * denominator))
+    } else if spec.eta.abs() > 1.0e-9 {
+        ((spec.eta.abs() + (spec.eta * spec.eta + 4.0 * denominator * lambda).sqrt())
+            / (2.0 * denominator))
             .max(0.0)
     } else {
         (lambda / denominator).sqrt()
     };
     let score = if lambda <= 0.0 {
         f64::NEG_INFINITY
-    } else if mode_count == 1 {
-        lambda * lambda / (4.0 * gamma0.max(1.0e-9))
+    } else if spec.mode_count == 1 {
+        lambda * lambda / (4.0 * spec.gamma0.max(1.0e-9))
     } else {
-        mode_count as f64
-            * (0.5 * lambda * amplitude * amplitude + eta.abs() * amplitude.powi(3) / 3.0
+        spec.mode_count as f64
+            * (0.5 * lambda * amplitude * amplitude + spec.eta.abs() * amplitude.powi(3) / 3.0
                 - 0.25 * denominator * amplitude.powi(4))
     };
     BranchCandidate {
-        family,
-        pattern,
-        mode_count,
-        theta_rad,
-        gamma_cross,
-        eta,
+        family: spec.family,
+        pattern: spec.pattern,
+        mode_count: spec.mode_count,
+        theta_rad: spec.theta_rad,
+        gamma_cross: spec.gamma_cross,
+        eta: spec.eta,
         amplitude,
         score,
-        stable: stable && lambda > 0.0 && amplitude.is_finite(),
-        note,
+        stable: spec.stable && lambda > 0.0 && amplitude.is_finite(),
+        note: spec.note,
     }
 }
 
@@ -8376,7 +8218,7 @@ fn lateral_weight_coeff(params: FrameParams, n: usize, q: f64) -> f64 {
     let inhibition = params.lateral_inhibition;
     let narrow = 0.25 * xi * xi * q * q;
     let broad = 0.25 * xi_hat * xi_hat * q * q;
-    let sign = if n % 2 == 0 { 1.0 } else { -1.0 };
+    let sign = if n.is_multiple_of(2) { 1.0 } else { -1.0 };
     lateral_spread_factor(params, n)
         * 0.5
         * sign
@@ -8640,7 +8482,7 @@ fn connectivity_into(
 
     out.par_chunks_mut(m).enumerate().for_each(|(cell, chunk)| {
         let base = cell * m;
-        for k in 0..m {
+        for (k, target) in chunk.iter_mut().enumerate().take(m) {
             let mut angular_sum = 0.0;
             for l in 0..m {
                 if l != k {
@@ -8656,7 +8498,7 @@ fn connectivity_into(
             for source in &sector.entries[start..end] {
                 lateral_sum += source.weight * sigmoid_state[source.source_index];
             }
-            chunk[k] = params.mu * (angular_sum + params.beta * lateral_sum);
+            *target = params.mu * (angular_sum + params.beta * lateral_sum);
         }
     });
 }
@@ -9312,6 +9154,55 @@ mod tests {
         assert!(rule_preset_catalog()
             .into_iter()
             .all(|preset| preset.model_family == MODEL_FAMILY_RULE));
+    }
+
+    #[test]
+    fn driven_registry_exports_high_priority_sources() {
+        let catalog = crate::models::driven::driven_example_catalog();
+        let ids: Vec<&str> = catalog.iter().map(|example| example.id).collect();
+        assert!(ids.contains(&"mackay_rays_linear_stationary"));
+        assert!(ids.contains(&"mackay_target_linear_stationary"));
+        assert!(ids.contains(&"nicks_1d_resonance_tongues"));
+        assert!(ids.contains(&"bolelli_periodic_attractor"));
+        assert!(catalog
+            .iter()
+            .all(|example| example.rights_status.contains("private")
+                || example.rights_status.contains("generated")));
+        assert!(catalog
+            .iter()
+            .all(|example| example.model_family != MODEL_FAMILY_BRESSLOFF
+                && example.model_family != MODEL_FAMILY_RULE));
+        assert!(
+            catalog
+                .iter()
+                .filter(|example| example.implementation_status == "implemented")
+                .count()
+                >= 3
+        );
+    }
+
+    #[test]
+    fn mackay_report_exports_generated_examples() {
+        let report = mackay_localized_input_report(MackayReportConfig {
+            n: 24,
+            iterations: 4,
+            ..MackayReportConfig::default()
+        })
+        .unwrap();
+        assert_eq!(report.format, "mackay-localized-input-report-v1");
+        assert_eq!(report.model_family, MODEL_FAMILY_MACKAY);
+        assert_eq!(report.examples.len(), 3);
+        for example in &report.examples {
+            assert_eq!(example.model_family, MODEL_FAMILY_MACKAY);
+            assert_eq!(example.status, "generated");
+            assert!(example.fixed_point.residual_linf.is_finite());
+            assert!(example.metrics.output_std.is_finite());
+            assert_eq!(example.input_thumbnail.width, 24);
+            let bytes = general_purpose::STANDARD
+                .decode(&example.output_thumbnail.data_base64)
+                .unwrap();
+            assert_eq!(bytes.len(), 24 * 24);
+        }
     }
 
     #[test]
