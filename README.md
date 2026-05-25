@@ -214,7 +214,7 @@ need the heavier `[frame,row,col,orientation]` payload for downstream analysis.
 
 ```text
 rust-v1-sim/          Rust server, payload generator, and model implementation
-  src/models/         Driven implementation plus Bressloff/Rule module roots
+  src/models/         Bressloff, Rule, and driven-field model-family modules
   src/numeric/        Shared numeric helpers for convolution and metrics
 viewer/               Browser viewer, controls, and model notes
 docs/                 Public implementation roadmaps and future work plans

@@ -10,8 +10,12 @@ use std::{
 use serde::Serialize;
 
 use crate::{
-    coerce_params, default_params_json, generate_payload, models::driven::driven_example_catalog,
-    paper_preset_catalog, payload_cache_key, rule_preset_catalog, ServerState,
+    coerce_params, default_params_json, generate_payload,
+    models::{
+        bressloff::presets::paper_preset_catalog, driven::driven_example_catalog,
+        rule::presets::rule_preset_catalog,
+    },
+    payload_cache_key, ServerState,
 };
 
 pub(crate) fn serve_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {

@@ -1,13 +1,17 @@
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let command = args.get(1).map(String::as_str).unwrap_or("serve");
     match command {
-        "calibrate" => crate::calibrate_command(&args[2..])?,
-        "bressloff-geometry" | "figure-stills" => crate::bressloff_geometry_command(&args[2..])?,
+        "calibrate" => crate::models::bressloff::reports::calibrate_command(&args[2..])?,
+        "bressloff-geometry" | "figure-stills" => {
+            crate::models::bressloff::reports::bressloff_geometry_command(&args[2..])?
+        }
         "export" => crate::export_command(&args[2..])?,
-        "rule-report" | "rule-calibrate" => crate::rule_report_command(&args[2..])?,
-        "rule-sweep" => crate::rule_sweep_command(&args[2..])?,
-        "rule-floquet" => crate::rule_floquet_command(&args[2..])?,
-        "rule-fit" | "rule-figure8-fit" => crate::rule_fit_command(&args[2..])?,
+        "rule-report" | "rule-calibrate" => {
+            crate::models::rule::reports::rule_report_command(&args[2..])?
+        }
+        "rule-sweep" => crate::models::rule::sweep::rule_sweep_command(&args[2..])?,
+        "rule-floquet" => crate::models::rule::floquet::rule_floquet_command(&args[2..])?,
+        "rule-fit" | "rule-figure8-fit" => crate::models::rule::fit::rule_fit_command(&args[2..])?,
         "driven-registry" => crate::driven_registry_command(&args[2..])?,
         "mackay-report" => crate::mackay_report_command(&args[2..])?,
         "serve" => crate::server::serve_command(&args[2..])?,

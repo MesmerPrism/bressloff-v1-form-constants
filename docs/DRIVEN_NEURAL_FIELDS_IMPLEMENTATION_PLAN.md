@@ -188,12 +188,26 @@ Delivered:
 
 ### Phase D1 - Minimal Shared Driven-Field Abstraction
 
-Status: partial. The first MacKay path now lives under
-`rust-v1-sim/src/models/driven/` and has a finite-grid input generator,
-separable Gaussian/DoG convolution, fixed-point iteration, and generated report
-schema. Shared convolution and metric helpers now live under
-`rust-v1-sim/src/numeric/`; Bolelli and Nicks should reuse or extend these
-helpers before introducing new solver machinery.
+Status: partial, with the module-boundary prerequisite now complete. The Rust
+binary remains one crate, but its model-family code is split under
+`rust-v1-sim/src/models/`:
+
+- `models/bressloff/presets.rs`, `planform.rs`, and `reports.rs` own the
+  Bressloff preset registry, orientation-hypercolumn planforms, stability
+  diagnostics, and public calibration reports.
+- `models/rule/presets.rs`, `mod.rs`, `sweep.rs`, `floquet.rs`, `fit.rs`, and
+  `reports.rs` own the Rule preset registry, E/I flicker simulator, sweeps,
+  Floquet boundary curves, Figure 8 fit diagnostics, and Rule reports.
+- `models/driven/registry.rs`, `mackay.rs`, and `reports.rs` own the
+  driven-field registry and first MacKay localized-input report.
+- `numeric/convolution.rs` and `numeric/metrics.rs` hold shared numeric helpers
+  that Bolelli and Nicks should reuse or extend before introducing new solver
+  machinery.
+
+The first MacKay path has a finite-grid input generator, separable Gaussian/DoG
+convolution, fixed-point iteration, generated report schema, and generated
+public-safe output report. The next implementation should add driven-specific
+time-periodic primitives without re-expanding `main.rs`.
 
 Keep the scalar driven-field abstraction smaller than the Bressloff
 orientation-hypercolumn and Rule E/I implementations:
@@ -236,7 +250,8 @@ diagnostic until source-derived numeric targets exist.
 
 ### Phase D3 - Localized Time-Periodic Input
 
-Implement Bolelli-Prandi time-periodic input after the MacKay static report:
+Status: next implementation phase. Implement Bolelli-Prandi time-periodic input
+after the module extraction baseline and MacKay static report:
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
@@ -257,6 +272,31 @@ Required fields:
 - contour or stripe width,
 - frequency/inhibition sweep rows,
 - generated thumbnails or row-major compact frames.
+
+Recommended code shape:
+
+- Add `rust-v1-sim/src/models/driven/bolelli.rs`.
+- Add Bolelli report structs to `models/driven/reports.rs` unless they grow
+  large enough to justify `models/driven/bolelli_reports.rs`.
+- Add `BolelliReportConfig` and `bolelli_time_periodic_report(config)`.
+- Add a `bolelli-report` CLI command that writes only generated numeric data and
+  generated thumbnails to `reports/bolelli-time-periodic-input.json`.
+- Keep the first pass diagnostic: use generated contour/stripe-width metrics,
+  period-lock residuals, and source-like parameter notes, but do not claim
+  source-figure reproduction.
+
+First-pass numerical target:
+
+- 1D finite cortical coordinate with zero or periodic boundary option recorded
+  in the report.
+- Linear DoG kernel using source-like pairs such as
+  `(0.4/sqrt(2*pi), 0.8/sqrt(2*pi))`.
+- Localized Heaviside or center/periphery periodic input with frequency rows.
+- Warmup over several periods, then compare the last two periods by residual and
+  phase.
+- Stripe/contour width measured from generated threshold crossings or
+  half-maximum support. Label this as a diagnostic width until source-derived
+  numeric targets exist.
 
 ### Phase D4 - Nicks Orthogonal-Response Diagnostics
 
