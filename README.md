@@ -167,6 +167,26 @@ Generate the first MacKay localized-input diagnostic report:
 The MacKay report contains generated fields and numeric diagnostics only. It is
 a first-pass diagnostic, not a source-figure reproduction claim.
 
+Generate the first Bolelli-Prandi localized time-periodic input diagnostic:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
+```
+
+The Bolelli report contains generated 1D profiles, period residuals, response
+phase, and stripe-width diagnostics only. It is a first-pass diagnostic, not a
+source-figure reproduction claim.
+
+Generate the first Nicks orthogonal-response amplitude diagnostic:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
+```
+
+The Nicks report contains generated cortical/log-polar frames, wavevector
+detuning metrics, orthogonality error, and amplitude-equation residuals only.
+It is a first-pass diagnostic, not a source-figure reproduction claim.
+
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 
 ```powershell

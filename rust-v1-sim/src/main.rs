@@ -25,7 +25,11 @@ use models::{
     bressloff::presets::{
         apply_paper_preset, paper_preset_details, parse_paper_preset, PaperPreset,
     },
-    driven::{driven_registry_report, mackay_localized_input_report, MackayReportConfig},
+    driven::{
+        bolelli_time_periodic_report, driven_registry_report, mackay_localized_input_report,
+        nicks_orthogonal_response_report, BolelliReportConfig, MackayReportConfig,
+        NicksReportConfig,
+    },
     rule::presets::{apply_rule_preset, parse_rule_preset, rule_preset_details, RulePreset},
     rule::reports::rule_details,
     rule::simulate_rule_flicker_frames,
@@ -1442,6 +1446,221 @@ fn mackay_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Erro
         report.parameters.n,
         report.parameters.n,
         report.parameters.iterations
+    );
+    Ok(())
+}
+
+fn bolelli_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/bolelli-time-periodic-input.json");
+    let mut config = BolelliReportConfig::default();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--n" => {
+                config.n =
+                    parse_clamped_usize(iter.next().ok_or("--n requires a value")?, 16, 512)?;
+            }
+            "--samples-per-period" => {
+                config.samples_per_period = parse_clamped_usize(
+                    iter.next().ok_or("--samples-per-period requires a value")?,
+                    16,
+                    1024,
+                )?;
+            }
+            "--warmup-periods" => {
+                config.warmup_periods = parse_clamped_usize(
+                    iter.next().ok_or("--warmup-periods requires a value")?,
+                    0,
+                    200,
+                )?;
+            }
+            "--periodic-tolerance" => {
+                config.periodic_tolerance = parse_clamped_f64(
+                    iter.next().ok_or("--periodic-tolerance requires a value")?,
+                    1.0e-12,
+                    1.0,
+                )?;
+            }
+            "--mu" => {
+                config.mu =
+                    parse_clamped_f64(iter.next().ok_or("--mu requires a value")?, 0.0, 4.0)?;
+            }
+            "--drive-amplitude" => {
+                config.drive_amplitude = parse_clamped_f64(
+                    iter.next().ok_or("--drive-amplitude requires a value")?,
+                    0.0,
+                    4.0,
+                )?;
+            }
+            "--static-bias" => {
+                config.static_bias = parse_clamped_f64(
+                    iter.next().ok_or("--static-bias requires a value")?,
+                    0.0,
+                    4.0,
+                )?;
+            }
+            "--spatial-frequency" => {
+                config.spatial_frequency = parse_clamped_f64(
+                    iter.next().ok_or("--spatial-frequency requires a value")?,
+                    0.0,
+                    32.0,
+                )?;
+            }
+            "--sigma-exc" => {
+                config.sigma_exc = parse_clamped_f64(
+                    iter.next().ok_or("--sigma-exc requires a value")?,
+                    1.0e-6,
+                    10.0,
+                )?;
+            }
+            "--sigma-inh" => {
+                config.sigma_inh = parse_clamped_f64(
+                    iter.next().ok_or("--sigma-inh requires a value")?,
+                    1.0e-6,
+                    10.0,
+                )?;
+            }
+            "--inhibition" => {
+                config.inhibition = parse_clamped_f64(
+                    iter.next().ok_or("--inhibition requires a value")?,
+                    0.0,
+                    4.0,
+                )?;
+            }
+            "--frequencies" | "--lambdas" => {
+                config.frequencies = parse_f64_csv(
+                    iter.next().ok_or("--frequencies requires a value")?,
+                    1.0e-6,
+                    1000.0,
+                )?;
+            }
+            "--domain-min" => {
+                config.domain_min = iter
+                    .next()
+                    .ok_or("--domain-min requires a value")?
+                    .parse::<f64>()?;
+            }
+            "--domain-max" => {
+                config.domain_max = iter
+                    .next()
+                    .ok_or("--domain-max requires a value")?
+                    .parse::<f64>()?;
+            }
+            _ => {}
+        }
+    }
+
+    let report = bolelli_time_periodic_report(config)?;
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let example_count = report.examples.len();
+    let sweep_count = report.frequency_sweep.len();
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
+    println!(
+        "wrote {} bolelli_examples={} frequency_rows={} grid={} samples_per_period={}",
+        out.display(),
+        example_count,
+        sweep_count,
+        report.parameters.n,
+        report.parameters.samples_per_period
+    );
+    Ok(())
+}
+
+fn nicks_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut out = PathBuf::from("reports/nicks-orthogonal-response.json");
+    let mut config = NicksReportConfig::default();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => out = PathBuf::from(iter.next().ok_or("--out requires a value")?),
+            "--n" => {
+                config.n =
+                    parse_clamped_usize(iter.next().ok_or("--n requires a value")?, 16, 256)?;
+            }
+            "--turing-wavenumber" | "--k0" => {
+                config.turing_wavenumber = parse_clamped_f64(
+                    iter.next().ok_or("--turing-wavenumber requires a value")?,
+                    1.0e-6,
+                    32.0,
+                )?;
+            }
+            "--epsilon2-delta" => {
+                config.epsilon2_delta = parse_clamped_f64(
+                    iter.next().ok_or("--epsilon2-delta requires a value")?,
+                    0.0,
+                    32.0,
+                )?;
+            }
+            "--forcing-strengths" | "--gammas" => {
+                config.forcing_strengths = parse_f64_csv(
+                    iter.next().ok_or("--forcing-strengths requires a value")?,
+                    0.0,
+                    32.0,
+                )?;
+            }
+            "--detuning-fractions" | "--detunings" => {
+                config.detuning_fractions = parse_f64_csv(
+                    iter.next().ok_or("--detuning-fractions requires a value")?,
+                    0.0,
+                    1.0,
+                )?;
+            }
+            "--self-interaction" => {
+                config.self_interaction = parse_clamped_f64(
+                    iter.next().ok_or("--self-interaction requires a value")?,
+                    0.0,
+                    32.0,
+                )?;
+            }
+            "--cross-interaction" => {
+                config.cross_interaction = parse_clamped_f64(
+                    iter.next().ok_or("--cross-interaction requires a value")?,
+                    0.0,
+                    32.0,
+                )?;
+            }
+            "--h" | "--threshold" => {
+                config.h = iter.next().ok_or("--h requires a value")?.parse::<f64>()?;
+            }
+            "--sigma" => {
+                config.sigma = parse_clamped_f64(
+                    iter.next().ok_or("--sigma requires a value")?,
+                    1.0e-6,
+                    32.0,
+                )?;
+            }
+            "--domain-min" => {
+                config.domain_min = iter
+                    .next()
+                    .ok_or("--domain-min requires a value")?
+                    .parse::<f64>()?;
+            }
+            "--domain-max" => {
+                config.domain_max = iter
+                    .next()
+                    .ok_or("--domain-max requires a value")?
+                    .parse::<f64>()?;
+            }
+            _ => {}
+        }
+    }
+
+    let report = nicks_orthogonal_response_report(config)?;
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let example_count = report.examples.len();
+    let sweep_count = report.parameter_sweep.len();
+    fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
+    println!(
+        "wrote {} nicks_examples={} sweep_rows={} grid={}",
+        out.display(),
+        example_count,
+        sweep_count,
+        report.parameters.n
     );
     Ok(())
 }
@@ -3164,6 +3383,65 @@ mod tests {
                 .unwrap();
             assert_eq!(bytes.len(), 24 * 24);
         }
+    }
+
+    #[test]
+    fn bolelli_report_exports_periodic_diagnostics() {
+        let report = crate::models::driven::bolelli_time_periodic_report(BolelliReportConfig {
+            n: 48,
+            samples_per_period: 24,
+            warmup_periods: 3,
+            frequencies: vec![2.0, 20.0],
+            ..BolelliReportConfig::default()
+        })
+        .unwrap();
+        assert_eq!(report.format, "bolelli-time-periodic-input-report-v1");
+        assert_eq!(report.model_family, MODEL_FAMILY_LOCALIZED_PERIODIC);
+        assert_eq!(report.examples.len(), 1);
+        assert_eq!(report.frequency_sweep.len(), 2);
+        assert!(report.parameters.contraction_mu_l1.is_finite());
+        for row in &report.frequency_sweep {
+            assert!(row.metrics.periodic_residual_linf.is_finite());
+            assert!(row.metrics.period_correlation.is_finite());
+            assert!(row.metrics.stripe_width_half_max >= 0.0);
+        }
+        let example = &report.examples[0];
+        assert_eq!(example.registry_id, "bolelli_heaviside_flicker_stripes");
+        let bytes = general_purpose::STANDARD
+            .decode(&example.amplitude_thumbnail.data_base64)
+            .unwrap();
+        assert_eq!(bytes.len(), 48);
+    }
+
+    #[test]
+    fn nicks_report_exports_orthogonal_response_diagnostics() {
+        let report = crate::models::driven::nicks_orthogonal_response_report(NicksReportConfig {
+            n: 32,
+            forcing_strengths: vec![0.02, 0.08],
+            detuning_fractions: vec![0.0, 0.5, 0.9],
+            ..NicksReportConfig::default()
+        })
+        .unwrap();
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v1");
+        assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
+        assert_eq!(report.examples.len(), 3);
+        assert_eq!(report.parameter_sweep.len(), 6);
+        assert!(report
+            .parameter_sweep
+            .iter()
+            .any(|row| row.metrics.classification.contains("orthogonal")));
+        for row in &report.parameter_sweep {
+            assert!(row.wavevectors.orthogonality_error_degrees.is_finite());
+            assert!(row.amplitude_solution.residual_linf < 1.0e-9);
+            assert!(row.metrics.diagnostic_metric_available);
+            assert!(!row.metrics.calibrated);
+        }
+        let example = &report.examples[2];
+        assert_eq!(example.registry_id, "nicks_billock_tsou_generated_map");
+        let bytes = general_purpose::STANDARD
+            .decode(&example.retinal_response_thumbnail.data_base64)
+            .unwrap();
+        assert_eq!(bytes.len(), 32 * 32);
     }
 
     #[test]

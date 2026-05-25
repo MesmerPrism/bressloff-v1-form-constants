@@ -1,0 +1,209 @@
+{
+  "format": "bolelli-time-periodic-input-report-v1",
+  "model_family": "localized_time_periodic_input",
+  "source_key": "bolelli-prandi-2025",
+  "status": "generated-first-pass-diagnostic",
+  "note": "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, and generated stripe-width metrics; it is not a source-figure reproduction claim.",
+  "rights_status": "generated outputs only; no copied paper figures or full text",
+  "solver": {
+    "method": "explicit Euler integration to a periodic state after warmup",
+    "boundary_model": "one-dimensional periodic cortical coordinate",
+    "transfer_function": "linear response with localized time-periodic external input",
+    "claim_level": "first-pass diagnostic"
+  },
+  "parameters": {
+    "n": 192,
+    "domain_min": -10.0,
+    "domain_max": 10.0,
+    "dx": 0.10471204188481675,
+    "samples_per_period": 96,
+    "warmup_periods": 10,
+    "periodic_tolerance": 0.005,
+    "mu": 0.35,
+    "drive_amplitude": 0.35,
+    "static_bias": 0.08,
+    "spatial_frequency": 1.0,
+    "sigma_exc": 0.1595769121605731,
+    "sigma_inh": 0.3191538243211462,
+    "inhibition": 0.8,
+    "approximate_kernel_l1": 0.06977989301059412,
+    "contraction_mu_l1": 0.02442296255370794
+  },
+  "examples": [
+    {
+      "id": "bolelli_heaviside_flicker_periodic_state",
+      "label": "Bolelli Heaviside flicker periodic-state diagnostic",
+      "registry_id": "bolelli_heaviside_flicker_stripes",
+      "source_key": "bolelli-prandi-2025",
+      "model_family": "localized_time_periodic_input",
+      "mathematical_object": "linear time-periodic neural field with localized Heaviside external input",
+      "domain": "one-dimensional periodic diagnostic grid on [-10, 10]",
+      "input_formula": "I(x,t)=static_bias*cos(k*x)+drive_amplitude*H(-x)*cos(lambda*t)",
+      "kernel": {
+        "family": "difference_of_gaussians_1d",
+        "formula": "omega(x)=G_sigma_exc(x)-inhibition*G_sigma_inh(x)",
+        "sigma_exc": 0.1595769121605731,
+        "sigma_inh": 0.3191538243211462,
+        "inhibition": 0.8,
+        "approximate_l1": 0.06977989301059412
+      },
+      "frequency_lambda": 20.0,
+      "period": 0.3141592653589793,
+      "metrics": {
+        "time_step": 0.0032724923474893677,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 0.001204949781115447,
+        "period_correlation": 0.9999977208378545,
+        "response_phase_radians": 1.557138585217321,
+        "response_amplitude": 0.01752628508886676,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.1014184638418287,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "input_thumbnail": {
+        "format": "u8-profile-v1",
+        "encoding": "base64",
+        "color_space": "normalized-luma",
+        "width": 192,
+        "height": 1,
+        "scale_min": -0.07989326595574796,
+        "scale_max": 0.42989230789060007,
+        "data_base64": "tbOxsK+vr6+wsbO1t7q9wcTIzNDU2d3h5ens8PP2+Pr8/f7//v79/Pr49vPw7Onl4d3Z1NDMyMTBvbq3tbOxsK+vr6+wsbO1t7q9wcTIzNDU2d3h5ens8PP2+Pr8/f7+T09OTUtJR0RBPTo2Mi4qJSEdGRUSDgsIBgQCAQAAAAABAgQGCAsOEhUZHSElKi4yNjo9QURHSUtNTk9PT09OTUtJR0RBPTo2Mi4qJSEdGRUSDgsIBgQCAQAAAAABAgQG"
+      },
+      "mean_response_thumbnail": {
+        "format": "u8-profile-v1",
+        "encoding": "base64",
+        "color_space": "normalized-luma",
+        "width": 192,
+        "height": 1,
+        "scale_min": -0.08368691580501322,
+        "scale_max": 0.0836795581412977,
+        "data_base64": "Fg8JBAEAAAEECA0UHCUvOkVRXmt4hpOgrbnFz9ni6vH2+v3+/v369vHq4tnPxLmtoJOGeGteUUU5LyUcFA0IBAEAAAEECA0UHCUvOUVRXmt4hpOgrbnFz9ni6vH2+v3+/v369vHq4tnPxbmtoJOGeGteUUU5LyUcFA0IBAEAAAEECA0UHCUvOUVRXmt4hpOgrbnEz9ni6vH2+v3+//369vHq4tnPxbmtoJOGeGteUUU6LyUcFA0IBAEAAAEECQ8W"
+      },
+      "amplitude_thumbnail": {
+        "format": "u8-profile-v1",
+        "encoding": "base64",
+        "color_space": "normalized-luma",
+        "width": 192,
+        "height": 1,
+        "scale_min": 0.000014847554545989809,
+        "scale_max": 0.01779677448794423,
+        "data_base64": "/v7+/v7+//7+/v7+/v39/fz8+/v7+vr5+fn4+Pf39/f39vb29vb29/f39/f4+Pn5+fr6+/v7/Pz9/f3+/v7+/v7+/v7+/v7+/v39/fz8+/v7+vr5+fn4+Pf39/f39vb2AwMDAwMDAgICAgEBAAAAAAAAAQECAgICAwMDAwMDAwMDAwMDAgICAgEBAAAAAAAAAQECAgICAwMDAwMDAwMDAwMDAgICAgEBAAAAAAAAAQECAgICAwMDAwMDAwMDAwMC"
+      },
+      "status": "period-locked-diagnostic",
+      "expected_behavior": "periodic response locked to localized flicker with a generated stripe-width diagnostic",
+      "public_claim_level": "first-pass diagnostic",
+      "note": "Uses generated profiles and numeric period metrics only; source figure comparison remains deferred."
+    }
+  ],
+  "frequency_sweep": [
+    {
+      "registry_id": "bolelli_contour_width_frequency_sweep",
+      "frequency_lambda": 2.0,
+      "period": 3.141592653589793,
+      "metrics": {
+        "time_step": 0.032724923474893676,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 6.925016116099414e-14,
+        "period_correlation": 1.0000000000000016,
+        "response_phase_radians": 1.1636991778051984,
+        "response_amplitude": 0.16080696217012475,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.2476899074760399,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "status": "period-locked-diagnostic",
+      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+    },
+    {
+      "registry_id": "bolelli_contour_width_frequency_sweep",
+      "frequency_lambda": 8.0,
+      "period": 0.7853981633974483,
+      "metrics": {
+        "time_step": 0.008181230868723419,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 0.00003256736228528234,
+        "period_correlation": 0.99999999545411,
+        "response_phase_radians": 1.4877371675277027,
+        "response_amplitude": 0.043630272388666604,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.13039431134639234,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "status": "period-locked-diagnostic",
+      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+    },
+    {
+      "registry_id": "bolelli_contour_width_frequency_sweep",
+      "frequency_lambda": 20.0,
+      "period": 0.3141592653589793,
+      "metrics": {
+        "time_step": 0.0032724923474893677,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 0.001204949781115447,
+        "period_correlation": 0.9999977208378545,
+        "response_phase_radians": 1.557138585217321,
+        "response_amplitude": 0.01752628508886676,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.1014184638418287,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "status": "period-locked-diagnostic",
+      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+    },
+    {
+      "registry_id": "bolelli_contour_width_frequency_sweep",
+      "frequency_lambda": 60.0,
+      "period": 0.10471975511965977,
+      "metrics": {
+        "time_step": 0.001090830782496456,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 0.0030421495151285657,
+        "period_correlation": 0.9999907069199911,
+        "response_phase_radians": 1.5880657937608091,
+        "response_amplitude": 0.00588849143771424,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.06466971887701213,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "status": "period-locked-diagnostic",
+      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+    },
+    {
+      "registry_id": "bolelli_contour_width_frequency_sweep",
+      "frequency_lambda": 100.0,
+      "period": 0.06283185307179587,
+      "metrics": {
+        "time_step": 0.0006544984694978736,
+        "total_steps": 1152,
+        "warmup_periods": 10,
+        "periodic_residual_linf": 0.0027364898733113624,
+        "period_correlation": 0.9999895193578149,
+        "response_phase_radians": 1.5942492473022285,
+        "response_amplitude": 0.003550070941934203,
+        "stripe_width_half_max": 10.052356020942408,
+        "active_fraction_half_max": 0.5,
+        "max_abs_response": 0.046304674214358736,
+        "mean_zero_crossings": 6.0,
+        "locked": true
+      },
+      "status": "period-locked-diagnostic",
+      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+    }
+  ]
+}

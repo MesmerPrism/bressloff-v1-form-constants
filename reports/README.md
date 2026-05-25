@@ -183,14 +183,30 @@ input/output thumbnails, fixed-point residuals, zero-crossing metrics, and a
 Gaussian-only diagnostic control. It is a first-pass diagnostic report, not a
 source-figure reproduction claim.
 
-See
-[`docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md`](../docs/DRIVEN_NEURAL_FIELDS_IMPLEMENTATION_PLAN.md)
-for the remaining public-safe report targets:
+The first generated Bolelli-Prandi localized time-periodic input diagnostic is
+generated with:
 
-```text
-bolelli-time-periodic-input-report-v1
-nicks-orthogonal-response-report-v1
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
 ```
+
+It writes `format: bolelli-time-periodic-input-report-v1` and includes generated
+1D profiles, period-lock residuals, response phase, half-max stripe-width
+metrics, and frequency-sweep rows for localized Heaviside flicker. It is a
+first-pass diagnostic report, not a source-figure reproduction claim.
+
+The first generated Nicks orthogonal-response amplitude diagnostic is generated
+with:
+
+```powershell
+.\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
+```
+
+It writes `format: nicks-orthogonal-response-report-v1` and includes generated
+cortical forcing/response frames, an inverse-log-polar response frame,
+wavevector detuning metrics, orthogonality error, amplitude-equation residuals,
+and validation flags. It is a first-pass diagnostic report, not a source-figure
+reproduction claim.
 
 Driven-input reports should contain generated outputs and derived numeric
 metrics only. PDFs, paper figure crops, page renders, and private extraction

@@ -25,8 +25,12 @@ Current tracked outputs:
   `format: driven-neural-fields-registry-v1`.
 - `reports/mackay-localized-input.json` uses
   `format: mackay-localized-input-report-v1`.
-- The MacKay report is a generated first-pass diagnostic. It is not a
-  source-figure reproduction claim.
+- `reports/bolelli-time-periodic-input.json` uses
+  `format: bolelli-time-periodic-input-report-v1`.
+- `reports/nicks-orthogonal-response.json` uses
+  `format: nicks-orthogonal-response-report-v1`.
+- The MacKay, Bolelli, and Nicks reports are generated first-pass diagnostics.
+  They are not source-figure reproduction claims.
 
 ## Audit Verdict
 
@@ -57,23 +61,22 @@ not all should become simulator code at the same depth.
    It validates that the input generator is not hardcoded to one orientation.
 
 3. `bolelli_heaviside_flicker_periodic_state`
-   Source: Bolelli-Prandi 2025. Add time-periodic localized input,
+   Source: Bolelli-Prandi 2025. Implemented with time-periodic localized input,
    transient trimming, periodic-state residual, and response phase metrics.
 
 4. `bolelli_contour_width_frequency_sweep`
-   Build on the periodic wrapper and report stripe or contour width versus
-   flicker frequency and inhibitory kernel scale. Treat this as a diagnostic
-   and calibration target until source-target metrics exist.
+   Partially implemented as generated stripe-width rows versus flicker
+   frequency. Treat this as a diagnostic and calibration target until the
+   source-specific pole/root width metric exists.
 
 5. `nicks_2d_orthogonal_response_amplitude`
-   Source: Nicks et al. 2021. Implement the reduced 2:1 resonance amplitude
-   examples before the full field solver: forcing wavevector, response
-   wavevector, rectangle/oblique/horizontal stripe family, and orthogonality
-   error.
+   Source: Nicks et al. 2021. Implemented as a normalized reduced 2:1 resonance
+   amplitude diagnostic with forcing wavevector, response wavevector,
+   rectangle/oblique/orthogonal response family, and orthogonality error.
 
 6. `nicks_billock_tsou_generated_map`
-   Generate source-safe ring/fan and fan/ring input-output panels through the
-   existing retinocortical map. This is a website and report target, not a
+   Partially implemented as a source-safe inverse-log-polar generated response
+   frame in the Nicks report. It remains a website/report target, not a
    reproduction claim.
 
 7. `nicks_halfspace_forcing_full_field`
@@ -148,8 +151,9 @@ Initial implemented/planned model-family names:
 | Example id | Equation or reduction | Domain and symmetry | Kernel/connectivity | Input/forcing | Source parameters | Method | Output target | Difficulty | Missing evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `nicks_1d_resonance_tongues` | 1D forced scalar neural field and n:1 amplitude equation | Cortical line, weak forcing near Turing instability | Balanced Wizard-hat/Mexican-hat kernel | `cos(kf x)` multiplicative drive | Example uses `sigma = 0.8`, threshold `h = 0`, small detuning/distance-from-threshold constants | Amplitude-equation scan | Resonance tongue report; dominant 2:1 band | Medium | Needs source curve digitization for quantitative tongue comparison. |
-| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Same isotropic kernel | Spatial stripe forcing | Example grid uses `sigma = 0.5`, `h = 0` or `|h| = 0.15`, distance from Turing about `0.3`, forcing strengths in a small list | Reduced planform generator and stability labels | Generated rectangle/oblique/orthogonal-stripe panels with orthogonality error | Medium | Coefficients need careful extraction into code; figure panels stay private. |
-| `nicks_halfspace_billock_tsou_full_field` | Full neural field with adaptation | 2D cortical half-space plus inverse log-polar retinal view | Isotropic local kernel plus adaptation | Half-space stripe/ring/fan forcing, optional flicker | Numerical method uses regular square mesh and FFT in source; repo can start smaller | Time stepping | Generated Billock-Tsou-style ring/fan response report | Hard | Needs grid/boundary choices and private source-target metrics. |
+| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Normalized mode-gain abstraction from the isotropic kernel | Spatial stripe forcing | Generated default uses `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, normalized `Phi` coefficients, and gamma/detuning sweeps | Symmetric-branch amplitude solve, generated fields, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as a first-pass diagnostic; source-derived coefficient normalization and acceptance criteria are still missing. |
+| `nicks_billock_tsou_generated_map` | Reduced-amplitude response mapped through an inverse log-polar visual-field frame | 2D cortical diagnostic frame plus generated retinal/log-polar frame | Same normalized mode-gain abstraction | Stripe forcing with orthogonal response mode | Uses the same generated Nicks defaults | Generated map diagnostic | `reports/nicks-orthogonal-response.json` | Medium/hard | Partially implemented; localized source-target geometry and source metrics remain missing. |
+| `nicks_halfspace_billock_tsou_full_field` | Full neural field with adaptation | 2D cortical half-space plus inverse log-polar retinal view | Isotropic local kernel plus adaptation | Half-space stripe/ring/fan forcing, optional flicker | Numerical method uses regular square mesh and FFT in source; repo can start smaller | Time stepping | Future Billock-Tsou-style ring/fan response report | Hard | Needs grid/boundary choices and private source-target metrics. |
 | `tamekue_plain_funnel_tunnel_negative_control` | Stationary Amari fixed point `a = I + mu omega * f(a)` | 2D cortical plane; funnel/tunnel remain symmetric | 2D DoG | Pure `PF` or `PT` cosine input | DoG constraints and `mu < mu0`; generated defaults can use source-like DoG | Fixed-point iteration | Negative-control report showing no induced MacKay contours | Easy | Needs acceptance metric for "same zero-level structure." |
 | `mackay_rays_linear_stationary` | Linear stationary input-output map | 2D finite cortical diagnostic grid; retinal view deferred | 2D DoG, balanced case supported | `cos(5 pi x2) + epsilon H(2 - x1)` | Source examples use `L = 10`, `epsilon = 0.025`, `mu = 1`, `kappa = 1`, `2 pi^2 sigma1^2 = 1`, `2 pi^2 sigma2^2 = 2`; generated report uses `n = 112`, finite zero-padded convolution | Fixed-point iteration | `reports/mackay-localized-input.json` | Easy | Implemented as first-pass generated diagnostic; source-target numeric comparison is still missing. |
 | `mackay_target_linear_stationary` | Same fixed-point map | 2D finite cortical diagnostic grid; retinal view deferred | 2D DoG | Target cosine plus localized symmetric ray controls | Same source-like kernel and epsilon constants | Fixed-point iteration | Same report, second example row | Easy/medium | Implemented as first-pass generated diagnostic; input geometry needs source-target calibration. |
@@ -198,16 +202,20 @@ binary remains one crate, but its model-family code is split under
 - `models/rule/presets.rs`, `mod.rs`, `sweep.rs`, `floquet.rs`, `fit.rs`, and
   `reports.rs` own the Rule preset registry, E/I flicker simulator, sweeps,
   Floquet boundary curves, Figure 8 fit diagnostics, and Rule reports.
-- `models/driven/registry.rs`, `mackay.rs`, and `reports.rs` own the
-  driven-field registry and first MacKay localized-input report.
+- `models/driven/registry.rs`, `mackay.rs`, `bolelli.rs`, `nicks.rs`, and
+  `reports.rs` own the driven-field registry and first generated MacKay,
+  Bolelli, and Nicks diagnostic reports.
 - `numeric/convolution.rs` and `numeric/metrics.rs` hold shared numeric helpers
   that Bolelli and Nicks should reuse or extend before introducing new solver
   machinery.
 
 The first MacKay path has a finite-grid input generator, separable Gaussian/DoG
 convolution, fixed-point iteration, generated report schema, and generated
-public-safe output report. The next implementation should add driven-specific
-time-periodic primitives without re-expanding `main.rs`.
+public-safe output report. The Bolelli path adds localized time-periodic
+diagnostics, and the Nicks path adds reduced amplitude-equation orthogonal
+response diagnostics. The next implementation should focus on source-derived
+numeric targets and deferred half-space/nonlinear extensions without
+re-expanding `main.rs`.
 
 Keep the scalar driven-field abstraction smaller than the Bressloff
 orientation-hypercolumn and Rule E/I implementations:
@@ -250,20 +258,21 @@ diagnostic until source-derived numeric targets exist.
 
 ### Phase D3 - Localized Time-Periodic Input
 
-Status: next implementation phase. Implement Bolelli-Prandi time-periodic input
-after the module extraction baseline and MacKay static report:
+Status: implemented as a generated first-pass diagnostic for the periodic-state
+and Heaviside-flicker examples; the source-calibrated pole/width sweep remains
+partial.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
 ```
 
-Suggested report format:
+Report format:
 
 ```text
 bolelli-time-periodic-input-report-v1
 ```
 
-Required fields:
+Delivered fields:
 
 - period/frequency and time-step settings,
 - transient/warmup duration,
@@ -273,19 +282,18 @@ Required fields:
 - frequency/inhibition sweep rows,
 - generated thumbnails or row-major compact frames.
 
-Recommended code shape:
+Implemented code shape:
 
-- Add `rust-v1-sim/src/models/driven/bolelli.rs`.
-- Add Bolelli report structs to `models/driven/reports.rs` unless they grow
-  large enough to justify `models/driven/bolelli_reports.rs`.
-- Add `BolelliReportConfig` and `bolelli_time_periodic_report(config)`.
-- Add a `bolelli-report` CLI command that writes only generated numeric data and
-  generated thumbnails to `reports/bolelli-time-periodic-input.json`.
+- `rust-v1-sim/src/models/driven/bolelli.rs`.
+- Bolelli report structs in `models/driven/reports.rs`.
+- `BolelliReportConfig` and `bolelli_time_periodic_report(config)`.
+- `bolelli-report` CLI command writes only generated numeric data and generated
+  thumbnails to `reports/bolelli-time-periodic-input.json`.
 - Keep the first pass diagnostic: use generated contour/stripe-width metrics,
   period-lock residuals, and source-like parameter notes, but do not claim
   source-figure reproduction.
 
-First-pass numerical target:
+Implemented numerical target:
 
 - 1D finite cortical coordinate with zero or periodic boundary option recorded
   in the report.
@@ -298,31 +306,61 @@ First-pass numerical target:
   half-maximum support. Label this as a diagnostic width until source-derived
   numeric targets exist.
 
+Remaining work:
+
+- Add source-derived public-safe numeric targets before any source-match claim.
+- Replace the generated half-max width with the paper-specific pole/root width
+  diagnostic once the root-tracking convention is tested.
+- Add nonlinear Billock-Tsou-style flicker only after the linear periodic-state
+  report has stable validation thresholds.
+
 ### Phase D4 - Nicks Orthogonal-Response Diagnostics
 
-Start with reduced amplitude-equation diagnostics, not a full field solver:
+Status: implemented as a generated first-pass diagnostic for the 2D
+orthogonal-response amplitude example; the full half-space driven neural-field
+solver remains deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
 ```
 
-Suggested report format:
+Report format:
 
 ```text
 nicks-orthogonal-response-report-v1
 ```
 
-Required fields:
+Delivered fields:
 
 - forcing wavevector and response wavevector,
-- resonance ratio and detuning,
-- rectangle/oblique/stripe classification,
+- 2:1 resonance ratio, Turing wavenumber, and detuning,
+- rectangle/oblique/orthogonal-response classification,
 - orthogonality error in degrees,
-- generated cortical frame,
-- generated retinal/log-polar frame where applicable.
+- generated cortical forcing and response frames,
+- generated inverse-log-polar visual-field frame,
+- symmetric-branch amplitude-equation residual,
+- validation flags for rendered target coverage, diagnostic metric availability,
+  source-target comparison, and calibration.
+
+Implemented code shape:
+
+- `rust-v1-sim/src/models/driven/nicks.rs`.
+- Nicks report structs in `models/driven/reports.rs`.
+- `NicksReportConfig` and `nicks_orthogonal_response_report(config)`.
+- `nicks-report` CLI command writes only generated numeric data and generated
+  thumbnails to `reports/nicks-orthogonal-response.json`.
+
+Remaining work:
 
 Only after these reduced examples are stable should the repo add a full
 half-space driven neural-field simulation.
+
+- Replace normalized amplitude coefficients with source-derived public-safe
+  coefficient tables before any source-match claim.
+- Add a private/source-target comparison layer for Figure 8-style region
+  boundaries.
+- Add localized half-space Billock-Tsou geometry and adaptation only after the
+  reduced diagnostic has stable acceptance thresholds.
 
 ### Phase D5 - Public Website Abstraction
 
