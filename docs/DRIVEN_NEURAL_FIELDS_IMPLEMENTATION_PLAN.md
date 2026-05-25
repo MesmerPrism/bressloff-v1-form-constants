@@ -24,13 +24,14 @@ Current tracked outputs:
 - `reports/driven-neural-fields-registry.json` uses
   `format: driven-neural-fields-registry-v1`.
 - `reports/mackay-localized-input.json` uses
-  `format: mackay-localized-input-report-v1`.
+  `format: mackay-localized-input-report-v2`.
 - `reports/bolelli-time-periodic-input.json` uses
-  `format: bolelli-time-periodic-input-report-v1`.
+  `format: bolelli-time-periodic-input-report-v2`.
 - `reports/nicks-orthogonal-response.json` uses
-  `format: nicks-orthogonal-response-report-v1`.
-- The MacKay, Bolelli, and Nicks reports are generated first-pass diagnostics.
-  They are not source-figure reproduction claims.
+  `format: nicks-orthogonal-response-report-v2`.
+- The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
+  include equation-derived source-target comparison layers while still reporting
+  `calibrated=false`.
 
 ## Audit Verdict
 
@@ -65,14 +66,15 @@ not all should become simulator code at the same depth.
    transient trimming, periodic-state residual, and response phase metrics.
 
 4. `bolelli_contour_width_frequency_sweep`
-   Partially implemented as generated stripe-width rows versus flicker
-   frequency. Treat this as a diagnostic and calibration target until the
-   source-specific pole/root width metric exists.
+   Implemented as generated stripe-width rows versus flicker frequency plus an
+   equation-derived principal-pole width comparison. Treat this as a
+   source-target diagnostic until source-backed acceptance thresholds exist.
 
 5. `nicks_2d_orthogonal_response_amplitude`
    Source: Nicks et al. 2021. Implemented as a normalized reduced 2:1 resonance
    amplitude diagnostic with forcing wavevector, response wavevector,
-   rectangle/oblique/orthogonal response family, and orthogonality error.
+   rectangle/oblique/orthogonal response family, orthogonality error, and an
+   equation-derived 2:1 geometry comparison.
 
 6. `nicks_billock_tsou_generated_map`
    Partially implemented as a source-safe inverse-log-polar generated response
@@ -151,7 +153,7 @@ Initial implemented/planned model-family names:
 | Example id | Equation or reduction | Domain and symmetry | Kernel/connectivity | Input/forcing | Source parameters | Method | Output target | Difficulty | Missing evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `nicks_1d_resonance_tongues` | 1D forced scalar neural field and n:1 amplitude equation | Cortical line, weak forcing near Turing instability | Balanced Wizard-hat/Mexican-hat kernel | `cos(kf x)` multiplicative drive | Example uses `sigma = 0.8`, threshold `h = 0`, small detuning/distance-from-threshold constants | Amplitude-equation scan | Resonance tongue report; dominant 2:1 band | Medium | Needs source curve digitization for quantitative tongue comparison. |
-| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Normalized mode-gain abstraction from the isotropic kernel | Spatial stripe forcing | Generated default uses `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, normalized `Phi` coefficients, and gamma/detuning sweeps | Symmetric-branch amplitude solve, generated fields, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as a first-pass diagnostic; source-derived coefficient normalization and acceptance criteria are still missing. |
+| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Normalized mode-gain abstraction from the isotropic kernel | Spatial stripe forcing | Generated default uses `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, normalized `Phi` coefficients, and gamma/detuning sweeps | Symmetric-branch amplitude solve, generated fields, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as an equation-derived source-target geometry diagnostic; source-derived coefficient normalization and calibrated region thresholds are still missing. |
 | `nicks_billock_tsou_generated_map` | Reduced-amplitude response mapped through an inverse log-polar visual-field frame | 2D cortical diagnostic frame plus generated retinal/log-polar frame | Same normalized mode-gain abstraction | Stripe forcing with orthogonal response mode | Uses the same generated Nicks defaults | Generated map diagnostic | `reports/nicks-orthogonal-response.json` | Medium/hard | Partially implemented; localized source-target geometry and source metrics remain missing. |
 | `nicks_halfspace_billock_tsou_full_field` | Full neural field with adaptation | 2D cortical half-space plus inverse log-polar retinal view | Isotropic local kernel plus adaptation | Half-space stripe/ring/fan forcing, optional flicker | Numerical method uses regular square mesh and FFT in source; repo can start smaller | Time stepping | Future Billock-Tsou-style ring/fan response report | Hard | Needs grid/boundary choices and private source-target metrics. |
 | `tamekue_plain_funnel_tunnel_negative_control` | Stationary Amari fixed point `a = I + mu omega * f(a)` | 2D cortical plane; funnel/tunnel remain symmetric | 2D DoG | Pure `PF` or `PT` cosine input | DoG constraints and `mu < mu0`; generated defaults can use source-like DoG | Fixed-point iteration | Negative-control report showing no induced MacKay contours | Easy | Needs acceptance metric for "same zero-level structure." |
@@ -161,7 +163,7 @@ Initial implemented/planned model-family names:
 | `mackay_gaussian_kernel_negative_check` | Same fixed point with excitatory Gaussian-only kernel | 2D finite cortical diagnostic grid | Gaussian-only comparator | Same localized input | No source reproduction expected | Negative-control report | Kernel-family diagnostic in `reports/mackay-localized-input.json` | Easy | Implemented as a diagnostic control, not a figure match. |
 | `bolelli_periodic_attractor` | Neural field with T-periodic input and unique periodic state under contraction assumptions | 1D/2D cortical domain, depending on input | Even kernel with `||omega||_1 < 1`; linear case explicit | Generic T-periodic input | Repo defines period/frequency grid | Time stepping plus period residual | `reports/bolelli-time-periodic-input.json` | Easy/medium | The theorem is broad; example-specific metrics must be defined. |
 | `bolelli_heaviside_flicker_stripes` | Linear periodic solution with kernel expansion | 1D cortical coordinate lifted to 2D display | 1D DoG | `H(x1) cos(lambda t)` or center/periphery variant | Source examples use `k = 1` and DoG pairs including `(0.4/sqrt(2 pi), 0.8/sqrt(2 pi))` | Periodic-state solver | Moving-stripe/contour-width diagnostic | Medium | Needs pole solver or numerical width estimate. |
-| `bolelli_contour_width_frequency_sweep` | Principal-pole/stripe-width dependence | 1D cortical coordinate | DoG inhibitory scale | Frequency sweep `lambda` | Source sweep range includes `lambda` from about `2` to `100` in examples | Numeric pole/root search or generated simulation metric | Width versus frequency/inhibition report | Medium/hard | Root tracking and axis normalization need tests. |
+| `bolelli_contour_width_frequency_sweep` | Principal-pole/stripe-width dependence | 1D cortical coordinate | DoG inhibitory scale | Frequency sweep `lambda` | Source sweep range includes `lambda` from about `2` to `100` in examples | Numeric pole/root search plus generated simulation metric | `reports/bolelli-time-periodic-input.json` | Medium/hard | Implemented as an equation-derived source-target diagnostic; source-figure thresholds and nonlinear examples remain missing. |
 | `bolelli_mackay_flicker_persistence` | Static MacKay input plus localized flicker | 1D cortical effective input, retinal display | DoG | Center localized flicker replacing static localized information | Frequency examples include `lambda = 0` and high-frequency comparison | Time stepping and width metric | MacKay flicker report row | Medium | Source examples are visual, not table-calibrated. |
 | `bolelli_billock_tsou_nonlinear_flicker` | Nonlinear periodic field | 2D display with effective 1D input | DoG | Static radial/fan term plus peripheral flicker | Source example uses clipped linear nonlinearity, `lambda = 60`, `k = 1`, source-like DoG pair | Time stepping over one period after convergence | Animated generated report frames | Hard | Nonlinear parameter calibration and source comparison are deferred. |
 | `pinwheel_lattice_bifurcation_baseline` | Neural field on periodic square/hexagonal domain | Periodic square or hexagonal cortex | Local DoG plus optional long-range pinwheel term | None; spontaneous activity | Source examples specify sigmoid threshold, local width, large meshes | Bifurcation/continuation or generated schematic first | Architecture caveat report | Hard | Requires pinwheel map generation and continuation machinery. |
@@ -248,19 +250,20 @@ Command:
 Report format:
 
 ```text
-mackay-localized-input-report-v1
+mackay-localized-input-report-v2
 ```
 
 The report includes generated input/output thumbnails, DoG parameters,
-fixed-point residuals, zero-crossing metrics, input-output correlation, and a
-Gaussian-only negative-control row. Status language remains first-pass
-diagnostic until source-derived numeric targets exist.
+fixed-point residuals, zero-crossing metrics, input-output correlation,
+validation flags, and a Gaussian-only negative-control row. Status language
+remains first-pass diagnostic until source-derived numeric targets exist.
 
 ### Phase D3 - Localized Time-Periodic Input
 
-Status: implemented as a generated first-pass diagnostic for the periodic-state
-and Heaviside-flicker examples; the source-calibrated pole/width sweep remains
-partial.
+Status: implemented as a generated source-target diagnostic for the
+periodic-state, Heaviside-flicker, and frequency-sweep examples. The report now
+compares generated half-max widths with the equation-derived principal-pole
+width target, but it remains uncalibrated against source figures.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
@@ -269,7 +272,7 @@ partial.
 Report format:
 
 ```text
-bolelli-time-periodic-input-report-v1
+bolelli-time-periodic-input-report-v2
 ```
 
 Delivered fields:
@@ -279,7 +282,8 @@ Delivered fields:
 - periodic-state residual over one period,
 - response phase relative to input,
 - contour or stripe width,
-- frequency/inhibition sweep rows,
+- equation-derived principal-pole width comparison,
+- frequency sweep rows,
 - generated thumbnails or row-major compact frames.
 
 Implemented code shape:
@@ -289,9 +293,9 @@ Implemented code shape:
 - `BolelliReportConfig` and `bolelli_time_periodic_report(config)`.
 - `bolelli-report` CLI command writes only generated numeric data and generated
   thumbnails to `reports/bolelli-time-periodic-input.json`.
-- Keep the first pass diagnostic: use generated contour/stripe-width metrics,
-  period-lock residuals, and source-like parameter notes, but do not claim
-  source-figure reproduction.
+- Keep the comparison diagnostic: use generated contour/stripe-width metrics,
+  period-lock residuals, source-like parameter notes, and the principal-pole
+  target relation, but do not claim source-figure reproduction.
 
 Implemented numerical target:
 
@@ -303,22 +307,25 @@ Implemented numerical target:
 - Warmup over several periods, then compare the last two periods by residual and
   phase.
 - Stripe/contour width measured from generated threshold crossings or
-  half-maximum support. Label this as a diagnostic width until source-derived
-  numeric targets exist.
+  half-maximum support.
+- Principal-pole target width from the public-safe equation relation
+  `1 +/- i*lambda = omega_hat(z)`.
 
 Remaining work:
 
-- Add source-derived public-safe numeric targets before any source-match claim.
-- Replace the generated half-max width with the paper-specific pole/root width
-  diagnostic once the root-tracking convention is tested.
+- Add source-figure-derived public-safe numeric targets before any calibrated
+  source-match claim.
+- Replace or normalize the generated half-max width only if a source-backed
+  acceptance convention is established.
 - Add nonlinear Billock-Tsou-style flicker only after the linear periodic-state
   report has stable validation thresholds.
 
 ### Phase D4 - Nicks Orthogonal-Response Diagnostics
 
-Status: implemented as a generated first-pass diagnostic for the 2D
-orthogonal-response amplitude example; the full half-space driven neural-field
-solver remains deferred.
+Status: implemented as a generated source-target diagnostic for the 2D
+orthogonal-response amplitude example. The report compares generated wavevector
+geometry with the equation-derived 2:1 response target, while coefficient
+normalization and full half-space simulations remain deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
@@ -327,7 +334,7 @@ solver remains deferred.
 Report format:
 
 ```text
-nicks-orthogonal-response-report-v1
+nicks-orthogonal-response-report-v2
 ```
 
 Delivered fields:
@@ -339,6 +346,7 @@ Delivered fields:
 - generated cortical forcing and response frames,
 - generated inverse-log-polar visual-field frame,
 - symmetric-branch amplitude-equation residual,
+- equation-derived 2:1 wavevector target comparison,
 - validation flags for rendered target coverage, diagnostic metric availability,
   source-target comparison, and calibration.
 
@@ -356,9 +364,9 @@ Only after these reduced examples are stable should the repo add a full
 half-space driven neural-field simulation.
 
 - Replace normalized amplitude coefficients with source-derived public-safe
-  coefficient tables before any source-match claim.
+  coefficient tables before any calibrated source-match claim.
 - Add a private/source-target comparison layer for Figure 8-style region
-  boundaries.
+  boundaries beyond the current equation-derived geometry check.
 - Add localized half-space Billock-Tsou geometry and adaptation only after the
   reduced diagnostic has stable acceptance thresholds.
 
@@ -394,6 +402,17 @@ For every driven example, the report should distinguish:
 Do not claim reproduction from visual resemblance alone. Until a report-backed
 match exists, use `diagnostic`, `first_pass`, `calibration_target`, or
 `source_target_comparison`.
+
+Current report status:
+
+- MacKay: rendered target coverage and diagnostic metrics are present;
+  source-target comparison is still false.
+- Bolelli: principal-pole width source-target comparisons are present;
+  calibration remains false because generated half-max widths are not accepted
+  source-figure matches.
+- Nicks: 2:1 wavevector geometry source-target comparisons are present;
+  calibration remains false because coefficient normalization and region
+  thresholds are not source calibrated.
 
 ### Phase D7 - Deferred High-Risk Work
 

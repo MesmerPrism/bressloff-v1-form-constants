@@ -3369,7 +3369,7 @@ mod tests {
             ..MackayReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "mackay-localized-input-report-v1");
+        assert_eq!(report.format, "mackay-localized-input-report-v2");
         assert_eq!(report.model_family, MODEL_FAMILY_MACKAY);
         assert_eq!(report.examples.len(), 3);
         for example in &report.examples {
@@ -3377,6 +3377,10 @@ mod tests {
             assert_eq!(example.status, "generated");
             assert!(example.fixed_point.residual_linf.is_finite());
             assert!(example.metrics.output_std.is_finite());
+            assert!(example.metrics.rendered_target_coverage);
+            assert!(example.metrics.diagnostic_metric_available);
+            assert!(!example.metrics.source_target_comparison);
+            assert!(!example.metrics.calibrated);
             assert_eq!(example.input_thumbnail.width, 24);
             let bytes = general_purpose::STANDARD
                 .decode(&example.output_thumbnail.data_base64)
@@ -3395,7 +3399,7 @@ mod tests {
             ..BolelliReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "bolelli-time-periodic-input-report-v1");
+        assert_eq!(report.format, "bolelli-time-periodic-input-report-v2");
         assert_eq!(report.model_family, MODEL_FAMILY_LOCALIZED_PERIODIC);
         assert_eq!(report.examples.len(), 1);
         assert_eq!(report.frequency_sweep.len(), 2);
@@ -3404,9 +3408,20 @@ mod tests {
             assert!(row.metrics.periodic_residual_linf.is_finite());
             assert!(row.metrics.period_correlation.is_finite());
             assert!(row.metrics.stripe_width_half_max >= 0.0);
+            assert!(row.metrics.rendered_target_coverage);
+            assert!(row.metrics.diagnostic_metric_available);
+            assert!(row.source_target.source_target_comparison);
+            assert!(!row.source_target.calibrated);
+            assert!(row.source_target.pole_real.unwrap() > 0.0);
+            assert!(row
+                .source_target
+                .target_width_principal_pole
+                .unwrap()
+                .is_finite());
         }
         let example = &report.examples[0];
         assert_eq!(example.registry_id, "bolelli_heaviside_flicker_stripes");
+        assert!(example.source_target.source_target_comparison);
         let bytes = general_purpose::STANDARD
             .decode(&example.amplitude_thumbnail.data_base64)
             .unwrap();
@@ -3422,7 +3437,7 @@ mod tests {
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v1");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v2");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
         assert_eq!(report.examples.len(), 3);
         assert_eq!(report.parameter_sweep.len(), 6);
@@ -3434,10 +3449,15 @@ mod tests {
             assert!(row.wavevectors.orthogonality_error_degrees.is_finite());
             assert!(row.amplitude_solution.residual_linf < 1.0e-9);
             assert!(row.metrics.diagnostic_metric_available);
+            assert!(row.metrics.source_target_comparison);
+            assert!(row.source_target.source_target_comparison);
+            assert!(row.source_target.classification_matches);
+            assert!(row.source_target.angle_error_degrees < 1.0e-9);
             assert!(!row.metrics.calibrated);
         }
         let example = &report.examples[2];
         assert_eq!(example.registry_id, "nicks_billock_tsou_generated_map");
+        assert!(example.source_target.source_target_comparison);
         let bytes = general_purpose::STANDARD
             .decode(&example.retinal_response_thumbnail.data_base64)
             .unwrap();

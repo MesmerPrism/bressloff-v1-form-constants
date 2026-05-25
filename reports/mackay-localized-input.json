@@ -1,5 +1,5 @@
 {
-  "format": "mackay-localized-input-report-v1",
+  "format": "mackay-localized-input-report-v2",
   "model_family": "mackay_localized_input",
   "source_key": "tamekue-prandi-chitour-2024",
   "status": "generated-first-pass-diagnostic",
@@ -69,7 +69,11 @@
         "zero_crossings_along_x_mean": 0.017857142857142856,
         "zero_crossings_along_y_mean": 100.0,
         "input_output_correlation": 0.9999334974211394,
-        "output_input_delta_std": 0.008600532944126079
+        "output_input_delta_std": 0.008600532944126079,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": false,
+        "calibrated": false
       },
       "input_thumbnail": {
         "format": "u8-field-v1",
@@ -140,7 +144,11 @@
         "zero_crossings_along_x_mean": 100.0,
         "zero_crossings_along_y_mean": 0.07142857142857142,
         "input_output_correlation": 0.9999326697317673,
-        "output_input_delta_std": 0.008650058907355098
+        "output_input_delta_std": 0.008650058907355098,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": false,
+        "calibrated": false
       },
       "input_thumbnail": {
         "format": "u8-field-v1",
@@ -211,7 +219,11 @@
         "zero_crossings_along_x_mean": 0.8571428571428571,
         "zero_crossings_along_y_mean": 46.32142857142857,
         "input_output_correlation": 0.8174711916597236,
-        "output_input_delta_std": 0.5056779276658926
+        "output_input_delta_std": 0.5056779276658926,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": false,
+        "calibrated": false
       },
       "input_thumbnail": {
         "format": "u8-field-v1",

@@ -50,7 +50,7 @@ pub(crate) fn mackay_localized_input_report(
         .map(|spec| mackay_generated_example(spec, config, parameters))
         .collect();
     Ok(MackayLocalizedInputReport {
-        format: "mackay-localized-input-report-v1",
+        format: "mackay-localized-input-report-v2",
         model_family: MODEL_FAMILY_MACKAY,
         source_key: "tamekue-prandi-chitour-2024",
         status: "generated-first-pass-diagnostic",
@@ -302,6 +302,10 @@ fn mackay_field_metrics(input: &[f64], output: &[f64], n: usize) -> MackayFieldM
         zero_crossings_along_y_mean: metrics::zero_crossings_along_y(output, n),
         input_output_correlation: metrics::correlation(input, output),
         output_input_delta_std: metrics::stats(&delta).1,
+        rendered_target_coverage: true,
+        diagnostic_metric_available: true,
+        source_target_comparison: false,
+        calibrated: false,
     }
 }
 

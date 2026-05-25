@@ -5,7 +5,7 @@ use base64::{engine::general_purpose, Engine as _};
 use super::reports::{
     NicksAmplitudeSolution, NicksFieldThumbnail, NicksGeneratedExample, NicksOrthogonalMetrics,
     NicksOrthogonalResponseReport, NicksReportConfig, NicksReportParameters, NicksReportSolver,
-    NicksSweepRow, NicksWavevectorDiagnostics,
+    NicksSourceTargetComparison, NicksSweepRow, NicksWavevectorDiagnostics,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_DRIVEN_ORTHOGONAL, PI};
 
@@ -19,6 +19,7 @@ struct NicksRunOutput {
     wavevectors: NicksWavevectorDiagnostics,
     amplitude_solution: NicksAmplitudeSolution,
     metrics: NicksOrthogonalMetrics,
+    source_target: NicksSourceTargetComparison,
 }
 
 pub(crate) fn nicks_orthogonal_response_report(
@@ -62,14 +63,15 @@ pub(crate) fn nicks_orthogonal_response_report(
                 wavevectors: run.wavevectors,
                 amplitude_solution: run.amplitude_solution,
                 metrics: run.metrics,
+                source_target: run.source_target,
                 status: "generated-first-pass-diagnostic",
-                note: "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred.",
+                note: "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred.",
             });
         }
     }
 
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v1",
+        format: "nicks-orthogonal-response-report-v2",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
@@ -176,13 +178,14 @@ fn nicks_generated_example(
         wavevectors: run.wavevectors,
         amplitude_solution: run.amplitude_solution,
         metrics: run.metrics,
+        source_target: run.source_target,
         forcing_thumbnail: nicks_field_thumbnail(&run.forcing_field, config.n),
         cortical_response_thumbnail: nicks_field_thumbnail(&run.cortical_response_field, config.n),
         retinal_response_thumbnail: nicks_field_thumbnail(&run.retinal_response_field, config.n),
         status: "generated-first-pass-diagnostic",
         expected_behavior: run.metrics.classification,
-        public_claim_level: "first-pass diagnostic",
-        note: "Uses generated mode geometry and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report.",
+        public_claim_level: "source-target comparison",
+        note: "Uses generated mode geometry, derived 2:1 wavevector targets, and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report.",
     }
 }
 
@@ -206,6 +209,7 @@ fn nicks_response_run(
         &forcing_field,
         &cortical_response_field,
     );
+    let source_target = nicks_source_target_comparison(wavevectors, metrics);
     NicksRunOutput {
         forcing_strength_gamma,
         detuning_fraction,
@@ -215,6 +219,7 @@ fn nicks_response_run(
         wavevectors,
         amplitude_solution,
         metrics,
+        source_target,
     }
 }
 
@@ -366,8 +371,49 @@ fn nicks_metrics(
         orthogonal_energy_fraction,
         rendered_target_coverage: true,
         diagnostic_metric_available: true,
-        source_target_comparison: false,
+        source_target_comparison: true,
         calibrated: false,
+    }
+}
+
+fn nicks_source_target_comparison(
+    wavevectors: NicksWavevectorDiagnostics,
+    metrics: NicksOrthogonalMetrics,
+) -> NicksSourceTargetComparison {
+    let response_kx_fraction = (1.0 - wavevectors.detuning_fraction).clamp(0.0, 1.0);
+    let target_response_angle_degrees = response_kx_fraction.acos() * 180.0 / PI;
+    let target_classification = response_classification(target_response_angle_degrees);
+    let target_ratio = if response_kx_fraction.abs() > 1.0e-12 {
+        Some(2.0)
+    } else {
+        None
+    };
+    let generated_ratio = if wavevectors.response_kx.abs() > 1.0e-12 {
+        Some(wavevectors.forcing_to_response_x_ratio)
+    } else {
+        None
+    };
+    let ratio_error = target_ratio
+        .zip(generated_ratio)
+        .map(|(target, generated)| (generated - target).abs());
+    NicksSourceTargetComparison {
+        source_target_kind: "equation-derived 2:1 wavevector target",
+        source_target_reference: "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        target_relationship: "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        target_classification,
+        generated_classification: metrics.classification,
+        classification_matches: metrics.classification == target_classification,
+        target_forcing_to_response_x_ratio: target_ratio,
+        generated_forcing_to_response_x_ratio: generated_ratio,
+        ratio_error,
+        target_response_angle_degrees,
+        generated_response_angle_degrees: wavevectors.response_angle_degrees,
+        angle_error_degrees: (wavevectors.response_angle_degrees - target_response_angle_degrees)
+            .abs(),
+        source_target_comparison: true,
+        calibrated: false,
+        status: "equation-derived-target",
+        note: "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated.",
     }
 }
 

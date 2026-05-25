@@ -1,5 +1,5 @@
 {
-  "format": "nicks-orthogonal-response-report-v1",
+  "format": "nicks-orthogonal-response-report-v2",
   "model_family": "spatial_forcing_orthogonal_response",
   "source_key": "nicks-et-al-2021",
   "status": "generated-first-pass-diagnostic",
@@ -80,8 +80,26 @@
         "orthogonal_energy_fraction": 0.0,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "forcing-aligned rectangle diagnostic",
+        "generated_classification": "forcing-aligned rectangle diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 0.0,
+        "generated_response_angle_degrees": 0.0,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
       },
       "forcing_thumbnail": {
         "format": "raw-u8-grid",
@@ -115,8 +133,8 @@
       },
       "status": "generated-first-pass-diagnostic",
       "expected_behavior": "forcing-aligned rectangle diagnostic",
-      "public_claim_level": "first-pass diagnostic",
-      "note": "Uses generated mode geometry and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
+      "public_claim_level": "source-target comparison",
+      "note": "Uses generated mode geometry, derived 2:1 wavevector targets, and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
     },
     {
       "id": "nicks_oblique_response_amplitude",
@@ -162,8 +180,26 @@
         "orthogonal_energy_fraction": 0.7843766329386659,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 60.00000000000001,
+        "generated_response_angle_degrees": 59.99999999999999,
+        "angle_error_degrees": 1.4210854715202004e-14,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
       },
       "forcing_thumbnail": {
         "format": "raw-u8-grid",
@@ -197,8 +233,8 @@
       },
       "status": "generated-first-pass-diagnostic",
       "expected_behavior": "oblique-response diagnostic",
-      "public_claim_level": "first-pass diagnostic",
-      "note": "Uses generated mode geometry and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
+      "public_claim_level": "source-target comparison",
+      "note": "Uses generated mode geometry, derived 2:1 wavevector targets, and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
     },
     {
       "id": "nicks_billock_tsou_generated_map",
@@ -244,8 +280,26 @@
         "orthogonal_energy_fraction": 0.9985976413710395,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 84.26082952273322,
+        "generated_response_angle_degrees": 84.26082952273322,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
       },
       "forcing_thumbnail": {
         "format": "raw-u8-grid",
@@ -279,8 +333,8 @@
       },
       "status": "generated-first-pass-diagnostic",
       "expected_behavior": "orthogonal-response diagnostic",
-      "public_claim_level": "first-pass diagnostic",
-      "note": "Uses generated mode geometry and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
+      "public_claim_level": "source-target comparison",
+      "note": "Uses generated mode geometry, derived 2:1 wavevector targets, and metrics only; private source panels and source-derived acceptance thresholds remain out of the public report."
     }
   ],
   "parameter_sweep": [
@@ -322,11 +376,29 @@
         "orthogonal_energy_fraction": 0.0,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "forcing-aligned rectangle diagnostic",
+        "generated_classification": "forcing-aligned rectangle diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 0.0,
+        "generated_response_angle_degrees": 0.0,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -366,11 +438,29 @@
         "orthogonal_energy_fraction": 0.3839058069982532,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 41.40962210927086,
+        "generated_response_angle_degrees": 41.40962210927086,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -410,11 +500,29 @@
         "orthogonal_energy_fraction": 0.7843766329386664,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 60.00000000000001,
+        "generated_response_angle_degrees": 59.99999999999999,
+        "angle_error_degrees": 1.4210854715202004e-14,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -454,11 +562,29 @@
         "orthogonal_energy_fraction": 0.9399071663972003,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 75.52248781407008,
+        "generated_response_angle_degrees": 75.52248781407008,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -498,11 +624,29 @@
         "orthogonal_energy_fraction": 0.9985976413710396,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 84.26082952273322,
+        "generated_response_angle_degrees": 84.26082952273322,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -542,11 +686,29 @@
         "orthogonal_energy_fraction": 0.0,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "forcing-aligned rectangle diagnostic",
+        "generated_classification": "forcing-aligned rectangle diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 0.0,
+        "generated_response_angle_degrees": 0.0,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -586,11 +748,29 @@
         "orthogonal_energy_fraction": 0.38390580699825194,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 41.40962210927086,
+        "generated_response_angle_degrees": 41.40962210927086,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -630,11 +810,29 @@
         "orthogonal_energy_fraction": 0.7843766329386659,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 60.00000000000001,
+        "generated_response_angle_degrees": 59.99999999999999,
+        "angle_error_degrees": 1.4210854715202004e-14,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -674,11 +872,29 @@
         "orthogonal_energy_fraction": 0.9399071663972,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 75.52248781407008,
+        "generated_response_angle_degrees": 75.52248781407008,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -718,11 +934,29 @@
         "orthogonal_energy_fraction": 0.9985976413710395,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 84.26082952273322,
+        "generated_response_angle_degrees": 84.26082952273322,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -762,11 +996,29 @@
         "orthogonal_energy_fraction": 0.0,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "forcing-aligned rectangle diagnostic",
+        "generated_classification": "forcing-aligned rectangle diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 0.0,
+        "generated_response_angle_degrees": 0.0,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -806,11 +1058,29 @@
         "orthogonal_energy_fraction": 0.38390580699825455,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 41.40962210927086,
+        "generated_response_angle_degrees": 41.40962210927086,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -850,11 +1120,29 @@
         "orthogonal_energy_fraction": 0.7843766329386651,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "oblique-response diagnostic",
+        "generated_classification": "oblique-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 60.00000000000001,
+        "generated_response_angle_degrees": 59.99999999999999,
+        "angle_error_degrees": 1.4210854715202004e-14,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -894,11 +1182,29 @@
         "orthogonal_energy_fraction": 0.9399071663972004,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 75.52248781407008,
+        "generated_response_angle_degrees": 75.52248781407008,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     },
     {
       "registry_id": "nicks_2d_orthogonal_response_amplitude",
@@ -938,11 +1244,29 @@
         "orthogonal_energy_fraction": 0.9985976413710395,
         "rendered_target_coverage": true,
         "diagnostic_metric_available": true,
-        "source_target_comparison": false,
+        "source_target_comparison": true,
         "calibrated": false
       },
+      "source_target": {
+        "source_target_kind": "equation-derived 2:1 wavevector target",
+        "source_target_reference": "Nicks et al. 2021 reduced two-dimensional spatial-forcing geometry; no source figure data",
+        "target_relationship": "forcing_x = 2*response_x with |response| fixed at the Turing wavenumber",
+        "target_classification": "orthogonal-response diagnostic",
+        "generated_classification": "orthogonal-response diagnostic",
+        "classification_matches": true,
+        "target_forcing_to_response_x_ratio": 2.0,
+        "generated_forcing_to_response_x_ratio": 2.0,
+        "ratio_error": 0.0,
+        "target_response_angle_degrees": 84.26082952273322,
+        "generated_response_angle_degrees": 84.26082952273322,
+        "angle_error_degrees": 0.0,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares generated wavevector geometry with the reduced 2:1 resonance relation only; coefficient normalization and source-region thresholds are not calibrated."
+      },
       "status": "generated-first-pass-diagnostic",
-      "note": "Generated reduced-amplitude row; source-derived coefficient normalization and acceptance thresholds remain deferred."
+      "note": "Generated reduced-amplitude row with equation-derived 2:1 wavevector comparison; source-derived coefficient normalization and calibration thresholds remain deferred."
     }
   ]
 }

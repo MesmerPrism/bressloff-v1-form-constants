@@ -163,6 +163,10 @@ pub(crate) struct MackayFieldMetrics {
     pub(crate) zero_crossings_along_y_mean: f64,
     pub(crate) input_output_correlation: f64,
     pub(crate) output_input_delta_std: f64,
+    pub(crate) rendered_target_coverage: bool,
+    pub(crate) diagnostic_metric_available: bool,
+    pub(crate) source_target_comparison: bool,
+    pub(crate) calibrated: bool,
 }
 
 #[derive(Serialize)]
@@ -272,6 +276,7 @@ pub(crate) struct BolelliGeneratedExample {
     pub(crate) frequency_lambda: f64,
     pub(crate) period: f64,
     pub(crate) metrics: BolelliPeriodMetrics,
+    pub(crate) source_target: BolelliPoleWidthComparison,
     pub(crate) input_thumbnail: BolelliProfileThumbnail,
     pub(crate) mean_response_thumbnail: BolelliProfileThumbnail,
     pub(crate) amplitude_thumbnail: BolelliProfileThumbnail,
@@ -305,6 +310,28 @@ pub(crate) struct BolelliPeriodMetrics {
     pub(crate) max_abs_response: f64,
     pub(crate) mean_zero_crossings: f64,
     pub(crate) locked: bool,
+    pub(crate) rendered_target_coverage: bool,
+    pub(crate) diagnostic_metric_available: bool,
+    pub(crate) source_target_comparison: bool,
+    pub(crate) calibrated: bool,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct BolelliPoleWidthComparison {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) pole_equation: &'static str,
+    pub(crate) pole_real: Option<f64>,
+    pub(crate) pole_imaginary: Option<f64>,
+    pub(crate) pole_residual: Option<f64>,
+    pub(crate) target_width_principal_pole: Option<f64>,
+    pub(crate) generated_width_half_max: f64,
+    pub(crate) absolute_width_error: Option<f64>,
+    pub(crate) relative_width_error: Option<f64>,
+    pub(crate) source_target_comparison: bool,
+    pub(crate) calibrated: bool,
+    pub(crate) status: &'static str,
+    pub(crate) note: &'static str,
 }
 
 #[derive(Serialize)]
@@ -313,6 +340,7 @@ pub(crate) struct BolelliFrequencySweepRow {
     pub(crate) frequency_lambda: f64,
     pub(crate) period: f64,
     pub(crate) metrics: BolelliPeriodMetrics,
+    pub(crate) source_target: BolelliPoleWidthComparison,
     pub(crate) status: &'static str,
     pub(crate) note: &'static str,
 }
@@ -414,6 +442,7 @@ pub(crate) struct NicksGeneratedExample {
     pub(crate) wavevectors: NicksWavevectorDiagnostics,
     pub(crate) amplitude_solution: NicksAmplitudeSolution,
     pub(crate) metrics: NicksOrthogonalMetrics,
+    pub(crate) source_target: NicksSourceTargetComparison,
     pub(crate) forcing_thumbnail: NicksFieldThumbnail,
     pub(crate) cortical_response_thumbnail: NicksFieldThumbnail,
     pub(crate) retinal_response_thumbnail: NicksFieldThumbnail,
@@ -466,6 +495,26 @@ pub(crate) struct NicksOrthogonalMetrics {
     pub(crate) calibrated: bool,
 }
 
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct NicksSourceTargetComparison {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) target_relationship: &'static str,
+    pub(crate) target_classification: &'static str,
+    pub(crate) generated_classification: &'static str,
+    pub(crate) classification_matches: bool,
+    pub(crate) target_forcing_to_response_x_ratio: Option<f64>,
+    pub(crate) generated_forcing_to_response_x_ratio: Option<f64>,
+    pub(crate) ratio_error: Option<f64>,
+    pub(crate) target_response_angle_degrees: f64,
+    pub(crate) generated_response_angle_degrees: f64,
+    pub(crate) angle_error_degrees: f64,
+    pub(crate) source_target_comparison: bool,
+    pub(crate) calibrated: bool,
+    pub(crate) status: &'static str,
+    pub(crate) note: &'static str,
+}
+
 #[derive(Serialize)]
 pub(crate) struct NicksSweepRow {
     pub(crate) registry_id: &'static str,
@@ -474,6 +523,7 @@ pub(crate) struct NicksSweepRow {
     pub(crate) wavevectors: NicksWavevectorDiagnostics,
     pub(crate) amplitude_solution: NicksAmplitudeSolution,
     pub(crate) metrics: NicksOrthogonalMetrics,
+    pub(crate) source_target: NicksSourceTargetComparison,
     pub(crate) status: &'static str,
     pub(crate) note: &'static str,
 }

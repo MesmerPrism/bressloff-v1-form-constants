@@ -1,11 +1,14 @@
-use std::error::Error;
+use std::{
+    error::Error,
+    ops::{Div, Mul, Sub},
+};
 
 use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
     BolelliExampleKernel, BolelliFrequencySweepRow, BolelliGeneratedExample, BolelliPeriodMetrics,
-    BolelliProfileThumbnail, BolelliReportConfig, BolelliReportParameters, BolelliReportSolver,
-    BolelliTimePeriodicInputReport,
+    BolelliPoleWidthComparison, BolelliProfileThumbnail, BolelliReportConfig,
+    BolelliReportParameters, BolelliReportSolver, BolelliTimePeriodicInputReport,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_LOCALIZED_PERIODIC, PI};
 
@@ -17,6 +20,7 @@ struct BolelliRunOutput {
     mean_profile: Vec<f64>,
     amplitude_profile: Vec<f64>,
     metrics: BolelliPeriodMetrics,
+    source_target: BolelliPoleWidthComparison,
 }
 
 struct BolelliPeriodMetricInput<'a> {
@@ -49,12 +53,13 @@ pub(crate) fn bolelli_time_periodic_report(
             frequency_lambda: run.frequency_lambda,
             period: run.period,
             metrics: run.metrics,
+            source_target: run.source_target,
             status: if run.metrics.locked {
                 "period-locked-diagnostic"
             } else {
                 "warmup-insufficient-diagnostic"
             },
-            note: "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist.",
+            note: "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred.",
         });
     }
 
@@ -74,7 +79,7 @@ pub(crate) fn bolelli_time_periodic_report(
     )];
 
     Ok(BolelliTimePeriodicInputReport {
-        format: "bolelli-time-periodic-input-report-v1",
+        format: "bolelli-time-periodic-input-report-v2",
         model_family: MODEL_FAMILY_LOCALIZED_PERIODIC,
         source_key: "bolelli-prandi-2025",
         status: "generated-first-pass-diagnostic",
@@ -180,6 +185,7 @@ fn bolelli_generated_example(
         frequency_lambda: run.frequency_lambda,
         period: run.period,
         metrics: run.metrics,
+        source_target: run.source_target,
         input_thumbnail: bolelli_profile_thumbnail(&run.input_profile),
         mean_response_thumbnail: bolelli_profile_thumbnail(&run.mean_profile),
         amplitude_thumbnail: bolelli_profile_thumbnail(&run.amplitude_profile),
@@ -189,8 +195,8 @@ fn bolelli_generated_example(
             "warmup-insufficient-diagnostic"
         },
         expected_behavior: "periodic response locked to localized flicker with a generated stripe-width diagnostic",
-        public_claim_level: "first-pass diagnostic",
-        note: "Uses generated profiles and numeric period metrics only; source figure comparison remains deferred.",
+        public_claim_level: "source-target comparison",
+        note: "Uses generated profiles, numeric period metrics, and an equation-derived pole-width target only; source figure comparison remains deferred.",
     }
 }
 
@@ -256,7 +262,7 @@ fn bolelli_frequency_run(
 
     let (mean_profile, amplitude_profile) =
         period_profiles(&last_period, config.samples_per_period, n);
-    let metrics = period_metrics(BolelliPeriodMetricInput {
+    let mut metrics = period_metrics(BolelliPeriodMetricInput {
         previous_period: &previous_period,
         last_period: &last_period,
         mean_profile: &mean_profile,
@@ -266,6 +272,10 @@ fn bolelli_frequency_run(
         dt,
         total_steps,
     });
+    let source_target =
+        bolelli_pole_width_comparison(config, frequency_lambda, metrics.stripe_width_half_max);
+    metrics.source_target_comparison = source_target.source_target_comparison;
+    metrics.calibrated = source_target.calibrated;
     BolelliRunOutput {
         frequency_lambda,
         period,
@@ -273,6 +283,7 @@ fn bolelli_frequency_run(
         mean_profile,
         amplitude_profile,
         metrics,
+        source_target,
     }
 }
 
@@ -339,7 +350,160 @@ fn period_metrics(input: BolelliPeriodMetricInput<'_>) -> BolelliPeriodMetrics {
         max_abs_response,
         mean_zero_crossings: zero_crossings_1d(input.mean_profile),
         locked: periodic_residual_linf <= input.config.periodic_tolerance,
+        rendered_target_coverage: true,
+        diagnostic_metric_available: true,
+        source_target_comparison: false,
+        calibrated: false,
     }
+}
+
+fn bolelli_pole_width_comparison(
+    config: &BolelliReportConfig,
+    frequency_lambda: f64,
+    generated_width_half_max: f64,
+) -> BolelliPoleWidthComparison {
+    if let Some((pole, pole_residual)) = principal_pole_root(config, frequency_lambda) {
+        let target_width = 1.0 / (2.0 * pole.re);
+        let absolute_width_error = (generated_width_half_max - target_width).abs();
+        BolelliPoleWidthComparison {
+            source_target_kind: "equation-derived principal-pole width",
+            source_target_reference:
+                "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+            pole_equation: "1 +/- i*lambda = omega_hat(z)",
+            pole_real: Some(pole.re),
+            pole_imaginary: Some(pole.im),
+            pole_residual: Some(pole_residual),
+            target_width_principal_pole: Some(target_width),
+            generated_width_half_max,
+            absolute_width_error: Some(absolute_width_error),
+            relative_width_error: Some(absolute_width_error / target_width.abs().max(1.0e-12)),
+            source_target_comparison: true,
+            calibrated: false,
+            status: "equation-derived-target",
+            note: "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match.",
+        }
+    } else {
+        BolelliPoleWidthComparison {
+            source_target_kind: "equation-derived principal-pole width",
+            source_target_reference:
+                "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+            pole_equation: "1 +/- i*lambda = omega_hat(z)",
+            pole_real: None,
+            pole_imaginary: None,
+            pole_residual: None,
+            target_width_principal_pole: None,
+            generated_width_half_max,
+            absolute_width_error: None,
+            relative_width_error: None,
+            source_target_comparison: false,
+            calibrated: false,
+            status: "root-unresolved",
+            note: "The report generated the periodic state, but the principal-pole root finder did not converge for this frequency.",
+        }
+    }
+}
+
+fn principal_pole_root(
+    config: &BolelliReportConfig,
+    frequency_lambda: f64,
+) -> Option<(Complex, f64)> {
+    let mut roots = Vec::new();
+    let y_max = (8.0 + 1.6 * frequency_lambda.sqrt()).max(24.0);
+    let x_min: f64 = 0.005;
+    let x_max: f64 = 12.0;
+    let x_samples = 42usize;
+    let y_samples = 86usize;
+
+    for sign in [-1.0, 1.0] {
+        let target = Complex::new(1.0, sign * frequency_lambda);
+        let mut seeds = Vec::new();
+        for xi in 0..x_samples {
+            let fraction = xi as f64 / x_samples.saturating_sub(1).max(1) as f64;
+            let x = x_min * (x_max / x_min).powf(fraction);
+            for yi in 0..y_samples {
+                let y_fraction = yi as f64 / y_samples.saturating_sub(1).max(1) as f64;
+                let y = -y_max + 2.0 * y_max * y_fraction;
+                let seed = Complex::new(x, y);
+                let residual = bolelli_pole_residual(config, seed, target);
+                if residual.is_finite() {
+                    seeds.push((seed, residual));
+                }
+            }
+        }
+        seeds.sort_by(|left, right| left.1.total_cmp(&right.1));
+        for (seed, _) in seeds.into_iter().take(12) {
+            if let Some((root, residual)) = refine_bolelli_pole(config, target, seed) {
+                roots.push((root, residual));
+            }
+        }
+    }
+
+    roots
+        .into_iter()
+        .filter(|(root, residual)| {
+            root.re > 1.0e-7 && root.re.is_finite() && root.im.is_finite() && *residual < 1.0e-6
+        })
+        .min_by(|left, right| {
+            left.0
+                .re
+                .total_cmp(&right.0.re)
+                .then_with(|| left.1.total_cmp(&right.1))
+        })
+}
+
+fn refine_bolelli_pole(
+    config: &BolelliReportConfig,
+    target: Complex,
+    seed: Complex,
+) -> Option<(Complex, f64)> {
+    let mut z = seed;
+    for _ in 0..50 {
+        let value = bolelli_kernel_hat(config, z) - target;
+        let residual = value.abs();
+        if residual < 1.0e-10 {
+            return Some((z, residual));
+        }
+        let derivative = bolelli_kernel_hat_derivative(config, z);
+        if derivative.abs() < 1.0e-14 {
+            return None;
+        }
+        let step = value / derivative;
+        z = z - step;
+        if !z.is_finite() || z.re <= 0.0 || z.abs() > 1.0e4 {
+            return None;
+        }
+        if step.abs() < 1.0e-11 {
+            break;
+        }
+    }
+    let residual = bolelli_pole_residual(config, z, target);
+    if residual.is_finite() {
+        Some((z, residual))
+    } else {
+        None
+    }
+}
+
+fn bolelli_pole_residual(config: &BolelliReportConfig, z: Complex, target: Complex) -> f64 {
+    (bolelli_kernel_hat(config, z) - target).abs()
+}
+
+fn bolelli_kernel_hat(config: &BolelliReportConfig, z: Complex) -> Complex {
+    let exc = gaussian_hat_complex(config.sigma_exc, z);
+    let inh = gaussian_hat_complex(config.sigma_inh, z);
+    exc - inh.scale(config.inhibition)
+}
+
+fn bolelli_kernel_hat_derivative(config: &BolelliReportConfig, z: Complex) -> Complex {
+    let exc = gaussian_hat_complex(config.sigma_exc, z);
+    let inh = gaussian_hat_complex(config.sigma_inh, z);
+    let exc_derivative = z.scale(-config.sigma_exc * config.sigma_exc) * exc;
+    let inh_derivative = z.scale(-config.sigma_inh * config.sigma_inh) * inh;
+    exc_derivative - inh_derivative.scale(config.inhibition)
+}
+
+fn gaussian_hat_complex(sigma: f64, z: Complex) -> Complex {
+    (z * z).scale(-0.5 * sigma * sigma).exp()
 }
 
 fn masked_period_phase(
@@ -449,6 +613,66 @@ fn bolelli_x_values(config: &BolelliReportConfig) -> Vec<f64> {
 
 fn bolelli_dx(config: &BolelliReportConfig) -> f64 {
     (config.domain_max - config.domain_min) / (config.n.saturating_sub(1).max(1) as f64)
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Complex {
+    re: f64,
+    im: f64,
+}
+
+impl Complex {
+    fn new(re: f64, im: f64) -> Self {
+        Self { re, im }
+    }
+
+    fn abs(self) -> f64 {
+        self.re.hypot(self.im)
+    }
+
+    fn is_finite(self) -> bool {
+        self.re.is_finite() && self.im.is_finite()
+    }
+
+    fn scale(self, scale: f64) -> Self {
+        Self::new(scale * self.re, scale * self.im)
+    }
+
+    fn exp(self) -> Self {
+        let magnitude = self.re.exp();
+        Self::new(magnitude * self.im.cos(), magnitude * self.im.sin())
+    }
+}
+
+impl Sub for Complex {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.re - rhs.re, self.im - rhs.im)
+    }
+}
+
+impl Mul for Complex {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::new(
+            self.re * rhs.re - self.im * rhs.im,
+            self.re * rhs.im + self.im * rhs.re,
+        )
+    }
+}
+
+impl Div for Complex {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let denom = rhs.re * rhs.re + rhs.im * rhs.im;
+        Self::new(
+            (self.re * rhs.re + self.im * rhs.im) / denom,
+            (self.im * rhs.re - self.re * rhs.im) / denom,
+        )
+    }
 }
 
 fn heaviside(value: f64) -> f64 {

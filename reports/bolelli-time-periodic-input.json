@@ -1,5 +1,5 @@
 {
-  "format": "bolelli-time-periodic-input-report-v1",
+  "format": "bolelli-time-periodic-input-report-v2",
   "model_family": "localized_time_periodic_input",
   "source_key": "bolelli-prandi-2025",
   "status": "generated-first-pass-diagnostic",
@@ -61,7 +61,27 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.1014184638418287,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 1.8162819044750727,
+        "pole_imaginary": -8.205721066936384,
+        "pole_residual": 2.0509242216887525e-13,
+        "target_width_principal_pole": 0.27528766254184867,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.777068358400559,
+        "relative_width_error": 35.515824676357475,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "input_thumbnail": {
         "format": "u8-profile-v1",
@@ -95,8 +115,8 @@
       },
       "status": "period-locked-diagnostic",
       "expected_behavior": "periodic response locked to localized flicker with a generated stripe-width diagnostic",
-      "public_claim_level": "first-pass diagnostic",
-      "note": "Uses generated profiles and numeric period metrics only; source figure comparison remains deferred."
+      "public_claim_level": "source-target comparison",
+      "note": "Uses generated profiles, numeric period metrics, and an equation-derived pole-width target only; source figure comparison remains deferred."
     }
   ],
   "frequency_sweep": [
@@ -116,10 +136,30 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.2476899074760399,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 2.6691537755866714,
+        "pole_imaginary": -5.423996077093912,
+        "pole_residual": 2.3193972396364478e-11,
+        "target_width_principal_pole": 0.18732528810188226,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.865030732840527,
+        "relative_width_error": 52.66256805367968,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -137,10 +177,30 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.13039431134639234,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 2.0493606134031586,
+        "pole_imaginary": -7.143706232656908,
+        "pole_residual": 1.2915899931656561e-11,
+        "target_width_principal_pole": 0.24397853492934188,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.808377486013066,
+        "relative_width_error": 40.20180500245093,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -158,10 +218,30 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.1014184638418287,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 1.8162819044750727,
+        "pole_imaginary": -8.205721066936384,
+        "pole_residual": 2.0509242216887525e-13,
+        "target_width_principal_pole": 0.27528766254184867,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.777068358400559,
+        "relative_width_error": 35.515824676357475,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -179,10 +259,30 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.06466971887701213,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 1.6163816030328317,
+        "pole_imaginary": -9.367758239408206,
+        "pole_residual": 9.818740121913235e-13,
+        "target_width_principal_pole": 0.30933289457257207,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.743023126369836,
+        "relative_width_error": 31.496886678775258,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -200,10 +300,30 @@
         "active_fraction_half_max": 0.5,
         "max_abs_response": 0.046304674214358736,
         "mean_zero_crossings": 6.0,
-        "locked": true
+        "locked": true,
+        "rendered_target_coverage": true,
+        "diagnostic_metric_available": true,
+        "source_target_comparison": true,
+        "calibrated": false
+      },
+      "source_target": {
+        "source_target_kind": "equation-derived principal-pole width",
+        "source_target_reference": "Bolelli-Prandi 2025 principal-pole relation; no source figure data",
+        "pole_equation": "1 +/- i*lambda = omega_hat(z)",
+        "pole_real": 1.5416384579510451,
+        "pole_imaginary": -9.870761471889633,
+        "pole_residual": 1.4230893989507518e-13,
+        "target_width_principal_pole": 0.324330258771916,
+        "generated_width_half_max": 10.052356020942408,
+        "absolute_width_error": 9.728025762170493,
+        "relative_width_error": 29.994197269801116,
+        "source_target_comparison": true,
+        "calibrated": false,
+        "status": "equation-derived-target",
+        "note": "Compares the generated half-max width with the principal-pole asymptotic width. This is a source-target diagnostic, not a calibrated source-figure match."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row; width and locking are diagnostics until source-derived numeric targets exist."
+      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
     }
   ]
 }

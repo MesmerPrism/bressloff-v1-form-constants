@@ -114,10 +114,10 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         report_target: "reports/nicks-orthogonal-response.json",
         expected_behavior: "orthogonal-response region labels, wavevector metrics, and representative generated fields",
         implementation_status: "implemented",
-        public_claim_level: "first-pass diagnostic",
+        public_claim_level: "source-target comparison",
         rights_status: "generated outputs only; source figures remain private",
         difficulty: "medium",
-        missing_evidence: "source-derived coefficient normalization and source-target acceptance criteria",
+        missing_evidence: "source-derived coefficient normalization and calibrated source-region acceptance criteria",
     },
     DrivenExampleDetails {
         id: "nicks_billock_tsou_generated_map",
@@ -202,11 +202,11 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         method: "sweep simulation with period-locking and contour-width metrics",
         report_target: "reports/bolelli-time-periodic-input.json",
         expected_behavior: "response-width and locking metrics across drive settings",
-        implementation_status: "partial",
-        public_claim_level: "first-pass diagnostic",
+        implementation_status: "implemented",
+        public_claim_level: "source-target comparison",
         rights_status: "generated outputs only; source figures remain private",
         difficulty: "hard",
-        missing_evidence: "validated source sweep axes, pole/root tracking, and source comparison thresholds",
+        missing_evidence: "validated source sweep axes, nonlinear source examples, and calibrated source comparison thresholds",
     },
 ];
 
