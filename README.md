@@ -33,9 +33,9 @@ calibration, not for claiming a calibrated flicker-frequency prediction.
   the rendered planform, same-lattice branch readout, and source metadata.
 - A separate Rule-Stoffregen-Ermentrout 2011 scalar E/I flicker generator with
   qualitative high-frequency stripe and low-frequency hexagonal presets.
-- A separate driven-input neural-field registry plus first-pass generated
-  MacKay localized-input diagnostics. These stay distinct from both the
-  Bressloff orientation-hypercolumn and Rule flicker model families.
+- A separate driven-input neural-field registry plus generated MacKay,
+  Bolelli, and Nicks diagnostics. These stay distinct from both the Bressloff
+  orientation-hypercolumn and Rule flicker model families.
 
 ## What It Does Not Claim
 
@@ -175,10 +175,11 @@ Generate the first Bolelli-Prandi localized time-periodic input diagnostic:
 ```
 
 The Bolelli report contains generated 1D profiles, period residuals, response
-phase, stripe-width diagnostics, and an equation-derived principal-pole width
-comparison using an accepted source-side paper Fourier convention. It is a
-source-target diagnostic, not a calibrated source-figure reproduction claim;
-generated half-max support is kept as an auxiliary renderer metric.
+phase, stripe-width diagnostics, an equation-derived principal-pole width
+comparison, and a generated decay-width estimate in the same pole convention
+when the fit passes the public diagnostic gate. It is a source-target
+diagnostic, not a calibrated source-figure reproduction claim; generated
+half-max support is kept as an auxiliary renderer metric.
 
 Generate the first Nicks orthogonal-response amplitude diagnostic:
 

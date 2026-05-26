@@ -34,6 +34,18 @@ struct BolelliPeriodMetricInput<'a> {
     total_steps: usize,
 }
 
+#[derive(Clone, Copy, Debug)]
+struct BolelliGeneratedWidthEstimate {
+    width: Option<f64>,
+    decay_rate: Option<f64>,
+    fit_r_squared: Option<f64>,
+    fit_points: usize,
+    fit_pass: bool,
+}
+
+const GENERATED_DECAY_WIDTH_MIN_R_SQUARED: f64 = 0.70;
+const GENERATED_DECAY_WIDTH_MIN_POINTS: usize = 8;
+
 pub(crate) fn bolelli_time_periodic_report(
     config: BolelliReportConfig,
 ) -> Result<BolelliTimePeriodicInputReport, Box<dyn Error>> {
@@ -79,11 +91,11 @@ pub(crate) fn bolelli_time_periodic_report(
     )];
 
     Ok(BolelliTimePeriodicInputReport {
-        format: "bolelli-time-periodic-input-report-v4",
+        format: "bolelli-time-periodic-input-report-v5",
         model_family: MODEL_FAMILY_LOCALIZED_PERIODIC,
         source_key: "bolelli-prandi-2025",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and an accepted source-side principal-pole width convention; it is not a source-figure reproduction or generated-width calibration claim.",
+        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, an accepted source-side principal-pole width convention, and a generated decay-width estimate in the same pole convention; it is not a source-figure reproduction or generated-width calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: BolelliReportSolver {
             method: "explicit Euler integration to a periodic state after warmup",
@@ -196,7 +208,7 @@ fn bolelli_generated_example(
         },
         expected_behavior: "periodic response locked to localized flicker with a generated stripe-width diagnostic",
         public_claim_level: "source-target comparison",
-        note: "Uses generated profiles, numeric period metrics, and an equation-derived pole-width target only; source figure comparison remains deferred.",
+        note: "Uses generated profiles, numeric period metrics, an equation-derived pole-width target, and a generated decay-width estimate in the same pole convention; source figure comparison remains deferred.",
     }
 }
 
@@ -272,8 +284,12 @@ fn bolelli_frequency_run(
         dt,
         total_steps,
     });
-    let source_target =
-        bolelli_pole_width_comparison(config, frequency_lambda, metrics.stripe_width_half_max);
+    let source_target = bolelli_pole_width_comparison(
+        config,
+        frequency_lambda,
+        metrics.stripe_width_half_max,
+        &amplitude_profile,
+    );
     metrics.source_target_comparison = source_target.source_target_comparison;
     metrics.calibrated = source_target.calibrated;
     BolelliRunOutput {
@@ -361,10 +377,12 @@ fn bolelli_pole_width_comparison(
     config: &BolelliReportConfig,
     frequency_lambda: f64,
     generated_width_half_max: f64,
+    amplitude_profile: &[f64],
 ) -> BolelliPoleWidthComparison {
     let source_parameter_match = bolelli_source_parameter_match(config);
     let lambda_in_source_range = (2.0..=100.0).contains(&frequency_lambda);
     let pole_residual_tolerance = 1.0e-8;
+    let generated_width_estimate = generated_pole_convention_width(config, amplitude_profile);
     if let Some((pole, pole_residual)) = principal_pole_root(config, frequency_lambda) {
         let pole = Complex::new(pole.re, pole.im.abs());
         let target_width = 1.0 / (2.0 * pole.re);
@@ -378,6 +396,14 @@ fn bolelli_pole_width_comparison(
             && pole_residual_pass
             && target_width.is_finite()
             && target_width > 0.0;
+        let generated_width_comparable =
+            source_width_convention_accepted && generated_width_estimate.fit_pass;
+        let absolute_width_error = generated_width_estimate
+            .width
+            .filter(|_| generated_width_comparable)
+            .map(|width| (width - target_width).abs());
+        let relative_width_error =
+            absolute_width_error.map(|error| error / target_width.abs().max(1.0e-12));
         BolelliPoleWidthComparison {
             source_target_kind: "equation-derived principal-pole width",
             source_target_reference:
@@ -404,12 +430,20 @@ fn bolelli_pole_width_comparison(
             asymptotic_width_principal_pole: asymptotic_width,
             asymptotic_relative_width_error,
             generated_width_half_max,
-            generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
-            generated_width_comparable: false,
-            generated_width_residual_status:
-                "not-accepted: generated half-max support does not share the source pole-width convention",
-            absolute_width_error: None,
-            relative_width_error: None,
+            generated_width_pole_convention: generated_width_estimate.width,
+            generated_width_decay_rate: generated_width_estimate.decay_rate,
+            generated_width_fit_r_squared: generated_width_estimate.fit_r_squared,
+            generated_width_fit_points: generated_width_estimate.fit_points,
+            generated_width_fit_min_r_squared: GENERATED_DECAY_WIDTH_MIN_R_SQUARED,
+            generated_width_comparison_convention: "generated decay-width estimate uses the source pole convention width=1/(2*alpha), where alpha is fitted from the generated unforced-side amplitude envelope; generated half-max support remains an auxiliary finite-domain renderer metric",
+            generated_width_comparable,
+            generated_width_residual_status: if generated_width_comparable {
+                "diagnostic-comparable: generated decay-width estimate shares the source pole-width convention, but calibration remains disallowed without source-figure residuals"
+            } else {
+                "not-accepted: generated decay-width fit did not meet the source-convention diagnostic quality gate"
+            },
+            absolute_width_error,
+            relative_width_error,
             source_target_comparison: true,
             calibration_claim_allowed: false,
             calibrated: false,
@@ -418,7 +452,7 @@ fn bolelli_pole_width_comparison(
             } else {
                 "source-pole-target-outside-validation-window"
             },
-            note: "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual.",
+            note: "Accepts the source-side pole equation and width convention. The generated decay-width estimate now uses the same width convention when the envelope fit passes; the generated half-max support remains auxiliary and no calibration claim is allowed.",
         }
     } else {
         BolelliPoleWidthComparison {
@@ -447,10 +481,15 @@ fn bolelli_pole_width_comparison(
             asymptotic_width_principal_pole: None,
             asymptotic_relative_width_error: None,
             generated_width_half_max,
-            generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
+            generated_width_pole_convention: generated_width_estimate.width,
+            generated_width_decay_rate: generated_width_estimate.decay_rate,
+            generated_width_fit_r_squared: generated_width_estimate.fit_r_squared,
+            generated_width_fit_points: generated_width_estimate.fit_points,
+            generated_width_fit_min_r_squared: GENERATED_DECAY_WIDTH_MIN_R_SQUARED,
+            generated_width_comparison_convention: "generated decay-width estimate uses the source pole convention width=1/(2*alpha), where alpha is fitted from the generated unforced-side amplitude envelope; generated half-max support remains an auxiliary finite-domain renderer metric",
             generated_width_comparable: false,
             generated_width_residual_status:
-                "not-accepted: generated half-max support does not share the source pole-width convention",
+                "not-accepted: source principal-pole target was unresolved",
             absolute_width_error: None,
             relative_width_error: None,
             source_target_comparison: false,
@@ -663,6 +702,117 @@ fn half_max_width(values: &[f64], dx: f64) -> (f64, f64) {
         active_count as f64 * dx,
         active_count as f64 / values.len().max(1) as f64,
     )
+}
+
+fn generated_pole_convention_width(
+    config: &BolelliReportConfig,
+    amplitude_profile: &[f64],
+) -> BolelliGeneratedWidthEstimate {
+    let x_values = bolelli_x_values(config);
+    let dx = bolelli_dx(config);
+    let max_amplitude = amplitude_profile.iter().copied().fold(0.0, f64::max);
+    if max_amplitude <= 1.0e-12 || x_values.len() != amplitude_profile.len() {
+        return empty_generated_width_estimate(0);
+    }
+
+    let fit_window_max = (config.domain_max - config.domain_min).abs() * 0.30;
+    let candidates = x_values
+        .iter()
+        .zip(amplitude_profile.iter())
+        .filter_map(|(x, amplitude)| {
+            if *x >= dx
+                && *x <= fit_window_max
+                && amplitude.is_finite()
+                && *amplitude > max_amplitude * 1.0e-4
+            {
+                Some((*x, *amplitude))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if candidates.len() < GENERATED_DECAY_WIDTH_MIN_POINTS {
+        return empty_generated_width_estimate(candidates.len());
+    }
+
+    let baseline = candidates
+        .iter()
+        .map(|(_, amplitude)| *amplitude)
+        .fold(f64::INFINITY, f64::min)
+        .min(max_amplitude * 0.05);
+    let points = candidates
+        .iter()
+        .filter_map(|(x, amplitude)| {
+            let adjusted = amplitude - baseline;
+            if adjusted > max_amplitude * 1.0e-5 {
+                Some((*x, adjusted.ln()))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if points.len() < GENERATED_DECAY_WIDTH_MIN_POINTS {
+        return empty_generated_width_estimate(points.len());
+    }
+
+    let count = points.len() as f64;
+    let mean_x = points.iter().map(|(x, _)| *x).sum::<f64>() / count;
+    let mean_y = points.iter().map(|(_, y)| *y).sum::<f64>() / count;
+    let variance_x = points
+        .iter()
+        .map(|(x, _)| (x - mean_x).powi(2))
+        .sum::<f64>();
+    if variance_x <= 1.0e-12 {
+        return empty_generated_width_estimate(points.len());
+    }
+    let covariance_xy = points
+        .iter()
+        .map(|(x, y)| (x - mean_x) * (y - mean_y))
+        .sum::<f64>();
+    let slope = covariance_xy / variance_x;
+    let intercept = mean_y - slope * mean_x;
+    let total_sum_squares = points
+        .iter()
+        .map(|(_, y)| (y - mean_y).powi(2))
+        .sum::<f64>();
+    let residual_sum_squares = points
+        .iter()
+        .map(|(x, y)| (y - (intercept + slope * x)).powi(2))
+        .sum::<f64>();
+    let r_squared = if total_sum_squares > 1.0e-12 {
+        1.0 - residual_sum_squares / total_sum_squares
+    } else {
+        0.0
+    };
+    let decay_rate = -slope;
+    let width = if decay_rate.is_finite() && decay_rate > 1.0e-12 {
+        Some(1.0 / (2.0 * decay_rate))
+    } else {
+        None
+    };
+    let fit_pass = width.is_some()
+        && r_squared.is_finite()
+        && r_squared >= GENERATED_DECAY_WIDTH_MIN_R_SQUARED
+        && points.len() >= GENERATED_DECAY_WIDTH_MIN_POINTS;
+    BolelliGeneratedWidthEstimate {
+        width,
+        decay_rate: Some(decay_rate),
+        fit_r_squared: Some(r_squared),
+        fit_points: points.len(),
+        fit_pass,
+    }
+}
+
+fn empty_generated_width_estimate(fit_points: usize) -> BolelliGeneratedWidthEstimate {
+    BolelliGeneratedWidthEstimate {
+        width: None,
+        decay_rate: None,
+        fit_r_squared: None,
+        fit_points,
+        fit_pass: false,
+    }
 }
 
 fn zero_crossings_1d(values: &[f64]) -> f64 {

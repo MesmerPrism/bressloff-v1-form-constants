@@ -26,7 +26,7 @@ Current tracked outputs:
 - `reports/mackay-localized-input.json` uses
   `format: mackay-localized-input-report-v2`.
 - `reports/bolelli-time-periodic-input.json` uses
-  `format: bolelli-time-periodic-input-report-v4`.
+  `format: bolelli-time-periodic-input-report-v5`.
 - `reports/nicks-orthogonal-response.json` uses
   `format: nicks-orthogonal-response-report-v6`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
@@ -76,8 +76,10 @@ not all should become simulator code at the same depth.
 4. `bolelli_contour_width_frequency_sweep`
    Implemented as generated stripe-width rows versus flicker frequency plus an
    equation-derived principal-pole width comparison. The source-side pole-width
-   convention is now accepted by residual threshold, while generated half-max
-   width remains an auxiliary renderer metric.
+   convention is now accepted by residual threshold. A generated decay-width
+   estimate uses the same pole convention only when its envelope fit passes the
+   diagnostic quality gate; generated half-max width remains an auxiliary
+   renderer metric.
 
 5. `nicks_2d_orthogonal_response_amplitude`
    Source: Nicks et al. 2021. Implemented as a reduced 2:1 resonance amplitude
@@ -173,7 +175,7 @@ Initial implemented/planned model-family names:
 | `tamekue_nonlinear_mackay_stationary` | Nonlinear Amari fixed point | 2D cortex and retinal view | 2D DoG | Same MacKay inputs | Source examples include odd saturating functions such as `s/(1 + |s|)` | Fixed-point iteration | Linear-vs-nonlinear comparison | Medium | Convergence and threshold choices need report fields. |
 | `mackay_gaussian_kernel_negative_check` | Same fixed point with excitatory Gaussian-only kernel | 2D finite cortical diagnostic grid | Gaussian-only comparator | Same localized input | No source reproduction expected | Negative-control report | Kernel-family diagnostic in `reports/mackay-localized-input.json` | Easy | Implemented as a diagnostic control, not a figure match. |
 | `bolelli_periodic_attractor` | Neural field with T-periodic input and unique periodic state under contraction assumptions | 1D/2D cortical domain, depending on input | Even kernel with `||omega||_1 < 1`; linear case explicit | Generic T-periodic input | Repo defines period/frequency grid | Time stepping plus period residual | `reports/bolelli-time-periodic-input.json` | Easy/medium | The theorem is broad; example-specific metrics must be defined. |
-| `bolelli_heaviside_flicker_stripes` | Linear periodic solution with kernel expansion | 1D cortical coordinate lifted to 2D display | 1D DoG | `H(x1) cos(lambda t)` or center/periphery variant | Source examples use `k = 1` and DoG pairs including `(0.4/sqrt(2 pi), 0.8/sqrt(2 pi))` | Periodic-state solver plus source-convention pole diagnostic | Moving-stripe/contour-width diagnostic | Medium | Implemented as source-target diagnostic; generated renderer width is not yet in the source stripe-width convention. |
+| `bolelli_heaviside_flicker_stripes` | Linear periodic solution with kernel expansion | 1D cortical coordinate lifted to 2D display | 1D DoG | `H(x1) cos(lambda t)` or center/periphery variant | Source examples use `k = 1` and DoG pairs including `(0.4/sqrt(2 pi), 0.8/sqrt(2 pi))` | Periodic-state solver plus source-convention pole diagnostic | Moving-stripe/contour-width diagnostic | Medium | Implemented as source-target diagnostic; generated decay-width estimates share the source pole convention only when the fit passes and do not support calibration language yet. |
 | `bolelli_contour_width_frequency_sweep` | Principal-pole/stripe-width dependence | 1D cortical coordinate | DoG inhibitory scale | Frequency sweep `lambda` | Source sweep range includes `lambda` from about `2` to `100` in examples | Numeric pole/root search plus generated simulation metric | `reports/bolelli-time-periodic-input.json` | Medium/hard | Implemented as an equation-derived source-target diagnostic; source-figure thresholds and nonlinear examples remain missing. |
 | `bolelli_mackay_flicker_persistence` | Static MacKay input plus localized flicker | 1D cortical effective input, retinal display | DoG | Center localized flicker replacing static localized information | Frequency examples include `lambda = 0` and high-frequency comparison | Time stepping and width metric | MacKay flicker report row | Medium | Source examples are visual, not table-calibrated. |
 | `bolelli_billock_tsou_nonlinear_flicker` | Nonlinear periodic field | 2D display with effective 1D input | DoG | Static radial/fan term plus peripheral flicker | Source example uses clipped linear nonlinearity, `lambda = 60`, `k = 1`, source-like DoG pair | Time stepping over one period after convergence | Animated generated report frames | Hard | Nonlinear parameter calibration and source comparison are deferred. |
@@ -274,8 +276,10 @@ remains first-pass diagnostic until source-derived numeric targets exist.
 Status: implemented as a generated source-target diagnostic for the
 periodic-state, Heaviside-flicker, and frequency-sweep examples. The report now
 applies an accepted source-side principal-pole width convention under the paper
-Fourier convention, while keeping generated half-max support as an auxiliary
-renderer metric rather than a width residual.
+Fourier convention and adds a generated decay-width estimate that shares that
+pole convention when the envelope fit passes the diagnostic gate. Generated
+half-max support remains an auxiliary renderer metric rather than a width
+residual.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
@@ -284,7 +288,7 @@ renderer metric rather than a width residual.
 Report format:
 
 ```text
-bolelli-time-periodic-input-report-v4
+bolelli-time-periodic-input-report-v5
 ```
 
 Delivered fields:
@@ -297,6 +301,8 @@ Delivered fields:
 - equation-derived principal-pole width comparison with source-parameter,
   lambda-range, accepted source-side pole residual, and asymptotic-width quality
   flags,
+- generated decay-width estimate, decay-rate fit, fit R-squared, fit-point
+  count, and a documented minimum R-squared acceptance gate,
 - frequency sweep rows,
 - generated thumbnails or row-major compact frames.
 
@@ -322,8 +328,10 @@ Implemented numerical target:
 - Warmup over several periods, then compare the last two periods by residual and
   phase.
 - Stripe/contour width measured from generated threshold crossings or
-  half-maximum support and explicitly labeled non-comparable to the pole-width
-  convention.
+  half-maximum support and kept as an auxiliary renderer metric.
+- Generated decay-width fitted from the unforced-side amplitude envelope and
+  converted to the same `1/(2*alpha)` pole-width convention only when the fit
+  passes the recorded R-squared and sample-count gate.
 - Principal-pole target width from the public-safe equation relation
   `1 +/- i*lambda = omega_hat(z)` with the source Fourier convention
   `omega_hat(z)=exp(-2*pi^2*sigma1^2*z^2)-k exp(-2*pi^2*sigma2^2*z^2)`.
@@ -335,8 +343,8 @@ Remaining work:
 
 - Add source-figure-derived public-safe numeric targets before any calibrated
   source-match claim.
-- Add a generated metric that shares the source stripe-width convention before
-  any calibrated width residual is reported.
+- Tighten or replace the generated decay-width fit after source-panel numeric
+  targets exist; current residuals are diagnostic and not calibration evidence.
 - Add nonlinear Billock-Tsou-style flicker only after the linear periodic-state
   report has stable validation thresholds.
 
@@ -441,9 +449,10 @@ Current report status:
 - MacKay: rendered target coverage and diagnostic metrics are present;
   source-target comparison is still false.
 - Bolelli: principal-pole width source-target comparisons and an accepted
-  source-side pole-width convention are present; calibration remains false
-  because generated half-max widths are explicitly non-comparable to the source
-  pole-width convention.
+  source-side pole-width convention are present. A generated decay-width
+  estimate now shares that convention when its envelope fit passes, but
+  calibration remains false because source-panel numeric targets and stable
+  generated residual thresholds are still missing.
 - Nicks: 2:1 wavevector geometry source-target comparisons, Appendix-B
   kernel-derived coefficient tables, source-equation Figure 8 boundary curves,
   a public residual field over the source grid, and residual thresholds are

@@ -3397,7 +3397,7 @@ mod tests {
             ..BolelliReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "bolelli-time-periodic-input-report-v4");
+        assert_eq!(report.format, "bolelli-time-periodic-input-report-v5");
         assert_eq!(report.model_family, MODEL_FAMILY_LOCALIZED_PERIODIC);
         assert_eq!(report.examples.len(), 1);
         assert_eq!(report.frequency_sweep.len(), 2);
@@ -3416,8 +3416,25 @@ mod tests {
             assert!(row.source_target.source_width_convention_accepted);
             assert!(row.source_target.accepted_width_residual.unwrap() < 1.0e-8);
             assert!(!row.source_target.calibration_claim_allowed);
-            assert!(!row.source_target.generated_width_comparable);
-            assert!(row.source_target.absolute_width_error.is_none());
+            assert!(row.source_target.generated_width_fit_points > 0);
+            assert_eq!(row.source_target.generated_width_fit_min_r_squared, 0.70);
+            if row.source_target.generated_width_comparable {
+                assert!(row
+                    .source_target
+                    .generated_width_pole_convention
+                    .unwrap()
+                    .is_finite());
+                assert!(row.source_target.generated_width_decay_rate.unwrap() > 0.0);
+                assert!(
+                    row.source_target.generated_width_fit_r_squared.unwrap()
+                        >= row.source_target.generated_width_fit_min_r_squared
+                );
+                assert!(row.source_target.absolute_width_error.unwrap().is_finite());
+                assert!(row.source_target.relative_width_error.unwrap().is_finite());
+            } else {
+                assert!(row.source_target.absolute_width_error.is_none());
+                assert!(row.source_target.relative_width_error.is_none());
+            }
             assert!(row.source_target.pole_real.unwrap() > 0.0);
             assert!(row.source_target.pole_imaginary.unwrap() >= 0.0);
             assert!(row
