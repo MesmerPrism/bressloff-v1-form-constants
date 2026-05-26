@@ -15,8 +15,27 @@ const SOURCE_FIGURE8_DETUNINGS: [f64; 5] = [0.0, 0.05, 0.25, 0.75, 1.0];
 const SOURCE_FIGURE8_SIGMA: f64 = 0.5;
 const SOURCE_FIGURE8_H: f64 = 0.0;
 const SOURCE_FIGURE8_EPSILON2_DELTA: f64 = 0.3;
-const NICKS_BETA_C_NORMALIZATION: f64 = 1.0;
 const SOURCE_GRID_TOLERANCE: f64 = 1.0e-9;
+
+#[derive(Clone, Copy, Debug)]
+struct NicksKernelCoefficientValues {
+    beta_c: f64,
+    source_turing_wavenumber: f64,
+    source_response_kx: f64,
+    source_response_ky: f64,
+    sigmoid_mu: f64,
+    sigmoid_f0: f64,
+    beta2: f64,
+    beta3: f64,
+    zeta1: f64,
+    zeta4: f64,
+    zeta6: f64,
+    phi1: f64,
+    phi4: f64,
+    gamma_c: f64,
+    gamma_p: f64,
+    boundary_distance_gamma: f64,
+}
 
 #[derive(Clone, Debug)]
 struct NicksRunOutput {
@@ -74,20 +93,20 @@ pub(crate) fn nicks_orthogonal_response_report(
                 metrics: run.metrics,
                 source_target: run.source_target,
                 status: "generated-first-pass-diagnostic",
-                note: "Generated reduced-amplitude row with source-equation coefficient diagnostics and Figure 8-style region comparison; kernel-derived coefficient calibration remains deferred.",
+                note: "Generated reduced-amplitude row with kernel-derived source coefficients and Figure 8-style region comparison; source-region digitization and calibration remain deferred.",
             });
         }
     }
 
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v3",
+        format: "nicks-orthogonal-response-report-v4",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with source-equation coefficient tables and Figure 8-style region comparisons. This is not a source-figure reproduction or calibration claim.",
+        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables and Figure 8-style region comparisons. This is not a source-figure reproduction or calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: NicksReportSolver {
-            method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with report-normalized coefficients",
+            method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with Appendix-B kernel-derived coefficients",
             boundary_model: "finite generated cortical frame plus inverse log-polar visual-field frame",
             transfer_function: "reduced amplitude equations with symmetric rho_a=rho_b branch",
             claim_level: "first-pass diagnostic",
@@ -128,17 +147,13 @@ fn validate_config(config: &NicksReportConfig) -> Result<(), Box<dyn Error>> {
     {
         return Err("nicks report detuning fractions must be in [0, 1]".into());
     }
-    if config.self_interaction + config.cross_interaction <= 0.0 {
-        return Err("nicks report amplitude interactions must have positive sum".into());
-    }
-    if !config.self_interaction.is_finite() || config.self_interaction <= 0.0 {
-        return Err("nicks report self-interaction Phi1 must be finite and positive".into());
-    }
-    if !config.cross_interaction.is_finite() {
-        return Err("nicks report cross-interaction Phi4 must be finite".into());
-    }
     if !config.sigma.is_finite() || config.sigma <= 0.0 {
         return Err("nicks report sigma must be finite and positive".into());
+    }
+    let source_k0 = source_static_turing_wavenumber(config.sigma);
+    let source_beta_c = 1.0 / source_kernel_hat(config.sigma, source_k0);
+    if source_sigmoid_mu(config.h, source_beta_c).is_none() {
+        return Err("nicks report h/sigma pair does not admit source sigmoid steepness".into());
     }
     Ok(())
 }
@@ -153,8 +168,8 @@ fn nicks_report_parameters(config: &NicksReportConfig) -> NicksReportParameters 
         epsilon2_delta: config.epsilon2_delta,
         forcing_strengths: config.forcing_strengths.clone(),
         detuning_fractions: config.detuning_fractions.clone(),
-        self_interaction: config.self_interaction,
-        cross_interaction: config.cross_interaction,
+        coefficient_mode: "source_appendix_b_kernel_derived",
+        source_kernel: "balanced isotropic 2D source kernel with A=sigma^-2",
         h: config.h,
         sigma: config.sigma,
     }
@@ -274,12 +289,13 @@ fn nicks_wavevectors(
 fn nicks_amplitude_solution(
     config: &NicksReportConfig,
     forcing_strength_gamma: f64,
-    _detuning_fraction: f64,
+    detuning_fraction: f64,
 ) -> NicksAmplitudeSolution {
-    let beta_c = NICKS_BETA_C_NORMALIZATION;
+    let coefficients = nicks_kernel_coefficients(config, forcing_strength_gamma, detuning_fraction);
+    let beta_c = coefficients.beta_c;
     let growth_term = config.epsilon2_delta;
     let coupling_term = 0.5 * forcing_strength_gamma * beta_c;
-    let denominator = config.self_interaction + config.cross_interaction;
+    let denominator = coefficients.phi1 + coefficients.phi4;
     let rho = ((growth_term + coupling_term) / denominator)
         .max(0.0)
         .sqrt();
@@ -413,7 +429,8 @@ fn nicks_source_target_comparison(
     let ratio_error = target_ratio
         .zip(generated_ratio)
         .map(|(target, generated)| (generated - target).abs());
-    let amplitude_coefficients = nicks_amplitude_coefficients(config, amplitude_solution);
+    let amplitude_coefficients =
+        nicks_amplitude_coefficients(config, amplitude_solution, wavevectors.detuning_fraction);
     let figure8_region =
         nicks_figure8_region_comparison(config, wavevectors, amplitude_coefficients);
     NicksSourceTargetComparison {
@@ -435,25 +452,27 @@ fn nicks_source_target_comparison(
         source_target_comparison: true,
         calibrated: false,
         status: "source-equation-target",
-        note: "Compares generated wavevector geometry, report-normalized source amplitude-equation coefficients, and Figure 8-style parameter-region labels; kernel-derived coefficient values and source-figure calibration remain deferred.",
+        note: "Compares generated wavevector geometry, kernel-derived source amplitude-equation coefficients, and Figure 8-style parameter-region labels; source-figure calibration remains deferred.",
     }
 }
 
 fn nicks_amplitude_coefficients(
     config: &NicksReportConfig,
     amplitude_solution: NicksAmplitudeSolution,
+    detuning_fraction: f64,
 ) -> NicksAmplitudeCoefficientTable {
-    let beta_c = NICKS_BETA_C_NORMALIZATION;
-    let phi1 = config.self_interaction;
-    let phi4 = config.cross_interaction;
+    let values = nicks_kernel_coefficients(
+        config,
+        amplitude_solution.forcing_strength_gamma,
+        detuning_fraction,
+    );
+    let beta_c = values.beta_c;
+    let phi1 = values.phi1;
+    let phi4 = values.phi4;
     let gamma = amplitude_solution.forcing_strength_gamma;
-    let gamma_c = -2.0 * config.epsilon2_delta / beta_c;
-    let gamma_p = if phi1.abs() > SOURCE_GRID_TOLERANCE {
-        (phi4 - phi1) * config.epsilon2_delta / (beta_c * phi1)
-    } else {
-        f64::NAN
-    };
-    let boundary_distance_gamma = gamma - gamma_p;
+    let gamma_c = values.gamma_c;
+    let gamma_p = values.gamma_p;
+    let boundary_distance_gamma = values.boundary_distance_gamma;
     let rectangle_existence_margin = 2.0 * config.epsilon2_delta + gamma * beta_c;
     let rectangle_stability_margin = (phi1 - phi4) * config.epsilon2_delta + phi1 * gamma * beta_c;
     let oblique_branch_available = phi1.abs() > SOURCE_GRID_TOLERANCE
@@ -465,10 +484,20 @@ fn nicks_amplitude_coefficients(
         source_parameter_set:
             "Figure 8-style defaults h=0, sigma=0.5, epsilon^2 delta=0.3",
         coefficient_normalization:
-            "beta_c=1 and Phi1/Phi4 are report-normalized coefficients",
+            "source balanced-kernel Appendix-B coefficients evaluated from equations B.6-B.9 and B.25-B.26",
         kernel_coefficient_status:
-            "source formulas are wired; Appendix-B kernel-derived numeric Phi values are deferred",
+            "kernel-derived source coefficients; source-figure digitized region residuals remain deferred",
         beta_c,
+        source_turing_wavenumber: values.source_turing_wavenumber,
+        source_response_kx: values.source_response_kx,
+        source_response_ky: values.source_response_ky,
+        sigmoid_mu: values.sigmoid_mu,
+        sigmoid_f0: values.sigmoid_f0,
+        beta2: values.beta2,
+        beta3: values.beta3,
+        zeta1: values.zeta1,
+        zeta4: values.zeta4,
+        zeta6: values.zeta6,
         phi1,
         phi4,
         epsilon2_delta: config.epsilon2_delta,
@@ -484,7 +513,7 @@ fn nicks_amplitude_coefficients(
             && rectangle_stability_margin > 0.0,
         oblique_branch_available,
         source_formula:
-            "rho0^2=(2*epsilon^2*delta+gamma*beta_c)/(2*(Phi1+Phi4)); gamma_p=(Phi4-Phi1)*epsilon^2*delta/(beta_c*Phi1)",
+            "Phi1=-2*beta2*zeta1-3*beta3; Phi4=-2*beta2*(zeta4+zeta6)-6*beta3; rho0^2=(2*epsilon^2*delta+gamma*beta_c)/(2*(Phi1+Phi4)); gamma_p=(Phi4-Phi1)*epsilon^2*delta/(beta_c*Phi1)",
         calibrated: false,
     }
 }
@@ -576,12 +605,139 @@ fn generated_figure8_region_label(
 
 fn boundary_side(boundary_distance_gamma: f64) -> &'static str {
     if boundary_distance_gamma > SOURCE_GRID_TOLERANCE {
-        "above normalized rectangle-oblique boundary"
+        "above source-derived rectangle-oblique boundary"
     } else if boundary_distance_gamma < -SOURCE_GRID_TOLERANCE {
-        "below normalized rectangle-oblique boundary"
+        "below source-derived rectangle-oblique boundary"
     } else {
-        "on normalized rectangle-oblique boundary"
+        "on source-derived rectangle-oblique boundary"
     }
+}
+
+fn nicks_kernel_coefficients(
+    config: &NicksReportConfig,
+    forcing_strength_gamma: f64,
+    detuning_fraction: f64,
+) -> NicksKernelCoefficientValues {
+    let source_turing_wavenumber = source_static_turing_wavenumber(config.sigma);
+    let source_beta_c = 1.0 / source_kernel_hat(config.sigma, source_turing_wavenumber);
+    let sigmoid_mu = source_sigmoid_mu(config.h, source_beta_c).unwrap_or(4.0 * source_beta_c);
+    let sigmoid_f0 = source_sigmoid_value(0.0, config.h, sigmoid_mu);
+    let beta2 = 0.5 * source_sigmoid_second_derivative(sigmoid_f0, sigmoid_mu);
+    let beta3 = source_sigmoid_third_derivative(sigmoid_f0, sigmoid_mu) / 6.0;
+    let response_kx = source_turing_wavenumber * (1.0 - detuning_fraction.clamp(0.0, 1.0));
+    let response_ky = (source_turing_wavenumber * source_turing_wavenumber
+        - response_kx * response_kx)
+        .max(0.0)
+        .sqrt();
+    let zeta1 = beta2 * source_kernel_hat(config.sigma, 2.0 * source_turing_wavenumber)
+        / (1.0 - source_beta_c * source_kernel_hat(config.sigma, 2.0 * source_turing_wavenumber));
+    let zeta4 = 2.0 * beta2 * source_kernel_hat(config.sigma, 2.0 * response_kx)
+        / (1.0 - source_beta_c * source_kernel_hat(config.sigma, 2.0 * response_kx));
+    let zeta6 = 2.0 * beta2 * source_kernel_hat(config.sigma, 2.0 * response_ky)
+        / (1.0 - source_beta_c * source_kernel_hat(config.sigma, 2.0 * response_ky));
+    let phi1 = -2.0 * beta2 * zeta1 - 3.0 * beta3;
+    let phi4 = -2.0 * beta2 * (zeta4 + zeta6) - 6.0 * beta3;
+    let gamma_c = -2.0 * config.epsilon2_delta / source_beta_c;
+    let gamma_p = if phi1.abs() > SOURCE_GRID_TOLERANCE {
+        (phi4 - phi1) * config.epsilon2_delta / (source_beta_c * phi1)
+    } else {
+        f64::NAN
+    };
+    NicksKernelCoefficientValues {
+        beta_c: source_beta_c,
+        source_turing_wavenumber,
+        source_response_kx: response_kx,
+        source_response_ky: response_ky,
+        sigmoid_mu,
+        sigmoid_f0,
+        beta2,
+        beta3,
+        zeta1,
+        zeta4,
+        zeta6,
+        phi1,
+        phi4,
+        gamma_c,
+        gamma_p,
+        boundary_distance_gamma: forcing_strength_gamma - gamma_p,
+    }
+}
+
+fn source_static_turing_wavenumber(sigma: f64) -> f64 {
+    let upper = (8.0 / sigma.max(1.0e-6)).max(8.0);
+    let mut left = 0.0;
+    let mut right = upper;
+    for _ in 0..96 {
+        let mid1 = left + (right - left) / 3.0;
+        let mid2 = right - (right - left) / 3.0;
+        if source_kernel_hat(sigma, mid1) < source_kernel_hat(sigma, mid2) {
+            left = mid1;
+        } else {
+            right = mid2;
+        }
+    }
+    0.5 * (left + right)
+}
+
+fn source_kernel_hat(sigma: f64, k: f64) -> f64 {
+    let a = sigma.powi(-2);
+    let exc = a / (sigma * (sigma.powi(-2) + k * k).powf(1.5));
+    let inh = 1.0 / (1.0 + k * k).powf(1.5);
+    2.0 * PI * (exc - inh)
+}
+
+fn source_sigmoid_mu(h: f64, beta_c: f64) -> Option<f64> {
+    let threshold = h.abs();
+    if threshold <= SOURCE_GRID_TOLERANCE {
+        return Some(4.0 * beta_c);
+    }
+    let mut left = 0.0;
+    let mut right = 64.0 / threshold;
+    for _ in 0..96 {
+        let mid1 = left + (right - left) / 3.0;
+        let mid2 = right - (right - left) / 3.0;
+        if source_sigmoid_slope_at_zero(threshold, mid1)
+            < source_sigmoid_slope_at_zero(threshold, mid2)
+        {
+            left = mid1;
+        } else {
+            right = mid2;
+        }
+    }
+    let peak_mu = 0.5 * (left + right);
+    let peak = source_sigmoid_slope_at_zero(threshold, peak_mu);
+    if beta_c > peak + 1.0e-12 {
+        return None;
+    }
+    let mut low = 0.0;
+    let mut high = peak_mu;
+    for _ in 0..96 {
+        let mid = 0.5 * (low + high);
+        if source_sigmoid_slope_at_zero(threshold, mid) < beta_c {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    Some(0.5 * (low + high))
+}
+
+fn source_sigmoid_slope_at_zero(threshold: f64, mu: f64) -> f64 {
+    let f0 = 1.0 / (1.0 + (mu * threshold).exp());
+    mu * f0 * (1.0 - f0)
+}
+
+fn source_sigmoid_value(u: f64, h: f64, mu: f64) -> f64 {
+    1.0 / (1.0 + (-mu * (u - h)).exp())
+}
+
+fn source_sigmoid_second_derivative(f: f64, mu: f64) -> f64 {
+    mu * mu * f * (1.0 - f) * (1.0 - 2.0 * f)
+}
+
+fn source_sigmoid_third_derivative(f: f64, mu: f64) -> f64 {
+    let f_one_minus = f * (1.0 - f);
+    mu.powi(3) * f_one_minus * ((1.0 - 2.0 * f).powi(2) - 2.0 * f_one_minus)
 }
 
 fn response_classification(response_angle_degrees: f64) -> &'static str {

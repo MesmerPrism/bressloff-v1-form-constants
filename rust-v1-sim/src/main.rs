@@ -1609,18 +1609,16 @@ fn nicks_report_command(args: &[String]) -> Result<(), Box<dyn std::error::Error
                 )?;
             }
             "--self-interaction" => {
-                config.self_interaction = parse_clamped_f64(
-                    iter.next().ok_or("--self-interaction requires a value")?,
-                    0.0,
-                    32.0,
-                )?;
+                return Err(
+                    "--self-interaction was removed; Nicks Phi coefficients are source-derived"
+                        .into(),
+                );
             }
             "--cross-interaction" => {
-                config.cross_interaction = parse_clamped_f64(
-                    iter.next().ok_or("--cross-interaction requires a value")?,
-                    0.0,
-                    32.0,
-                )?;
+                return Err(
+                    "--cross-interaction was removed; Nicks Phi coefficients are source-derived"
+                        .into(),
+                );
             }
             "--h" | "--threshold" => {
                 config.h = iter.next().ok_or("--h requires a value")?.parse::<f64>()?;
@@ -3448,7 +3446,7 @@ mod tests {
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v3");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v4");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
         assert_eq!(report.examples.len(), 3);
         assert_eq!(report.parameter_sweep.len(), 6);
@@ -3465,6 +3463,15 @@ mod tests {
             assert!(row.source_target.classification_matches);
             assert!(row.source_target.angle_error_degrees < 1.0e-9);
             assert!(row.source_target.amplitude_coefficients.beta_c.is_finite());
+            assert!(row.source_target.amplitude_coefficients.beta_c > 0.0);
+            assert!(
+                row.source_target
+                    .amplitude_coefficients
+                    .source_turing_wavenumber
+                    > 0.0
+            );
+            assert!(row.source_target.amplitude_coefficients.phi1 > 0.0);
+            assert!(row.source_target.amplitude_coefficients.phi4 > 0.0);
             assert!(row.source_target.amplitude_coefficients.gamma_p.is_finite());
             assert!(!row.source_target.amplitude_coefficients.calibrated);
             assert!(row.source_target.figure8_region.source_parameter_match);
