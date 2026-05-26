@@ -176,9 +176,9 @@ Generate the first Bolelli-Prandi localized time-periodic input diagnostic:
 
 The Bolelli report contains generated 1D profiles, period residuals, response
 phase, stripe-width diagnostics, and an equation-derived principal-pole width
-comparison using the paper's Fourier convention. It is a source-target
-diagnostic, not a calibrated source-figure reproduction claim; generated
-half-max support is kept as an auxiliary renderer metric.
+comparison using an accepted source-side paper Fourier convention. It is a
+source-target diagnostic, not a calibrated source-figure reproduction claim;
+generated half-max support is kept as an auxiliary renderer metric.
 
 Generate the first Nicks orthogonal-response amplitude diagnostic:
 
@@ -189,9 +189,9 @@ Generate the first Nicks orthogonal-response amplitude diagnostic:
 The Nicks report contains generated cortical/log-polar frames, wavevector
 detuning metrics, orthogonality error, amplitude-equation residuals, and an
 equation-derived 2:1 wavevector target comparison. It now also records
-Appendix-B kernel-derived coefficient diagnostics and Figure 8-style
-parameter-grid region checks. It is a source-target diagnostic, not a calibrated
-source-figure reproduction claim.
+Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
+8 boundary curve, residual thresholds, and parameter-grid region checks. It is
+a source-target diagnostic, not a calibrated source-figure reproduction claim.
 
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 

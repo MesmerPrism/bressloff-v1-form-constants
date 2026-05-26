@@ -4,9 +4,10 @@ use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
     NicksAmplitudeCoefficientTable, NicksAmplitudeSolution, NicksFieldThumbnail,
-    NicksFigure8RegionComparison, NicksGeneratedExample, NicksOrthogonalMetrics,
-    NicksOrthogonalResponseReport, NicksReportConfig, NicksReportParameters, NicksReportSolver,
-    NicksSourceTargetComparison, NicksSweepRow, NicksWavevectorDiagnostics,
+    NicksFigure8RegionComparison, NicksFigure8SourceCurvePoint, NicksFigure8SourceCurves,
+    NicksGeneratedExample, NicksOrthogonalMetrics, NicksOrthogonalResponseReport,
+    NicksReportConfig, NicksReportParameters, NicksReportSolver, NicksSourceTargetComparison,
+    NicksSweepRow, NicksWavevectorDiagnostics,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_DRIVEN_ORTHOGONAL, PI};
 
@@ -16,6 +17,8 @@ const SOURCE_FIGURE8_SIGMA: f64 = 0.5;
 const SOURCE_FIGURE8_H: f64 = 0.0;
 const SOURCE_FIGURE8_EPSILON2_DELTA: f64 = 0.3;
 const SOURCE_GRID_TOLERANCE: f64 = 1.0e-9;
+const SOURCE_CURVE_RESIDUAL_TOLERANCE_GAMMA: f64 = 1.0e-8;
+const FIGURE8_SOURCE_CURVE_STEPS: usize = 20;
 
 #[derive(Clone, Copy, Debug)]
 struct NicksKernelCoefficientValues {
@@ -93,17 +96,17 @@ pub(crate) fn nicks_orthogonal_response_report(
                 metrics: run.metrics,
                 source_target: run.source_target,
                 status: "generated-first-pass-diagnostic",
-                note: "Generated reduced-amplitude row with kernel-derived source coefficients and Figure 8-style region comparison; source-region digitization and calibration remain deferred.",
+                note: "Generated reduced-amplitude row with kernel-derived source coefficients, source-equation Figure 8 boundary residuals, and source-grid margin checks; source-panel calibration remains deferred.",
             });
         }
     }
 
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v4",
+        format: "nicks-orthogonal-response-report-v5",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables and Figure 8-style region comparisons. This is not a source-figure reproduction or calibration claim.",
+        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables, source-equation Figure 8 boundary curves, and residual thresholds. This is not a source-figure reproduction or calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: NicksReportSolver {
             method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with Appendix-B kernel-derived coefficients",
@@ -112,6 +115,7 @@ pub(crate) fn nicks_orthogonal_response_report(
             claim_level: "first-pass diagnostic",
         },
         parameters,
+        figure8_source_curves: nicks_figure8_source_curves(),
         examples,
         parameter_sweep,
     })
@@ -452,7 +456,7 @@ fn nicks_source_target_comparison(
         source_target_comparison: true,
         calibrated: false,
         status: "source-equation-target",
-        note: "Compares generated wavevector geometry, kernel-derived source amplitude-equation coefficients, and Figure 8-style parameter-region labels; source-figure calibration remains deferred.",
+        note: "Compares generated wavevector geometry, kernel-derived source amplitude-equation coefficients, and source-equation Figure 8 boundary residuals; source-panel calibration remains deferred.",
     }
 }
 
@@ -486,7 +490,7 @@ fn nicks_amplitude_coefficients(
         coefficient_normalization:
             "source balanced-kernel Appendix-B coefficients evaluated from equations B.6-B.9 and B.25-B.26",
         kernel_coefficient_status:
-            "kernel-derived source coefficients; source-figure digitized region residuals remain deferred",
+            "kernel-derived source coefficients with source-equation Figure 8 residuals; source-panel pixel residuals remain deferred",
         beta_c,
         source_turing_wavenumber: values.source_turing_wavenumber,
         source_response_kx: values.source_response_kx,
@@ -518,6 +522,57 @@ fn nicks_amplitude_coefficients(
     }
 }
 
+fn nicks_figure8_source_curves() -> NicksFigure8SourceCurves {
+    let curve_points = (0..=FIGURE8_SOURCE_CURVE_STEPS)
+        .map(|index| {
+            nicks_figure8_source_curve_point(index as f64 / FIGURE8_SOURCE_CURVE_STEPS as f64)
+        })
+        .collect();
+    NicksFigure8SourceCurves {
+        source_target_kind: "source-equation Figure 8 rectangle/oblique boundary curve",
+        source_target_reference:
+            "Nicks et al. 2021 equations 4.17-4.20 and Figure 8 parameter set; no copied source panel pixels",
+        derivation:
+            "gamma_p(v2/k0)=(Phi4-Phi1)*epsilon^2*delta/(beta_c*Phi1), with Phi values from Appendix B",
+        source_parameter_set:
+            "sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}",
+        source_gamma_values: SOURCE_FIGURE8_GAMMAS,
+        source_detuning_fractions: SOURCE_FIGURE8_DETUNINGS,
+        curve_parameter: "v2/k0 in [0, 1]",
+        curve_points,
+        curve_residual_tolerance_gamma: SOURCE_CURVE_RESIDUAL_TOLERANCE_GAMMA,
+        curve_residual_tolerance_source:
+            "absolute gamma residual against the source-equation boundary curve; tolerance is numerical roundoff, not source-panel digitization",
+        region_margin_threshold_gamma: source_region_margin_threshold_gamma(),
+        region_margin_threshold_source:
+            "half of the smallest published Figure 8 gamma-grid spacing, used only to label robust grid-point side comparisons",
+        calibrated: false,
+        note: "The curve is derived from the published amplitude equations and parameter set. It is a source-target diagnostic curve, not a digitized-paper-figure calibration.",
+    }
+}
+
+fn nicks_figure8_source_curve_point(detuning_fraction: f64) -> NicksFigure8SourceCurvePoint {
+    let source_config = NicksReportConfig {
+        epsilon2_delta: SOURCE_FIGURE8_EPSILON2_DELTA,
+        sigma: SOURCE_FIGURE8_SIGMA,
+        h: SOURCE_FIGURE8_H,
+        ..NicksReportConfig::default()
+    };
+    let detuning_fraction = detuning_fraction.clamp(0.0, 1.0);
+    let values = nicks_kernel_coefficients(&source_config, 0.0, detuning_fraction);
+    NicksFigure8SourceCurvePoint {
+        detuning_fraction,
+        response_kx_over_k0: 1.0 - detuning_fraction,
+        response_ky_over_k0: (1.0 - (1.0 - detuning_fraction).powi(2)).max(0.0).sqrt(),
+        rectangle_oblique_boundary_gamma: values.gamma_p,
+        gamma_c: values.gamma_c,
+        phi1: values.phi1,
+        phi4: values.phi4,
+        branch_below_boundary: figure8_region_label(detuning_fraction, -1.0),
+        branch_above_boundary: figure8_region_label(detuning_fraction, 1.0),
+    }
+}
+
 fn nicks_figure8_region_comparison(
     config: &NicksReportConfig,
     wavevectors: NicksWavevectorDiagnostics,
@@ -532,6 +587,19 @@ fn nicks_figure8_region_comparison(
         <= SOURCE_GRID_TOLERANCE
         && (config.h - SOURCE_FIGURE8_H).abs() <= SOURCE_GRID_TOLERANCE
         && (config.epsilon2_delta - SOURCE_FIGURE8_EPSILON2_DELTA).abs() <= SOURCE_GRID_TOLERANCE;
+    let source_curve_point = nicks_figure8_source_curve_point(wavevectors.detuning_fraction);
+    let curve_residual_gamma =
+        amplitude_coefficients.gamma_p - source_curve_point.rectangle_oblique_boundary_gamma;
+    let curve_residual_abs_gamma = curve_residual_gamma.abs();
+    let curve_residual_pass =
+        source_parameter_match && curve_residual_abs_gamma <= SOURCE_CURVE_RESIDUAL_TOLERANCE_GAMMA;
+    let boundary_distance_abs_gamma = amplitude_coefficients.boundary_distance_gamma.abs();
+    let min_gamma_spacing = source_gamma_min_spacing();
+    let boundary_distance_normalized_to_source_grid =
+        boundary_distance_abs_gamma / min_gamma_spacing.max(SOURCE_GRID_TOLERANCE);
+    let region_margin_threshold_gamma = source_region_margin_threshold_gamma();
+    let region_margin_pass =
+        curve_residual_pass && boundary_distance_abs_gamma >= region_margin_threshold_gamma;
     let target_region_label = figure8_region_label(
         wavevectors.detuning_fraction,
         amplitude_coefficients.boundary_distance_gamma,
@@ -559,15 +627,27 @@ fn nicks_figure8_region_comparison(
         detuning_grid_error,
         detuning_on_source_grid: detuning_grid_error <= SOURCE_GRID_TOLERANCE,
         rectangle_oblique_boundary_gamma: amplitude_coefficients.gamma_p,
+        source_curve_boundary_gamma: source_curve_point.rectangle_oblique_boundary_gamma,
+        curve_residual_gamma,
+        curve_residual_abs_gamma,
+        curve_residual_tolerance_gamma: SOURCE_CURVE_RESIDUAL_TOLERANCE_GAMMA,
+        curve_residual_pass,
         boundary_distance_gamma: amplitude_coefficients.boundary_distance_gamma,
+        boundary_distance_abs_gamma,
+        boundary_distance_normalized_to_source_grid,
         boundary_side: boundary_side(amplitude_coefficients.boundary_distance_gamma),
+        region_margin_threshold_gamma,
+        region_margin_pass,
+        region_margin_status: region_margin_status(curve_residual_pass, region_margin_pass),
+        acceptance_convention:
+            "source-curve residual passes at roundoff tolerance; robust region-side labels require at least half the smallest source gamma-grid spacing from the boundary",
         target_region_label,
         generated_region_label,
         region_label_matches: target_region_label == generated_region_label,
         boundary_comparison_available: amplitude_coefficients.gamma_p.is_finite(),
         calibrated: false,
-        status: "figure8-style-source-target-diagnostic",
-        note: "Compares against the source parameter grid and equation-derived rectangle/oblique boundary only; no source panel pixels, digitized curves, or calibration thresholds are published.",
+        status: "source-equation-figure8-boundary-diagnostic",
+        note: "Compares against a source-equation Figure 8 boundary curve and explicit residual thresholds; no source panel pixels or copied figure data are published.",
     }
 }
 
@@ -582,6 +662,27 @@ fn nearest_source_value(target: f64, values: &[f64]) -> f64 {
                 .unwrap_or(std::cmp::Ordering::Equal)
         })
         .unwrap_or(target)
+}
+
+fn source_gamma_min_spacing() -> f64 {
+    SOURCE_FIGURE8_GAMMAS
+        .windows(2)
+        .map(|pair| (pair[1] - pair[0]).abs())
+        .fold(f64::INFINITY, f64::min)
+}
+
+fn source_region_margin_threshold_gamma() -> f64 {
+    0.5 * source_gamma_min_spacing()
+}
+
+fn region_margin_status(curve_residual_pass: bool, region_margin_pass: bool) -> &'static str {
+    if region_margin_pass {
+        "accepted-source-grid-side-margin"
+    } else if curve_residual_pass {
+        "boundary-adjacent-source-grid-side-diagnostic"
+    } else {
+        "source-curve-residual-outside-threshold"
+    }
 }
 
 fn figure8_region_label(detuning_fraction: f64, boundary_distance_gamma: f64) -> &'static str {

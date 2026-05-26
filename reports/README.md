@@ -190,13 +190,14 @@ generated with:
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
 ```
 
-It writes `format: bolelli-time-periodic-input-report-v3` and includes generated
+It writes `format: bolelli-time-periodic-input-report-v4` and includes generated
 1D profiles, period-lock residuals, response phase, half-max stripe-width
 metrics, equation-derived principal-pole width comparisons, and frequency-sweep
 rows for localized Heaviside flicker. It is a source-target diagnostic report,
-not a calibrated source-figure reproduction claim. The pole comparison uses the
-source Fourier convention and records that generated half-max support is an
-auxiliary renderer metric, not an accepted pole-width residual.
+not a calibrated source-figure reproduction claim. The pole comparison now
+names an accepted source-side width convention using the source Fourier
+residual, while generated half-max support remains an auxiliary renderer
+metric, not an accepted pole-width residual.
 
 The first generated Nicks orthogonal-response amplitude diagnostic is generated
 with:
@@ -205,13 +206,14 @@ with:
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
 ```
 
-It writes `format: nicks-orthogonal-response-report-v4` and includes generated
+It writes `format: nicks-orthogonal-response-report-v5` and includes generated
 cortical forcing/response frames, an inverse-log-polar response frame,
 wavevector detuning metrics, orthogonality error, amplitude-equation residuals,
 equation-derived 2:1 wavevector target comparisons, Appendix-B kernel-derived
-coefficient diagnostics, Figure 8-style parameter-grid region checks, and
-validation flags. It is a source-target diagnostic report, not a calibrated
-source-figure reproduction claim.
+coefficient diagnostics, source-equation Figure 8 boundary curves, residual
+thresholds, parameter-grid region checks, and validation flags. It is a
+source-target diagnostic report, not a calibrated source-figure reproduction
+claim.
 
 Driven-input reports should contain generated outputs and derived numeric
 metrics only. PDFs, paper figure crops, page renders, and private extraction

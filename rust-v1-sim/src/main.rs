@@ -3397,7 +3397,7 @@ mod tests {
             ..BolelliReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "bolelli-time-periodic-input-report-v3");
+        assert_eq!(report.format, "bolelli-time-periodic-input-report-v4");
         assert_eq!(report.model_family, MODEL_FAMILY_LOCALIZED_PERIODIC);
         assert_eq!(report.examples.len(), 1);
         assert_eq!(report.frequency_sweep.len(), 2);
@@ -3413,6 +3413,9 @@ mod tests {
             assert!(row.source_target.source_parameter_match);
             assert!(row.source_target.lambda_in_source_range);
             assert!(row.source_target.pole_residual_pass);
+            assert!(row.source_target.source_width_convention_accepted);
+            assert!(row.source_target.accepted_width_residual.unwrap() < 1.0e-8);
+            assert!(!row.source_target.calibration_claim_allowed);
             assert!(!row.source_target.generated_width_comparable);
             assert!(row.source_target.absolute_width_error.is_none());
             assert!(row.source_target.pole_real.unwrap() > 0.0);
@@ -3446,8 +3449,13 @@ mod tests {
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v4");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v5");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
+        assert!(!report.figure8_source_curves.curve_points.is_empty());
+        assert_eq!(
+            report.figure8_source_curves.curve_residual_tolerance_gamma,
+            1.0e-8
+        );
         assert_eq!(report.examples.len(), 3);
         assert_eq!(report.parameter_sweep.len(), 6);
         assert!(report
@@ -3482,6 +3490,14 @@ mod tests {
                 row.source_target
                     .figure8_region
                     .boundary_comparison_available
+            );
+            assert!(row.source_target.figure8_region.curve_residual_pass);
+            assert!(row.source_target.figure8_region.curve_residual_abs_gamma <= 1.0e-8);
+            assert!(
+                row.source_target
+                    .figure8_region
+                    .region_margin_threshold_gamma
+                    > 0.0
             );
             assert!(!row.source_target.figure8_region.calibrated);
             assert!(!row.metrics.calibrated);

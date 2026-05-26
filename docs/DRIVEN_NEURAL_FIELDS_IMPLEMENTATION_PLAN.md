@@ -26,9 +26,9 @@ Current tracked outputs:
 - `reports/mackay-localized-input.json` uses
   `format: mackay-localized-input-report-v2`.
 - `reports/bolelli-time-periodic-input.json` uses
-  `format: bolelli-time-periodic-input-report-v3`.
+  `format: bolelli-time-periodic-input-report-v4`.
 - `reports/nicks-orthogonal-response.json` uses
-  `format: nicks-orthogonal-response-report-v4`.
+  `format: nicks-orthogonal-response-report-v5`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
   include equation-derived source-target comparison layers while still reporting
   `calibrated=false`.
@@ -67,15 +67,16 @@ not all should become simulator code at the same depth.
 
 4. `bolelli_contour_width_frequency_sweep`
    Implemented as generated stripe-width rows versus flicker frequency plus an
-   equation-derived principal-pole width comparison. Treat this as a
-   source-target diagnostic until source-backed acceptance thresholds exist.
+   equation-derived principal-pole width comparison. The source-side pole-width
+   convention is now accepted by residual threshold, while generated half-max
+   width remains an auxiliary renderer metric.
 
 5. `nicks_2d_orthogonal_response_amplitude`
    Source: Nicks et al. 2021. Implemented as a reduced 2:1 resonance amplitude
    diagnostic with forcing wavevector, response wavevector,
    rectangle/oblique/orthogonal response family, orthogonality error,
-   Appendix-B kernel-derived coefficient diagnostics, and a Figure 8-style
-   parameter-grid/region comparison.
+   Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
+   8 boundary curve, and parameter-grid/region residual checks.
 
 6. `nicks_billock_tsou_generated_map`
    Partially implemented as a source-safe inverse-log-polar generated response
@@ -263,9 +264,9 @@ remains first-pass diagnostic until source-derived numeric targets exist.
 
 Status: implemented as a generated source-target diagnostic for the
 periodic-state, Heaviside-flicker, and frequency-sweep examples. The report now
-validates the source-side principal-pole width target under the paper Fourier
-convention, while keeping generated half-max support as an auxiliary renderer
-metric rather than a calibration residual.
+applies an accepted source-side principal-pole width convention under the paper
+Fourier convention, while keeping generated half-max support as an auxiliary
+renderer metric rather than a width residual.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe bolelli-report --out reports\bolelli-time-periodic-input.json
@@ -274,7 +275,7 @@ metric rather than a calibration residual.
 Report format:
 
 ```text
-bolelli-time-periodic-input-report-v3
+bolelli-time-periodic-input-report-v4
 ```
 
 Delivered fields:
@@ -285,7 +286,8 @@ Delivered fields:
 - response phase relative to input,
 - contour or stripe width,
 - equation-derived principal-pole width comparison with source-parameter,
-  lambda-range, residual, and asymptotic-width quality flags,
+  lambda-range, accepted source-side pole residual, and asymptotic-width quality
+  flags,
 - frequency sweep rows,
 - generated thumbnails or row-major compact frames.
 
@@ -298,7 +300,8 @@ Implemented code shape:
   thumbnails to `reports/bolelli-time-periodic-input.json`.
 - Keep the comparison diagnostic: use generated contour/stripe-width metrics,
   period-lock residuals, source-like parameter notes, and the principal-pole
-  target relation, but do not claim source-figure reproduction.
+  target relation, but do not claim source-figure reproduction or generated
+  width calibration.
 
 Implemented numerical target:
 
@@ -315,6 +318,9 @@ Implemented numerical target:
 - Principal-pole target width from the public-safe equation relation
   `1 +/- i*lambda = omega_hat(z)` with the source Fourier convention
   `omega_hat(z)=exp(-2*pi^2*sigma1^2*z^2)-k exp(-2*pi^2*sigma2^2*z^2)`.
+- Accepted source-side width convention
+  `1/(2*Re z0(lambda))` with pole-equation residual tolerance recorded in the
+  report.
 
 Remaining work:
 
@@ -330,9 +336,9 @@ Remaining work:
 Status: implemented as a generated source-target diagnostic for the 2D
 orthogonal-response amplitude example. The report compares generated wavevector
 geometry with the equation-derived 2:1 response target and now records
-source-equation coefficient tables plus Figure 8-style region comparisons.
-Kernel-derived coefficient calibration and full half-space simulations remain
-deferred.
+source-equation coefficient tables, a Figure 8 source-equation boundary curve,
+curve residual thresholds, and source-grid region-side margin checks. Full
+half-space simulations and source-panel calibration remain deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
@@ -341,7 +347,7 @@ deferred.
 Report format:
 
 ```text
-nicks-orthogonal-response-report-v4
+nicks-orthogonal-response-report-v5
 ```
 
 Delivered fields:
@@ -358,6 +364,10 @@ Delivered fields:
   `sigma=0.5`, `h=0`, `epsilon^2 delta=0.3`,
   `gamma={0.1,0.4,0.65,1.1}`, and
   `v2/k0={0,0.05,0.25,0.75,1}`,
+- source-equation Figure 8 boundary curve
+  `gamma_p(v2/k0)=(Phi4-Phi1)*epsilon^2*delta/(Phi1*beta_c)`,
+- curve residual tolerance in gamma units and a source-grid region-margin
+  threshold derived from the published gamma grid,
 - kernel-derived `beta_c`, `mu`, `beta2`, `beta3`, `zeta1`, `zeta4`,
   `zeta6`, `Phi1`, `Phi4`, `gamma_c`, and `gamma_p` coefficient
   diagnostics from equations 4.11-4.18 and Appendix B,
@@ -377,10 +387,10 @@ Remaining work:
 Only after these reduced examples are stable should the repo add a full
 half-space driven neural-field simulation.
 
-- Add private digitized/source-derived Figure 8 region curves before any
-  accepted region-boundary residual is reported.
+- Add source-panel or independent full-field residuals before any calibrated
+  Figure 8 source-figure match is reported.
 - Add localized half-space Billock-Tsou geometry and adaptation only after the
-  reduced diagnostic has stable acceptance thresholds.
+  reduced diagnostic source-equation thresholds remain stable.
 
 ### Phase D5 - Public Website Abstraction
 
@@ -419,13 +429,15 @@ Current report status:
 
 - MacKay: rendered target coverage and diagnostic metrics are present;
   source-target comparison is still false.
-- Bolelli: principal-pole width source-target comparisons are present;
-  calibration remains false because generated half-max widths are explicitly
-  non-comparable to the source pole-width convention.
+- Bolelli: principal-pole width source-target comparisons and an accepted
+  source-side pole-width convention are present; calibration remains false
+  because generated half-max widths are explicitly non-comparable to the source
+  pole-width convention.
 - Nicks: 2:1 wavevector geometry source-target comparisons, Appendix-B
-  kernel-derived coefficient tables, and Figure 8-style region comparisons are
-  present; calibration remains false because digitized source-region curves and
-  acceptance thresholds are not source calibrated.
+  kernel-derived coefficient tables, source-equation Figure 8 boundary curves,
+  and residual thresholds are present; calibration remains false because these
+  are equation diagnostics, not source-panel or full-field reproduction
+  residuals.
 
 ### Phase D7 - Deferred High-Risk Work
 

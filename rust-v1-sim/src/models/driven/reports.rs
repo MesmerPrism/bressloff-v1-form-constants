@@ -326,6 +326,11 @@ pub(crate) struct BolelliPoleWidthComparison {
     pub(crate) source_parameter_match: bool,
     pub(crate) source_lambda_range: [f64; 2],
     pub(crate) lambda_in_source_range: bool,
+    pub(crate) accepted_width_convention: &'static str,
+    pub(crate) accepted_width_residual_kind: &'static str,
+    pub(crate) accepted_width_residual: Option<f64>,
+    pub(crate) accepted_width_residual_tolerance: f64,
+    pub(crate) source_width_convention_accepted: bool,
     pub(crate) pole_residual_tolerance: f64,
     pub(crate) pole_residual_pass: bool,
     pub(crate) pole_real: Option<f64>,
@@ -337,9 +342,11 @@ pub(crate) struct BolelliPoleWidthComparison {
     pub(crate) generated_width_half_max: f64,
     pub(crate) generated_width_comparison_convention: &'static str,
     pub(crate) generated_width_comparable: bool,
+    pub(crate) generated_width_residual_status: &'static str,
     pub(crate) absolute_width_error: Option<f64>,
     pub(crate) relative_width_error: Option<f64>,
     pub(crate) source_target_comparison: bool,
+    pub(crate) calibration_claim_allowed: bool,
     pub(crate) calibrated: bool,
     pub(crate) status: &'static str,
     pub(crate) note: &'static str,
@@ -407,6 +414,7 @@ pub(crate) struct NicksOrthogonalResponseReport {
     pub(crate) rights_status: &'static str,
     pub(crate) solver: NicksReportSolver,
     pub(crate) parameters: NicksReportParameters,
+    pub(crate) figure8_source_curves: NicksFigure8SourceCurves,
     pub(crate) examples: Vec<NicksGeneratedExample>,
     pub(crate) parameter_sweep: Vec<NicksSweepRow>,
 }
@@ -520,6 +528,37 @@ pub(crate) struct NicksAmplitudeCoefficientTable {
     pub(crate) calibrated: bool,
 }
 
+#[derive(Serialize)]
+pub(crate) struct NicksFigure8SourceCurves {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) derivation: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) source_gamma_values: [f64; 4],
+    pub(crate) source_detuning_fractions: [f64; 5],
+    pub(crate) curve_parameter: &'static str,
+    pub(crate) curve_points: Vec<NicksFigure8SourceCurvePoint>,
+    pub(crate) curve_residual_tolerance_gamma: f64,
+    pub(crate) curve_residual_tolerance_source: &'static str,
+    pub(crate) region_margin_threshold_gamma: f64,
+    pub(crate) region_margin_threshold_source: &'static str,
+    pub(crate) calibrated: bool,
+    pub(crate) note: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct NicksFigure8SourceCurvePoint {
+    pub(crate) detuning_fraction: f64,
+    pub(crate) response_kx_over_k0: f64,
+    pub(crate) response_ky_over_k0: f64,
+    pub(crate) rectangle_oblique_boundary_gamma: f64,
+    pub(crate) gamma_c: f64,
+    pub(crate) phi1: f64,
+    pub(crate) phi4: f64,
+    pub(crate) branch_below_boundary: &'static str,
+    pub(crate) branch_above_boundary: &'static str,
+}
+
 #[derive(Clone, Copy, Debug, Serialize)]
 pub(crate) struct NicksFigure8RegionComparison {
     pub(crate) source_target_kind: &'static str,
@@ -538,8 +577,19 @@ pub(crate) struct NicksFigure8RegionComparison {
     pub(crate) detuning_grid_error: f64,
     pub(crate) detuning_on_source_grid: bool,
     pub(crate) rectangle_oblique_boundary_gamma: f64,
+    pub(crate) source_curve_boundary_gamma: f64,
+    pub(crate) curve_residual_gamma: f64,
+    pub(crate) curve_residual_abs_gamma: f64,
+    pub(crate) curve_residual_tolerance_gamma: f64,
+    pub(crate) curve_residual_pass: bool,
     pub(crate) boundary_distance_gamma: f64,
+    pub(crate) boundary_distance_abs_gamma: f64,
+    pub(crate) boundary_distance_normalized_to_source_grid: f64,
     pub(crate) boundary_side: &'static str,
+    pub(crate) region_margin_threshold_gamma: f64,
+    pub(crate) region_margin_pass: bool,
+    pub(crate) region_margin_status: &'static str,
+    pub(crate) acceptance_convention: &'static str,
     pub(crate) target_region_label: &'static str,
     pub(crate) generated_region_label: &'static str,
     pub(crate) region_label_matches: bool,

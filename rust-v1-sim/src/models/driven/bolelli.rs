@@ -59,7 +59,7 @@ pub(crate) fn bolelli_time_periodic_report(
             } else {
                 "warmup-insufficient-diagnostic"
             },
-            note: "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred.",
+            note: "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic.",
         });
     }
 
@@ -79,11 +79,11 @@ pub(crate) fn bolelli_time_periodic_report(
     )];
 
     Ok(BolelliTimePeriodicInputReport {
-        format: "bolelli-time-periodic-input-report-v3",
+        format: "bolelli-time-periodic-input-report-v4",
         model_family: MODEL_FAMILY_LOCALIZED_PERIODIC,
         source_key: "bolelli-prandi-2025",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and source-normalized pole-width targets; it is not a source-figure reproduction claim.",
+        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and an accepted source-side principal-pole width convention; it is not a source-figure reproduction or generated-width calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: BolelliReportSolver {
             method: "explicit Euler integration to a periodic state after warmup",
@@ -373,6 +373,11 @@ fn bolelli_pole_width_comparison(
             dominant_inhibitory_width_approximation(config, frequency_lambda, pole.im.signum());
         let asymptotic_relative_width_error = asymptotic_width
             .map(|width| (width - target_width).abs() / target_width.abs().max(1.0e-12));
+        let source_width_convention_accepted = source_parameter_match
+            && lambda_in_source_range
+            && pole_residual_pass
+            && target_width.is_finite()
+            && target_width > 0.0;
         BolelliPoleWidthComparison {
             source_target_kind: "equation-derived principal-pole width",
             source_target_reference:
@@ -383,6 +388,13 @@ fn bolelli_pole_width_comparison(
             source_parameter_match,
             source_lambda_range: [2.0, 100.0],
             lambda_in_source_range,
+            accepted_width_convention:
+                "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+            accepted_width_residual_kind:
+                "complex principal-pole equation residual under the paper Fourier convention",
+            accepted_width_residual: Some(pole_residual),
+            accepted_width_residual_tolerance: pole_residual_tolerance,
+            source_width_convention_accepted,
             pole_residual_tolerance,
             pole_residual_pass,
             pole_real: Some(pole.re),
@@ -394,16 +406,19 @@ fn bolelli_pole_width_comparison(
             generated_width_half_max,
             generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
             generated_width_comparable: false,
+            generated_width_residual_status:
+                "not-accepted: generated half-max support does not share the source pole-width convention",
             absolute_width_error: None,
             relative_width_error: None,
             source_target_comparison: true,
+            calibration_claim_allowed: false,
             calibrated: false,
-            status: if source_parameter_match && lambda_in_source_range && pole_residual_pass {
-                "source-pole-target-valid"
+            status: if source_width_convention_accepted {
+                "accepted-source-pole-width-convention"
             } else {
                 "source-pole-target-outside-validation-window"
             },
-            note: "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual.",
+            note: "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual.",
         }
     } else {
         BolelliPoleWidthComparison {
@@ -416,6 +431,13 @@ fn bolelli_pole_width_comparison(
             source_parameter_match,
             source_lambda_range: [2.0, 100.0],
             lambda_in_source_range,
+            accepted_width_convention:
+                "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+            accepted_width_residual_kind:
+                "complex principal-pole equation residual under the paper Fourier convention",
+            accepted_width_residual: None,
+            accepted_width_residual_tolerance: pole_residual_tolerance,
+            source_width_convention_accepted: false,
             pole_residual_tolerance,
             pole_residual_pass: false,
             pole_real: None,
@@ -427,9 +449,12 @@ fn bolelli_pole_width_comparison(
             generated_width_half_max,
             generated_width_comparison_convention: "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
             generated_width_comparable: false,
+            generated_width_residual_status:
+                "not-accepted: generated half-max support does not share the source pole-width convention",
             absolute_width_error: None,
             relative_width_error: None,
             source_target_comparison: false,
+            calibration_claim_allowed: false,
             calibrated: false,
             status: "root-unresolved",
             note: "The report generated the periodic state, but the principal-pole root finder did not converge for this frequency.",

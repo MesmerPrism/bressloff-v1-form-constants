@@ -1,9 +1,9 @@
 {
-  "format": "bolelli-time-periodic-input-report-v3",
+  "format": "bolelli-time-periodic-input-report-v4",
   "model_family": "localized_time_periodic_input",
   "source_key": "bolelli-prandi-2025",
   "status": "generated-first-pass-diagnostic",
-  "note": "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and source-normalized pole-width targets; it is not a source-figure reproduction claim.",
+  "note": "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, and an accepted source-side principal-pole width convention; it is not a source-figure reproduction or generated-width calibration claim.",
   "rights_status": "generated outputs only; no copied paper figures or full text",
   "solver": {
     "method": "explicit Euler integration to a periodic state after warmup",
@@ -79,6 +79,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 3.4416913763379853e-15,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.29956589404006634,
@@ -90,12 +95,14 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "input_thumbnail": {
         "format": "u8-profile-v1",
@@ -168,6 +175,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 1.4234430347663656e-12,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.4600774390379905,
@@ -179,15 +191,17 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
+      "note": "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -223,6 +237,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 4.189529226675416e-15,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.34234346690678147,
@@ -234,15 +253,17 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
+      "note": "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -278,6 +299,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 3.4416913763379853e-15,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.29956589404006634,
@@ -289,15 +315,17 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
+      "note": "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -333,6 +361,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 4.4143897099397604e-14,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.264150773709251,
@@ -344,15 +377,17 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
+      "note": "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic."
     },
     {
       "registry_id": "bolelli_contour_width_frequency_sweep",
@@ -388,6 +423,11 @@
           100.0
         ],
         "lambda_in_source_range": true,
+        "accepted_width_convention": "source-side vertical-stripe width is 1/(2*Re z0(lambda)) from the principal pole in P1+",
+        "accepted_width_residual_kind": "complex principal-pole equation residual under the paper Fourier convention",
+        "accepted_width_residual": 1.0273296911587103e-11,
+        "accepted_width_residual_tolerance": 1e-8,
+        "source_width_convention_accepted": true,
         "pole_residual_tolerance": 1e-8,
         "pole_residual_pass": true,
         "pole_real": 0.25120250099702884,
@@ -399,15 +439,17 @@
         "generated_width_half_max": 10.052356020942408,
         "generated_width_comparison_convention": "not-comparable: generated half-max support is a finite-domain renderer metric, while the source width is the pole-controlled vertical-stripe convention 1/(2*Re z0)",
         "generated_width_comparable": false,
+        "generated_width_residual_status": "not-accepted: generated half-max support does not share the source pole-width convention",
         "absolute_width_error": null,
         "relative_width_error": null,
         "source_target_comparison": true,
+        "calibration_claim_allowed": false,
         "calibrated": false,
-        "status": "source-pole-target-valid",
-        "note": "Validates the source-side pole-width target under the paper Fourier convention. The generated half-max support is reported for renderer diagnostics but is not used as a calibration residual."
+        "status": "accepted-source-pole-width-convention",
+        "note": "Accepts only the source-side pole equation and width convention. The generated half-max support is reported for renderer diagnostics but is not used as an accepted width residual."
       },
       "status": "period-locked-diagnostic",
-      "note": "Generated frequency-sweep row with an equation-derived principal-pole width comparison; calibration thresholds remain deferred."
+      "note": "Generated frequency-sweep row with an accepted source-side principal-pole width convention; generated half-max width remains an auxiliary diagnostic."
     }
   ]
 }
