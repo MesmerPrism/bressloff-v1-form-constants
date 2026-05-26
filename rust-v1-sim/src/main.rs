@@ -3397,11 +3397,30 @@ mod tests {
             ..BolelliReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "bolelli-time-periodic-input-report-v5");
+        assert_eq!(report.format, "bolelli-time-periodic-input-report-v6");
         assert_eq!(report.model_family, MODEL_FAMILY_LOCALIZED_PERIODIC);
         assert_eq!(report.examples.len(), 1);
         assert_eq!(report.frequency_sweep.len(), 2);
         assert!(report.parameters.contraction_mu_l1.is_finite());
+        assert_eq!(
+            report.figure5_source_curves.format,
+            "bolelli-figure5-source-equation-curves-v1"
+        );
+        assert_eq!(report.figure5_source_curves.parameter_curves.len(), 3);
+        assert!(
+            report.figure5_source_curves.max_pole_residual.unwrap()
+                < report.figure5_source_curves.pole_residual_tolerance
+        );
+        assert!(!report.figure5_source_curves.calibration_claim_allowed);
+        assert!(!report.figure5_source_curves.calibrated);
+        for curve in &report.figure5_source_curves.parameter_curves {
+            assert_eq!(curve.point_count, 10);
+            assert_eq!(curve.root_resolved_count, curve.point_count);
+            assert!(curve
+                .max_asymptotic_relative_width_error
+                .unwrap()
+                .is_finite());
+        }
         for row in &report.frequency_sweep {
             assert!(row.metrics.periodic_residual_linf.is_finite());
             assert!(row.metrics.period_correlation.is_finite());

@@ -6,8 +6,9 @@ use std::{
 use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
-    BolelliExampleKernel, BolelliFrequencySweepRow, BolelliGeneratedExample, BolelliPeriodMetrics,
-    BolelliPoleWidthComparison, BolelliProfileThumbnail, BolelliReportConfig,
+    BolelliExampleKernel, BolelliFigure5CurvePoint, BolelliFigure5ParameterCurve,
+    BolelliFigure5SourceCurves, BolelliFrequencySweepRow, BolelliGeneratedExample,
+    BolelliPeriodMetrics, BolelliPoleWidthComparison, BolelliProfileThumbnail, BolelliReportConfig,
     BolelliReportParameters, BolelliReportSolver, BolelliTimePeriodicInputReport,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_LOCALIZED_PERIODIC, PI};
@@ -45,6 +46,14 @@ struct BolelliGeneratedWidthEstimate {
 
 const GENERATED_DECAY_WIDTH_MIN_R_SQUARED: f64 = 0.70;
 const GENERATED_DECAY_WIDTH_MIN_POINTS: usize = 8;
+const FIGURE5_POLE_RESIDUAL_TOLERANCE: f64 = 1.0e-8;
+const FIGURE5_LAMBDA_SAMPLES: [f64; 10] =
+    [2.0, 5.0, 8.0, 10.0, 20.0, 30.0, 40.0, 60.0, 80.0, 100.0];
+const FIGURE5_SOURCE_KERNEL_PAIRS: [(f64, f64, &str); 3] = [
+    (0.2, 0.4, "(0.2/sqrt(2*pi), 0.4/sqrt(2*pi))"),
+    (1.0, 2.0, "(1/sqrt(2*pi), 2/sqrt(2*pi))"),
+    (0.4, 0.8, "(0.4/sqrt(2*pi), 0.8/sqrt(2*pi))"),
+];
 
 pub(crate) fn bolelli_time_periodic_report(
     config: BolelliReportConfig,
@@ -91,11 +100,11 @@ pub(crate) fn bolelli_time_periodic_report(
     )];
 
     Ok(BolelliTimePeriodicInputReport {
-        format: "bolelli-time-periodic-input-report-v5",
+        format: "bolelli-time-periodic-input-report-v6",
         model_family: MODEL_FAMILY_LOCALIZED_PERIODIC,
         source_key: "bolelli-prandi-2025",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, an accepted source-side principal-pole width convention, and a generated decay-width estimate in the same pole convention; it is not a source-figure reproduction or generated-width calibration claim.",
+        note: "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, accepted source-side principal-pole width conventions, source-equation Figure 5 curve samples, and a generated decay-width estimate in the same pole convention; it is not a source-figure reproduction or generated-width calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: BolelliReportSolver {
             method: "explicit Euler integration to a periodic state after warmup",
@@ -104,6 +113,7 @@ pub(crate) fn bolelli_time_periodic_report(
             claim_level: "first-pass diagnostic",
         },
         parameters,
+        figure5_source_curves: bolelli_figure5_source_curves(),
         examples,
         frequency_sweep,
     })
@@ -209,6 +219,135 @@ fn bolelli_generated_example(
         expected_behavior: "periodic response locked to localized flicker with a generated stripe-width diagnostic",
         public_claim_level: "source-target comparison",
         note: "Uses generated profiles, numeric period metrics, an equation-derived pole-width target, and a generated decay-width estimate in the same pole convention; source figure comparison remains deferred.",
+    }
+}
+
+fn bolelli_figure5_source_curves() -> BolelliFigure5SourceCurves {
+    let parameter_curves = FIGURE5_SOURCE_KERNEL_PAIRS
+        .iter()
+        .map(|(sigma_exc_scale, sigma_inh_scale, label)| {
+            bolelli_figure5_parameter_curve(*sigma_exc_scale, *sigma_inh_scale, label)
+        })
+        .collect::<Vec<_>>();
+    let max_pole_residual = max_finite(
+        parameter_curves
+            .iter()
+            .filter_map(|curve| curve.max_pole_residual.filter(|value| value.is_finite())),
+    );
+    let max_asymptotic_relative_width_error =
+        max_finite(parameter_curves.iter().filter_map(|curve| {
+            curve
+                .max_asymptotic_relative_width_error
+                .filter(|value| value.is_finite())
+        }));
+    let all_curves_resolved = parameter_curves
+        .iter()
+        .all(|curve| curve.root_resolved_count == curve.point_count);
+    let residuals_pass =
+        matches!(max_pole_residual, Some(value) if value <= FIGURE5_POLE_RESIDUAL_TOLERANCE);
+
+    BolelliFigure5SourceCurves {
+        format: "bolelli-figure5-source-equation-curves-v1",
+        source_target_kind: "source-equation Figure 5 principal-pole curves",
+        source_target_reference:
+            "Bolelli-Prandi 2025 Figure 5 and Section 4.3.1; generated from public equations, not digitized source panels",
+        derivation: "For each source DoG pair and lambda sample, solve 1 +/- i*lambda = omega_hat(z), report Re z0, Im z0, width=1/(2*Re z0), and the Proposition 4.17 dominant-inhibitory asymptotic width.",
+        source_parameter_set:
+            "Figure 5 source families with k=1 and (sigma_exc,sigma_inh) in {(0.2,0.4),(1,2),(0.4,0.8)}/sqrt(2*pi), lambda in [2,100]",
+        lambda_range: [2.0, 100.0],
+        sample_grid_kind: "repo-generated lambda samples over the source Figure 5 range; no paper curve pixels or source-panel crops",
+        pole_residual_tolerance: FIGURE5_POLE_RESIDUAL_TOLERANCE,
+        max_pole_residual,
+        max_asymptotic_relative_width_error,
+        parameter_curves,
+        calibration_claim_allowed: false,
+        calibrated: false,
+        status: if all_curves_resolved && residuals_pass {
+            "source-equation-curve-diagnostic-ready"
+        } else {
+            "source-equation-curve-diagnostic-review"
+        },
+        note: "This block provides public-safe numeric source-equation curve samples for the paper's Figure 5 target families. It is not digitized source-panel data and does not allow calibration language.",
+    }
+}
+
+fn bolelli_figure5_parameter_curve(
+    sigma_exc_scale: f64,
+    sigma_inh_scale: f64,
+    parameter_label: &'static str,
+) -> BolelliFigure5ParameterCurve {
+    let config = BolelliReportConfig {
+        sigma_exc: source_sigma(sigma_exc_scale),
+        sigma_inh: source_sigma(sigma_inh_scale),
+        inhibition: 1.0,
+        ..BolelliReportConfig::default()
+    };
+    let points = FIGURE5_LAMBDA_SAMPLES
+        .iter()
+        .map(|frequency_lambda| bolelli_figure5_curve_point(&config, *frequency_lambda))
+        .collect::<Vec<_>>();
+    let root_resolved_count = points.iter().filter(|point| point.root_resolved).count();
+    let max_pole_residual = max_finite(points.iter().filter_map(|point| point.pole_residual));
+    let max_asymptotic_relative_width_error = max_finite(
+        points
+            .iter()
+            .filter_map(|point| point.asymptotic_relative_width_error),
+    );
+    let residuals_pass =
+        matches!(max_pole_residual, Some(value) if value <= FIGURE5_POLE_RESIDUAL_TOLERANCE);
+
+    BolelliFigure5ParameterCurve {
+        parameter_label,
+        sigma_exc_scale,
+        sigma_inh_scale,
+        sigma_exc: config.sigma_exc,
+        sigma_inh: config.sigma_inh,
+        inhibition: config.inhibition,
+        point_count: points.len(),
+        root_resolved_count,
+        max_pole_residual,
+        max_asymptotic_relative_width_error,
+        status: if root_resolved_count == points.len() && residuals_pass {
+            "resolved-source-equation-curve"
+        } else {
+            "source-equation-curve-review"
+        },
+        points,
+    }
+}
+
+fn bolelli_figure5_curve_point(
+    config: &BolelliReportConfig,
+    frequency_lambda: f64,
+) -> BolelliFigure5CurvePoint {
+    if let Some((pole, pole_residual)) = principal_pole_root(config, frequency_lambda) {
+        let pole = Complex::new(pole.re, pole.im.abs());
+        let target_width = 1.0 / (2.0 * pole.re);
+        let asymptotic_width =
+            dominant_inhibitory_width_approximation(config, frequency_lambda, 1.0);
+        let asymptotic_relative_width_error = asymptotic_width
+            .map(|width| (width - target_width).abs() / target_width.abs().max(1.0e-12));
+        BolelliFigure5CurvePoint {
+            frequency_lambda,
+            root_resolved: true,
+            pole_real: Some(pole.re),
+            pole_imaginary: Some(pole.im),
+            pole_residual: Some(pole_residual),
+            target_width_principal_pole: Some(target_width),
+            asymptotic_width_principal_pole: asymptotic_width,
+            asymptotic_relative_width_error,
+        }
+    } else {
+        BolelliFigure5CurvePoint {
+            frequency_lambda,
+            root_resolved: false,
+            pole_real: None,
+            pole_imaginary: None,
+            pole_residual: None,
+            target_width_principal_pole: None,
+            asymptotic_width_principal_pole: None,
+            asymptotic_relative_width_error: None,
+        }
     }
 }
 
@@ -813,6 +952,14 @@ fn empty_generated_width_estimate(fit_points: usize) -> BolelliGeneratedWidthEst
         fit_points,
         fit_pass: false,
     }
+}
+
+fn max_finite(values: impl Iterator<Item = f64>) -> Option<f64> {
+    values
+        .filter(|value| value.is_finite())
+        .fold(None, |max_value, value| {
+            Some(max_value.map_or(value, |current| current.max(value)))
+        })
 }
 
 fn zero_crossings_1d(values: &[f64]) -> f64 {

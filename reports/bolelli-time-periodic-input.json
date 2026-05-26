@@ -1,9 +1,9 @@
 {
-  "format": "bolelli-time-periodic-input-report-v5",
+  "format": "bolelli-time-periodic-input-report-v6",
   "model_family": "localized_time_periodic_input",
   "source_key": "bolelli-prandi-2025",
   "status": "generated-first-pass-diagnostic",
-  "note": "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, an accepted source-side principal-pole width convention, and a generated decay-width estimate in the same pole convention; it is not a source-figure reproduction or generated-width calibration claim.",
+  "note": "Generated Bolelli-Prandi-style localized time-periodic input diagnostics. This report checks period locking, phase, generated stripe-width metrics, accepted source-side principal-pole width conventions, source-equation Figure 5 curve samples, and a generated decay-width estimate in the same pole convention; it is not a source-figure reproduction or generated-width calibration claim.",
   "rights_status": "generated outputs only; no copied paper figures or full text",
   "solver": {
     "method": "explicit Euler integration to a periodic state after warmup",
@@ -28,6 +28,372 @@
     "inhibition": 1.0,
     "approximate_kernel_l1": 0.06600889203237137,
     "contraction_mu_l1": 0.023103112211329976
+  },
+  "figure5_source_curves": {
+    "format": "bolelli-figure5-source-equation-curves-v1",
+    "source_target_kind": "source-equation Figure 5 principal-pole curves",
+    "source_target_reference": "Bolelli-Prandi 2025 Figure 5 and Section 4.3.1; generated from public equations, not digitized source panels",
+    "derivation": "For each source DoG pair and lambda sample, solve 1 +/- i*lambda = omega_hat(z), report Re z0, Im z0, width=1/(2*Re z0), and the Proposition 4.17 dominant-inhibitory asymptotic width.",
+    "source_parameter_set": "Figure 5 source families with k=1 and (sigma_exc,sigma_inh) in {(0.2,0.4),(1,2),(0.4,0.8)}/sqrt(2*pi), lambda in [2,100]",
+    "lambda_range": [
+      2.0,
+      100.0
+    ],
+    "sample_grid_kind": "repo-generated lambda samples over the source Figure 5 range; no paper curve pixels or source-panel crops",
+    "pole_residual_tolerance": 1e-8,
+    "max_pole_residual": 5.443622256844909e-11,
+    "max_asymptotic_relative_width_error": 0.21551493531776272,
+    "parameter_curves": [
+      {
+        "parameter_label": "(0.2/sqrt(2*pi), 0.4/sqrt(2*pi))",
+        "sigma_exc_scale": 0.2,
+        "sigma_inh_scale": 0.4,
+        "sigma_exc": 0.07978845608028655,
+        "sigma_inh": 0.1595769121605731,
+        "inhibition": 1.0,
+        "point_count": 10,
+        "root_resolved_count": 10,
+        "max_pole_residual": 5.443622256844909e-11,
+        "max_asymptotic_relative_width_error": 0.21551493531756974,
+        "status": "resolved-source-equation-curve",
+        "points": [
+          {
+            "frequency_lambda": 2.0,
+            "root_resolved": true,
+            "pole_real": 0.9201548780762072,
+            "pole_imaginary": 1.6254254383075042,
+            "pole_residual": 1.0033001380271505e-13,
+            "target_width_principal_pole": 0.5433867840220155,
+            "asymptotic_width_principal_pole": 0.42627881641108856,
+            "asymptotic_relative_width_error": 0.21551493531756974
+          },
+          {
+            "frequency_lambda": 5.0,
+            "root_resolved": true,
+            "pole_real": 0.745166806658287,
+            "pole_imaginary": 1.9936130517148614,
+            "pole_residual": 8.860887421508486e-14,
+            "target_width_principal_pole": 0.6709907037355278,
+            "asymptotic_width_principal_pole": 0.5694025313590604,
+            "asymptotic_relative_width_error": 0.1514002680080477
+          },
+          {
+            "frequency_lambda": 8.0,
+            "root_resolved": true,
+            "pole_real": 0.6846869338135602,
+            "pole_imaginary": 2.1819689420302453,
+            "pole_residual": 6.325826329657162e-14,
+            "target_width_principal_pole": 0.7302607590524719,
+            "asymptotic_width_principal_pole": 0.6463170432623087,
+            "asymptotic_relative_width_error": 0.1149503307545676
+          },
+          {
+            "frequency_lambda": 10.0,
+            "root_resolved": true,
+            "pole_real": 0.6605972490683337,
+            "pole_imaginary": 2.269230338866027,
+            "pole_residual": 5.3854400208818836e-15,
+            "target_width_principal_pole": 0.7568908297834568,
+            "asymptotic_width_principal_pole": 0.6814773369383899,
+            "asymptotic_relative_width_error": 0.09963589183217136
+          },
+          {
+            "frequency_lambda": 20.0,
+            "root_resolved": true,
+            "pole_real": 0.5991317880791217,
+            "pole_imaginary": 2.52951735645326,
+            "pole_residual": 5.443622256844909e-11,
+            "target_width_principal_pole": 0.8345409306407386,
+            "asymptotic_width_principal_pole": 0.7827680070271132,
+            "asymptotic_relative_width_error": 0.062037608597430335
+          },
+          {
+            "frequency_lambda": 30.0,
+            "root_resolved": true,
+            "pole_real": 0.5700326070393129,
+            "pole_imaginary": 2.67403724799283,
+            "pole_residual": 3.807375473254682e-13,
+            "target_width_principal_pole": 0.8771428052106447,
+            "asymptotic_width_principal_pole": 0.8364187244367451,
+            "asymptotic_relative_width_error": 0.04642810786565104
+          },
+          {
+            "frequency_lambda": 40.0,
+            "root_resolved": true,
+            "pole_real": 0.5516423262297288,
+            "pole_imaginary": 2.773232981325103,
+            "pole_residual": 1.533876673602434e-14,
+            "target_width_principal_pole": 0.9063844020405668,
+            "asymptotic_width_principal_pole": 0.872238594756229,
+            "asymptotic_relative_width_error": 0.03767254512264825
+          },
+          {
+            "frequency_lambda": 60.0,
+            "root_resolved": true,
+            "pole_real": 0.5283015474185021,
+            "pole_imaginary": 2.9085782045722888,
+            "pole_residual": 3.553823728406967e-14,
+            "target_width_principal_pole": 0.9464291794018113,
+            "asymptotic_width_principal_pole": 0.9199549037720982,
+            "asymptotic_relative_width_error": 0.02797280156392269
+          },
+          {
+            "frequency_lambda": 80.0,
+            "root_resolved": true,
+            "pole_real": 0.5132869820779594,
+            "pole_imaginary": 3.001615181015146,
+            "pole_residual": 1.0476364719853894e-13,
+            "target_width_principal_pole": 0.9741139313057011,
+            "asymptotic_width_principal_pole": 0.9520886383793012,
+            "asymptotic_relative_width_error": 0.02261059227114964
+          },
+          {
+            "frequency_lambda": 100.0,
+            "root_resolved": true,
+            "pole_real": 0.5024050019940806,
+            "pole_imaginary": 3.072164849896713,
+            "pole_residual": 1.4762209355896038e-14,
+            "target_width_principal_pole": 0.9952130213980057,
+            "asymptotic_width_principal_pole": 0.9761473688944536,
+            "asymptotic_relative_width_error": 0.019157358368131056
+          }
+        ]
+      },
+      {
+        "parameter_label": "(1/sqrt(2*pi), 2/sqrt(2*pi))",
+        "sigma_exc_scale": 1.0,
+        "sigma_inh_scale": 2.0,
+        "sigma_exc": 0.3989422804014327,
+        "sigma_inh": 0.7978845608028654,
+        "inhibition": 1.0,
+        "point_count": 10,
+        "root_resolved_count": 10,
+        "max_pole_residual": 2.099793476130593e-11,
+        "max_asymptotic_relative_width_error": 0.21551493531755667,
+        "status": "resolved-source-equation-curve",
+        "points": [
+          {
+            "frequency_lambda": 2.0,
+            "root_resolved": true,
+            "pole_real": 0.18403097561524456,
+            "pole_imaginary": 0.3250850876615042,
+            "pole_residual": 8.005932084973442e-16,
+            "target_width_principal_pole": 2.7169339201100313,
+            "asymptotic_width_principal_pole": 2.1313940820554422,
+            "asymptotic_relative_width_error": 0.21551493531755667
+          },
+          {
+            "frequency_lambda": 5.0,
+            "root_resolved": true,
+            "pole_real": 0.14903336133148515,
+            "pole_imaginary": 0.39872261034306616,
+            "pole_residual": 1.1461222720579812e-11,
+            "target_width_principal_pole": 3.354953518681517,
+            "asymptotic_width_principal_pole": 2.847012656795302,
+            "asymptotic_relative_width_error": 0.1514002680090285
+          },
+          {
+            "frequency_lambda": 8.0,
+            "root_resolved": true,
+            "pole_real": 0.13693738676271264,
+            "pole_imaginary": 0.4363937884060489,
+            "pole_residual": 3.8778423131653425e-15,
+            "target_width_principal_pole": 3.651303795262343,
+            "asymptotic_width_principal_pole": 3.231585216311542,
+            "asymptotic_relative_width_error": 0.11495033075456398
+          },
+          {
+            "frequency_lambda": 10.0,
+            "root_resolved": true,
+            "pole_real": 0.13211944981366677,
+            "pole_imaginary": 0.4538460677732055,
+            "pole_residual": 3.794299872214038e-15,
+            "target_width_principal_pole": 3.784454148917283,
+            "asymptotic_width_principal_pole": 3.407386684691949,
+            "asymptotic_relative_width_error": 0.09963589183217121
+          },
+          {
+            "frequency_lambda": 20.0,
+            "root_resolved": true,
+            "pole_real": 0.11982635761602656,
+            "pole_imaginary": 0.5059034712906535,
+            "pole_residual": 8.881784197001252e-16,
+            "target_width_principal_pole": 4.172704653196651,
+            "asymptotic_width_principal_pole": 3.9138400351355638,
+            "asymptotic_relative_width_error": 0.06203760859584792
+          },
+          {
+            "frequency_lambda": 30.0,
+            "root_resolved": true,
+            "pole_real": 0.11400652140786338,
+            "pole_imaginary": 0.5348074495985656,
+            "pole_residual": 7.105427357601002e-15,
+            "target_width_principal_pole": 4.385714026053193,
+            "asymptotic_width_principal_pole": 4.182093622183729,
+            "asymptotic_relative_width_error": 0.04642810786564367
+          },
+          {
+            "frequency_lambda": 40.0,
+            "root_resolved": true,
+            "pole_real": 0.11032846524594578,
+            "pole_imaginary": 0.5546465962650208,
+            "pole_residual": 2.4566804763758967e-14,
+            "target_width_principal_pole": 4.531922010202833,
+            "asymptotic_width_principal_pole": 4.361192973781145,
+            "asymptotic_relative_width_error": 0.037672545122648136
+          },
+          {
+            "frequency_lambda": 60.0,
+            "root_resolved": true,
+            "pole_real": 0.10566030948371298,
+            "pole_imaginary": 0.5817156409144383,
+            "pole_residual": 2.099793476130593e-11,
+            "target_width_principal_pole": 4.732145897008493,
+            "asymptotic_width_principal_pole": 4.5997745188604915,
+            "asymptotic_relative_width_error": 0.027972801563806948
+          },
+          {
+            "frequency_lambda": 80.0,
+            "root_resolved": true,
+            "pole_real": 0.1026573964155938,
+            "pole_imaginary": 0.6003230362030259,
+            "pole_residual": 4.843271702226328e-12,
+            "target_width_principal_pole": 4.870569656528415,
+            "asymptotic_width_principal_pole": 4.760443191896501,
+            "asymptotic_relative_width_error": 0.02261059227113262
+          },
+          {
+            "frequency_lambda": 100.0,
+            "root_resolved": true,
+            "pole_real": 0.10048100039881655,
+            "pole_imaginary": 0.6144329699793417,
+            "pole_residual": 1.5515441247246577e-12,
+            "target_width_principal_pole": 4.976065106990007,
+            "asymptotic_width_principal_pole": 4.8807368444722705,
+            "asymptotic_relative_width_error": 0.019157358368126386
+          }
+        ]
+      },
+      {
+        "parameter_label": "(0.4/sqrt(2*pi), 0.8/sqrt(2*pi))",
+        "sigma_exc_scale": 0.4,
+        "sigma_inh_scale": 0.8,
+        "sigma_exc": 0.1595769121605731,
+        "sigma_inh": 0.3191538243211462,
+        "inhibition": 1.0,
+        "point_count": 10,
+        "root_resolved_count": 10,
+        "max_pole_residual": 3.0511239819381396e-11,
+        "max_asymptotic_relative_width_error": 0.21551493531776272,
+        "status": "resolved-source-equation-curve",
+        "points": [
+          {
+            "frequency_lambda": 2.0,
+            "root_resolved": true,
+            "pole_real": 0.4600774390379905,
+            "pole_imaginary": 0.8127127191538672,
+            "pole_residual": 1.4234430347663656e-12,
+            "target_width_principal_pole": 1.0867735680442983,
+            "asymptotic_width_principal_pole": 0.8525576328221771,
+            "asymptotic_relative_width_error": 0.21551493531776272
+          },
+          {
+            "frequency_lambda": 5.0,
+            "root_resolved": true,
+            "pole_real": 0.3725834033280006,
+            "pole_imaginary": 0.9968065258567822,
+            "pole_residual": 3.0511239819381396e-11,
+            "target_width_principal_pole": 1.3419814074751721,
+            "asymptotic_width_principal_pole": 1.1388050627181208,
+            "asymptotic_relative_width_error": 0.15140026801065076
+          },
+          {
+            "frequency_lambda": 8.0,
+            "root_resolved": true,
+            "pole_real": 0.34234346690678147,
+            "pole_imaginary": 1.090984471015122,
+            "pole_residual": 4.189529226675416e-15,
+            "target_width_principal_pole": 1.4605215181049378,
+            "asymptotic_width_principal_pole": 1.2926340865246173,
+            "asymptotic_relative_width_error": 0.11495033075456397
+          },
+          {
+            "frequency_lambda": 10.0,
+            "root_resolved": true,
+            "pole_real": 0.33029862453416686,
+            "pole_imaginary": 1.1346151694330135,
+            "pole_residual": 5.3854400208818836e-15,
+            "target_width_principal_pole": 1.5137816595669136,
+            "asymptotic_width_principal_pole": 1.3629546738767797,
+            "asymptotic_relative_width_error": 0.09963589183217136
+          },
+          {
+            "frequency_lambda": 20.0,
+            "root_resolved": true,
+            "pole_real": 0.29956589404006634,
+            "pole_imaginary": 1.2647586782266333,
+            "pole_residual": 3.4416913763379853e-15,
+            "target_width_principal_pole": 1.6690818612786609,
+            "asymptotic_width_principal_pole": 1.5655360140542265,
+            "asymptotic_relative_width_error": 0.062037608595847615
+          },
+          {
+            "frequency_lambda": 30.0,
+            "root_resolved": true,
+            "pole_real": 0.2850163035196584,
+            "pole_imaginary": 1.337018623996414,
+            "pole_residual": 1.0048591735576161e-14,
+            "target_width_principal_pole": 1.7542856104212774,
+            "asymptotic_width_principal_pole": 1.6728374488734903,
+            "asymptotic_relative_width_error": 0.046428107865644525
+          },
+          {
+            "frequency_lambda": 40.0,
+            "root_resolved": true,
+            "pole_real": 0.2758211631148644,
+            "pole_imaginary": 1.3866164906625515,
+            "pole_residual": 1.533876673602434e-14,
+            "target_width_principal_pole": 1.8127688040811336,
+            "asymptotic_width_principal_pole": 1.744477189512458,
+            "asymptotic_relative_width_error": 0.03767254512264825
+          },
+          {
+            "frequency_lambda": 60.0,
+            "root_resolved": true,
+            "pole_real": 0.264150773709251,
+            "pole_imaginary": 1.4542891022861444,
+            "pole_residual": 4.4143897099397604e-14,
+            "target_width_principal_pole": 1.8928583588036227,
+            "asymptotic_width_principal_pole": 1.8399098075441964,
+            "asymptotic_relative_width_error": 0.0279728015639228
+          },
+          {
+            "frequency_lambda": 80.0,
+            "root_resolved": true,
+            "pole_real": 0.2566434910389793,
+            "pole_imaginary": 1.5008075905075726,
+            "pole_residual": 2.678694614580105e-13,
+            "target_width_principal_pole": 1.9482278626114051,
+            "asymptotic_width_principal_pole": 1.9041772767586025,
+            "asymptotic_relative_width_error": 0.022610592271151086
+          },
+          {
+            "frequency_lambda": 100.0,
+            "root_resolved": true,
+            "pole_real": 0.25120250099702884,
+            "pole_imaginary": 1.536082424948368,
+            "pole_residual": 1.0273296911587103e-11,
+            "target_width_principal_pole": 1.990426042796102,
+            "asymptotic_width_principal_pole": 1.9522947377889073,
+            "asymptotic_relative_width_error": 0.0191573583681757
+          }
+        ]
+      }
+    ],
+    "calibration_claim_allowed": false,
+    "calibrated": false,
+    "status": "source-equation-curve-diagnostic-ready",
+    "note": "This block provides public-safe numeric source-equation curve samples for the paper's Figure 5 target families. It is not digitized source-panel data and does not allow calibration language."
   },
   "examples": [
     {

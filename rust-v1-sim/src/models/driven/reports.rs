@@ -230,6 +230,7 @@ pub(crate) struct BolelliTimePeriodicInputReport {
     pub(crate) rights_status: &'static str,
     pub(crate) solver: BolelliReportSolver,
     pub(crate) parameters: BolelliReportParameters,
+    pub(crate) figure5_source_curves: BolelliFigure5SourceCurves,
     pub(crate) examples: Vec<BolelliGeneratedExample>,
     pub(crate) frequency_sweep: Vec<BolelliFrequencySweepRow>,
 }
@@ -378,6 +379,53 @@ pub(crate) struct BolelliProfileThumbnail {
     pub(crate) scale_min: f64,
     pub(crate) scale_max: f64,
     pub(crate) data_base64: String,
+}
+
+#[derive(Serialize)]
+pub(crate) struct BolelliFigure5SourceCurves {
+    pub(crate) format: &'static str,
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) derivation: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) lambda_range: [f64; 2],
+    pub(crate) sample_grid_kind: &'static str,
+    pub(crate) pole_residual_tolerance: f64,
+    pub(crate) max_pole_residual: Option<f64>,
+    pub(crate) max_asymptotic_relative_width_error: Option<f64>,
+    pub(crate) parameter_curves: Vec<BolelliFigure5ParameterCurve>,
+    pub(crate) calibration_claim_allowed: bool,
+    pub(crate) calibrated: bool,
+    pub(crate) status: &'static str,
+    pub(crate) note: &'static str,
+}
+
+#[derive(Serialize)]
+pub(crate) struct BolelliFigure5ParameterCurve {
+    pub(crate) parameter_label: &'static str,
+    pub(crate) sigma_exc_scale: f64,
+    pub(crate) sigma_inh_scale: f64,
+    pub(crate) sigma_exc: f64,
+    pub(crate) sigma_inh: f64,
+    pub(crate) inhibition: f64,
+    pub(crate) point_count: usize,
+    pub(crate) root_resolved_count: usize,
+    pub(crate) max_pole_residual: Option<f64>,
+    pub(crate) max_asymptotic_relative_width_error: Option<f64>,
+    pub(crate) status: &'static str,
+    pub(crate) points: Vec<BolelliFigure5CurvePoint>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct BolelliFigure5CurvePoint {
+    pub(crate) frequency_lambda: f64,
+    pub(crate) root_resolved: bool,
+    pub(crate) pole_real: Option<f64>,
+    pub(crate) pole_imaginary: Option<f64>,
+    pub(crate) pole_residual: Option<f64>,
+    pub(crate) target_width_principal_pole: Option<f64>,
+    pub(crate) asymptotic_width_principal_pole: Option<f64>,
+    pub(crate) asymptotic_relative_width_error: Option<f64>,
 }
 
 #[derive(Clone, Debug)]
