@@ -15,3 +15,6 @@ reports/*orientation*.json
 
 # Local-only paper copies and other private research material.
 private/
+
+# Local-only third-party source clones used as implementation references.
+references/BifurcationKit.jl/

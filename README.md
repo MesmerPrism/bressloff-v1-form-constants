@@ -272,6 +272,10 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
   records what the source papers say about original software stacks and
   numerical workflows. It is implementation provenance, not a claim that this
   repo has the authors' code or exact figure scripts.
+- [`docs/BIFURCATIONKIT_REFERENCE_AUDIT.md`](docs/BIFURCATIONKIT_REFERENCE_AUDIT.md)
+  audits the local ignored BifurcationKit.jl reference clone and identifies
+  which continuation, Newton-Krylov, Floquet, and sidecar ideas are useful for
+  future Rule, pinwheel, and color-field work.
 - [`docs/WEB_HOSTING_PLAN.md`](docs/WEB_HOSTING_PLAN.md) describes the
   server-backed container deployment path for a public interactive version.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.

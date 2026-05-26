@@ -462,6 +462,10 @@ The software-methods audit reinforces this deferral: Veltz/Faugeras-style
 architecture and color work was computed with continuation, Krylov, PETSc,
 Trilinos, Julia, BifurcationKit, CUDA, and large-grid workflows that are outside
 the current compact Rust report layer.
+The local reference audit in
+[`docs/BIFURCATIONKIT_REFERENCE_AUDIT.md`](BIFURCATIONKIT_REFERENCE_AUDIT.md)
+records which BifurcationKit continuation, Newton-Krylov, Floquet, and sidecar
+ideas are useful if those deferred branches are promoted.
 
 ## Public Sources
 

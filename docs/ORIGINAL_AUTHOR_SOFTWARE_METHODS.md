@@ -121,6 +121,8 @@ change the calibration status of any report:
   360 (2022). https://doi.org/10.5802/crmath.289
 - BifurcationKit contributors. "BifurcationKit.jl." GitHub.
   https://github.com/bifurcationkit/BifurcationKit.jl
+  Local project audit:
+  [`docs/BIFURCATIONKIT_REFERENCE_AUDIT.md`](BIFURCATIONKIT_REFERENCE_AUDIT.md).
 - Carroll, S. R., and Bressloff, P. C. "Symmetric Bifurcations in a Neural
   Field Model for Encoding the Direction of Spatial Contrast Gradients." SIAM
   Journal on Applied Dynamical Systems 17, no. 1 (2018).
