@@ -4,10 +4,11 @@ use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
     NicksAmplitudeCoefficientTable, NicksAmplitudeSolution, NicksFieldThumbnail,
-    NicksFigure8RegionComparison, NicksFigure8SourceCurvePoint, NicksFigure8SourceCurves,
-    NicksGeneratedExample, NicksOrthogonalMetrics, NicksOrthogonalResponseReport,
-    NicksReportConfig, NicksReportParameters, NicksReportSolver, NicksSourceTargetComparison,
-    NicksSweepRow, NicksWavevectorDiagnostics,
+    NicksFigure8RegionComparison, NicksFigure8ResidualField, NicksFigure8ResidualFieldRow,
+    NicksFigure8SourceCurvePoint, NicksFigure8SourceCurves, NicksGeneratedExample,
+    NicksOrthogonalMetrics, NicksOrthogonalResponseReport, NicksReportConfig,
+    NicksReportParameters, NicksReportSolver, NicksSourceTargetComparison, NicksSweepRow,
+    NicksWavevectorDiagnostics,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_DRIVEN_ORTHOGONAL, PI};
 
@@ -102,11 +103,11 @@ pub(crate) fn nicks_orthogonal_response_report(
     }
 
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v5",
+        format: "nicks-orthogonal-response-report-v6",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables, source-equation Figure 8 boundary curves, and residual thresholds. This is not a source-figure reproduction or calibration claim.",
+        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables, source-equation Figure 8 boundary curves, a public residual field over the source grid, and residual thresholds. This is not a source-figure reproduction or calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: NicksReportSolver {
             method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with Appendix-B kernel-derived coefficients",
@@ -116,6 +117,7 @@ pub(crate) fn nicks_orthogonal_response_report(
         },
         parameters,
         figure8_source_curves: nicks_figure8_source_curves(),
+        figure8_residual_field: nicks_figure8_residual_field(),
         examples,
         parameter_sweep,
     })
@@ -219,7 +221,7 @@ fn nicks_generated_example(
         status: "generated-first-pass-diagnostic",
         expected_behavior: run.metrics.classification,
         public_claim_level: "source-target comparison",
-        note: "Uses generated mode geometry, source-equation amplitude diagnostics, and Figure 8-style parameter-grid comparisons only; private source panels and source-derived acceptance thresholds remain out of the public report.",
+        note: "Uses generated mode geometry, source-equation amplitude diagnostics, Figure 8-style parameter-grid comparisons, and public residual thresholds; private source panels remain out of the public report.",
     }
 }
 
@@ -570,6 +572,56 @@ fn nicks_figure8_source_curve_point(detuning_fraction: f64) -> NicksFigure8Sourc
         phi4: values.phi4,
         branch_below_boundary: figure8_region_label(detuning_fraction, -1.0),
         branch_above_boundary: figure8_region_label(detuning_fraction, 1.0),
+    }
+}
+
+fn nicks_figure8_residual_field() -> NicksFigure8ResidualField {
+    let threshold = source_region_margin_threshold_gamma();
+    let min_gamma_spacing = source_gamma_min_spacing();
+    let mut rows = Vec::new();
+    for gamma in SOURCE_FIGURE8_GAMMAS {
+        for detuning_fraction in SOURCE_FIGURE8_DETUNINGS {
+            let source_curve_point = nicks_figure8_source_curve_point(detuning_fraction);
+            let residual_gamma = gamma - source_curve_point.rectangle_oblique_boundary_gamma;
+            let residual_abs_gamma = residual_gamma.abs();
+            let robust_region_side = residual_abs_gamma >= threshold;
+            rows.push(NicksFigure8ResidualFieldRow {
+                forcing_strength_gamma: gamma,
+                detuning_fraction,
+                response_kx_over_k0: source_curve_point.response_kx_over_k0,
+                response_ky_over_k0: source_curve_point.response_ky_over_k0,
+                rectangle_oblique_boundary_gamma: source_curve_point
+                    .rectangle_oblique_boundary_gamma,
+                residual_gamma,
+                residual_abs_gamma,
+                residual_normalized_to_source_grid: residual_abs_gamma
+                    / min_gamma_spacing.max(SOURCE_GRID_TOLERANCE),
+                boundary_side: boundary_side(residual_gamma),
+                region_label: figure8_region_label(detuning_fraction, residual_gamma),
+                robust_region_side,
+                margin_threshold_gamma: threshold,
+                source_grid_point: true,
+                status: region_margin_status(true, robust_region_side),
+            });
+        }
+    }
+    NicksFigure8ResidualField {
+        source_target_kind: "public residual field for source-equation Figure 8 grid",
+        source_target_reference:
+            "Nicks et al. 2021 Figure 8 parameter grid and equations 4.17-4.20; no copied source panel pixels",
+        source_parameter_set:
+            "sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}",
+        source_gamma_values: SOURCE_FIGURE8_GAMMAS,
+        source_detuning_fractions: SOURCE_FIGURE8_DETUNINGS,
+        boundary_curve_source:
+            "source-equation rectangle/oblique boundary gamma_p(v2/k0), not a digitized panel trace",
+        residual_units: "gamma - gamma_p(v2/k0)",
+        robust_region_margin_threshold_gamma: threshold,
+        acceptance_convention:
+            "region-side labels are robust only when abs(gamma-gamma_p) is at least half the smallest source gamma-grid spacing; residuals are diagnostics, not calibration claims",
+        rows,
+        calibrated: false,
+        note: "This residual field exposes the source-grid relationship to the equation-derived boundary so website and report consumers can inspect which points are boundary-adjacent. It is not a source-figure reproduction.",
     }
 }
 

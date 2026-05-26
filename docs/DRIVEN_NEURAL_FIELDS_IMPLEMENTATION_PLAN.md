@@ -1,6 +1,6 @@
 # Driven Neural Fields Implementation Plan
 
-Updated: 2026-05-25
+Updated: 2026-05-26
 
 This plan covers the seven driven-input, architecture, color, and perceptual
 function papers added after the Bressloff and Rule extraction passes. It keeps
@@ -28,7 +28,7 @@ Current tracked outputs:
 - `reports/bolelli-time-periodic-input.json` uses
   `format: bolelli-time-periodic-input-report-v4`.
 - `reports/nicks-orthogonal-response.json` uses
-  `format: nicks-orthogonal-response-report-v5`.
+  `format: nicks-orthogonal-response-report-v6`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
   include equation-derived source-target comparison layers while still reporting
   `calibrated=false`.
@@ -84,7 +84,8 @@ not all should become simulator code at the same depth.
    diagnostic with forcing wavevector, response wavevector,
    rectangle/oblique/orthogonal response family, orthogonality error,
    Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
-   8 boundary curve, and parameter-grid/region residual checks.
+   8 boundary curve, a public residual field over the source grid, and
+   parameter-grid/region residual checks.
 
 6. `nicks_billock_tsou_generated_map`
    Partially implemented as a source-safe inverse-log-polar generated response
@@ -345,8 +346,9 @@ Status: implemented as a generated source-target diagnostic for the 2D
 orthogonal-response amplitude example. The report compares generated wavevector
 geometry with the equation-derived 2:1 response target and now records
 source-equation coefficient tables, a Figure 8 source-equation boundary curve,
-curve residual thresholds, and source-grid region-side margin checks. Full
-half-space simulations and source-panel calibration remain deferred.
+public residual field over the source grid, curve residual thresholds, and
+source-grid region-side margin checks. Full half-space simulations and
+source-panel calibration remain deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
@@ -355,7 +357,7 @@ half-space simulations and source-panel calibration remain deferred.
 Report format:
 
 ```text
-nicks-orthogonal-response-report-v5
+nicks-orthogonal-response-report-v6
 ```
 
 Delivered fields:
@@ -374,6 +376,7 @@ Delivered fields:
   `v2/k0={0,0.05,0.25,0.75,1}`,
 - source-equation Figure 8 boundary curve
   `gamma_p(v2/k0)=(Phi4-Phi1)*epsilon^2*delta/(Phi1*beta_c)`,
+- public Figure 8 residual field over the source gamma/detuning grid,
 - curve residual tolerance in gamma units and a source-grid region-margin
   threshold derived from the published gamma grid,
 - kernel-derived `beta_c`, `mu`, `beta2`, `beta3`, `zeta1`, `zeta4`,
@@ -443,9 +446,9 @@ Current report status:
   pole-width convention.
 - Nicks: 2:1 wavevector geometry source-target comparisons, Appendix-B
   kernel-derived coefficient tables, source-equation Figure 8 boundary curves,
-  and residual thresholds are present; calibration remains false because these
-  are equation diagnostics, not source-panel or full-field reproduction
-  residuals.
+  a public residual field over the source grid, and residual thresholds are
+  present; calibration remains false because these are equation diagnostics,
+  not source-panel or full-field reproduction residuals.
 
 ### Phase D7 - Deferred High-Risk Work
 

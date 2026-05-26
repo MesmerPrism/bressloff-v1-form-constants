@@ -3449,13 +3449,25 @@ mod tests {
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v5");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v6");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
         assert!(!report.figure8_source_curves.curve_points.is_empty());
         assert_eq!(
             report.figure8_source_curves.curve_residual_tolerance_gamma,
             1.0e-8
         );
+        assert_eq!(report.figure8_residual_field.rows.len(), 20);
+        assert!(!report.figure8_residual_field.calibrated);
+        assert!(report
+            .figure8_residual_field
+            .rows
+            .iter()
+            .all(|row| row.source_grid_point && row.residual_abs_gamma.is_finite()));
+        assert!(report
+            .figure8_residual_field
+            .rows
+            .iter()
+            .any(|row| !row.robust_region_side));
         assert_eq!(report.examples.len(), 3);
         assert_eq!(report.parameter_sweep.len(), 6);
         assert!(report

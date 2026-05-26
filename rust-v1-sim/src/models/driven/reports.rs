@@ -415,6 +415,7 @@ pub(crate) struct NicksOrthogonalResponseReport {
     pub(crate) solver: NicksReportSolver,
     pub(crate) parameters: NicksReportParameters,
     pub(crate) figure8_source_curves: NicksFigure8SourceCurves,
+    pub(crate) figure8_residual_field: NicksFigure8ResidualField,
     pub(crate) examples: Vec<NicksGeneratedExample>,
     pub(crate) parameter_sweep: Vec<NicksSweepRow>,
 }
@@ -557,6 +558,40 @@ pub(crate) struct NicksFigure8SourceCurvePoint {
     pub(crate) phi4: f64,
     pub(crate) branch_below_boundary: &'static str,
     pub(crate) branch_above_boundary: &'static str,
+}
+
+#[derive(Serialize)]
+pub(crate) struct NicksFigure8ResidualField {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) source_gamma_values: [f64; 4],
+    pub(crate) source_detuning_fractions: [f64; 5],
+    pub(crate) boundary_curve_source: &'static str,
+    pub(crate) residual_units: &'static str,
+    pub(crate) robust_region_margin_threshold_gamma: f64,
+    pub(crate) acceptance_convention: &'static str,
+    pub(crate) rows: Vec<NicksFigure8ResidualFieldRow>,
+    pub(crate) calibrated: bool,
+    pub(crate) note: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Serialize)]
+pub(crate) struct NicksFigure8ResidualFieldRow {
+    pub(crate) forcing_strength_gamma: f64,
+    pub(crate) detuning_fraction: f64,
+    pub(crate) response_kx_over_k0: f64,
+    pub(crate) response_ky_over_k0: f64,
+    pub(crate) rectangle_oblique_boundary_gamma: f64,
+    pub(crate) residual_gamma: f64,
+    pub(crate) residual_abs_gamma: f64,
+    pub(crate) residual_normalized_to_source_grid: f64,
+    pub(crate) boundary_side: &'static str,
+    pub(crate) region_label: &'static str,
+    pub(crate) robust_region_side: bool,
+    pub(crate) margin_threshold_gamma: f64,
+    pub(crate) source_grid_point: bool,
+    pub(crate) status: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]

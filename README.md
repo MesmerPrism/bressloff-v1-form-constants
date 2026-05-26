@@ -190,8 +190,9 @@ The Nicks report contains generated cortical/log-polar frames, wavevector
 detuning metrics, orthogonality error, amplitude-equation residuals, and an
 equation-derived 2:1 wavevector target comparison. It now also records
 Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
-8 boundary curve, residual thresholds, and parameter-grid region checks. It is
-a source-target diagnostic, not a calibrated source-figure reproduction claim.
+8 boundary curve, a public residual field over the source grid, residual
+thresholds, and parameter-grid region checks. It is a source-target diagnostic,
+not a calibrated source-figure reproduction claim.
 
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 
