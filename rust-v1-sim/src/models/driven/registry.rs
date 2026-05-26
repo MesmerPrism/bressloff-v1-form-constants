@@ -110,9 +110,9 @@ static DRIVEN_EXAMPLE_REGISTRY: &[DrivenExampleDetails] = &[
         input_type: "spatially periodic forcing",
         parameter_summary:
             "generated default uses source Figure 8-style sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}, and Appendix-B kernel-derived Phi coefficients",
-        method: "source-equation symmetric-branch amplitude solve with Appendix-B coefficient table, generated field diagnostics, and Figure 8 source-curve residual checks",
+        method: "source-equation symmetric-branch amplitude solve with Appendix-B coefficient table, generated field diagnostics, Figure 8 source-curve residual checks, and source-derived region acceptance policy",
         report_target: "reports/nicks-orthogonal-response.json",
-        expected_behavior: "orthogonal-response region labels, wavevector metrics, source-grid checks, source-equation boundary residuals, coefficient diagnostics, and representative generated fields",
+        expected_behavior: "orthogonal-response region labels, wavevector metrics, source-grid checks, source-equation boundary residuals, source-derived acceptance-policy fields, coefficient diagnostics, and representative generated fields",
         implementation_status: "implemented",
         public_claim_level: "source-target comparison",
         rights_status: "generated outputs only; source figures remain private",

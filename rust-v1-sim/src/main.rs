@@ -3485,7 +3485,7 @@ mod tests {
             ..NicksReportConfig::default()
         })
         .unwrap();
-        assert_eq!(report.format, "nicks-orthogonal-response-report-v6");
+        assert_eq!(report.format, "nicks-orthogonal-response-report-v7");
         assert_eq!(report.model_family, MODEL_FAMILY_DRIVEN_ORTHOGONAL);
         assert!(!report.figure8_source_curves.curve_points.is_empty());
         assert_eq!(
@@ -3494,6 +3494,26 @@ mod tests {
         );
         assert_eq!(report.figure8_residual_field.rows.len(), 20);
         assert!(!report.figure8_residual_field.calibrated);
+        assert_eq!(report.figure8_acceptance_policy.source_grid_rows, 20);
+        assert_eq!(report.figure8_acceptance_policy.robust_region_rows, 15);
+        assert_eq!(report.figure8_acceptance_policy.boundary_adjacent_rows, 5);
+        assert!((report.figure8_acceptance_policy.source_gamma_min_spacing - 0.25).abs() < 1.0e-12);
+        assert!(
+            (report
+                .figure8_acceptance_policy
+                .region_margin_threshold_gamma
+                - 0.125)
+                .abs()
+                < 1.0e-12
+        );
+        assert_eq!(
+            report
+                .figure8_acceptance_policy
+                .curve_residual_tolerance_gamma,
+            1.0e-8
+        );
+        assert!(!report.figure8_acceptance_policy.calibration_claim_allowed);
+        assert!(!report.figure8_acceptance_policy.calibrated);
         assert!(report
             .figure8_residual_field
             .rows

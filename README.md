@@ -180,7 +180,9 @@ comparison, source-equation Figure 5 principal-pole curve samples, and a
 generated decay-width estimate in the same pole convention when the fit passes
 the public diagnostic gate. It is a source-target diagnostic, not a calibrated
 source-figure reproduction claim; generated half-max support is kept as an
-auxiliary renderer metric.
+auxiliary renderer metric. True source-panel digitization is only needed if the
+project later chooses plot-image comparison; the current layer is
+source-equation comparison.
 
 Generate the first Nicks orthogonal-response amplitude diagnostic:
 
@@ -192,9 +194,10 @@ The Nicks report contains generated cortical/log-polar frames, wavevector
 detuning metrics, orthogonality error, amplitude-equation residuals, and an
 equation-derived 2:1 wavevector target comparison. It now also records
 Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
-8 boundary curve, a public residual field over the source grid, residual
-thresholds, and parameter-grid region checks. It is a source-target diagnostic,
-not a calibrated source-figure reproduction claim.
+8 boundary curve, a public residual field over the source grid, a
+source-derived Figure 8 acceptance policy, residual thresholds, and
+parameter-grid region checks. It is a source-target diagnostic, not a calibrated
+source-figure reproduction claim.
 
 Generate Bressloff figure-geometry stills and public-safe comparison slots:
 

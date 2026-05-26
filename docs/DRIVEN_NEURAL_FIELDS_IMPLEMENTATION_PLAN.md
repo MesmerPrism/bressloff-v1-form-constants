@@ -28,10 +28,12 @@ Current tracked outputs:
 - `reports/bolelli-time-periodic-input.json` uses
   `format: bolelli-time-periodic-input-report-v6`.
 - `reports/nicks-orthogonal-response.json` uses
-  `format: nicks-orthogonal-response-report-v6`.
+  `format: nicks-orthogonal-response-report-v7`.
 - The MacKay report is a generated first-pass diagnostic. Bolelli and Nicks now
   include equation-derived source-target comparison layers while still reporting
-  `calibrated=false`.
+  `calibrated=false`. The Nicks report now exposes the source-derived Figure 8
+  acceptance policy as data, and the Bolelli report remains a source-equation
+  comparison layer rather than source-panel calibration.
 
 Related provenance note:
 
@@ -48,9 +50,9 @@ not all should become simulator code at the same depth.
 
 | Paper | Implementation depth | Math completeness | Main gap |
 | --- | --- | --- | --- |
-| Nicks et al. 2021, sensory-induced hallucinations | High | Strong: driven neural field, kernels, 1D and 2D amplitude equations, resonance tongues, orthogonal-response figures, and numerical method are available. | Exact figure-level source curves/images would need private digitization before calibration claims. |
+| Nicks et al. 2021, sensory-induced hallucinations | High | Strong: driven neural field, kernels, 1D and 2D amplitude equations, resonance tongues, orthogonal-response figures, and numerical method are available. | Source-panel pixel residuals and full-field half-space validation are still missing; equation-derived Figure 8 region thresholds are now report-backed diagnostics, not calibration claims. |
 | Tamekue, Prandi, Chitour 2024, MacKay effect | High | Strong: Amari field, DoG kernel, retinocortical map, MacKay inputs, fixed-point map, parameter examples, and Gaussian-kernel negative control are available. | Public validation should be generated zero-level metrics, not copied SIAM figures. |
-| Bolelli and Prandi 2025, time-periodic inputs | High | Strong: periodic input theorem, linear periodic-state formula, DoG kernel, localized flicker inputs, contour-width pole diagnostics, and example parameters are available. | A robust pole solver and nonlinear Billock-Tsou calibration are nontrivial. |
+| Bolelli and Prandi 2025, time-periodic inputs | High | Strong: periodic input theorem, linear periodic-state formula, DoG kernel, localized flicker inputs, contour-width pole diagnostics, and example parameters are available. | The current report layer is source-equation comparison; true source-panel digitization is only needed for later plot-image comparison or stronger calibration claims. |
 | Veltz, Chossat, Faugeras 2015, pinwheels | Medium | Good: neural field, local/long-range kernels, pinwheel lattices, symmetry groups, torus dynamics, and simulation parameters are available. | Requires pinwheel maps, wallpaper-group machinery, and large-domain FFT/continuation work. |
 | Faugeras, Song, Veltz 2022, spatial-color hallucinations | Medium | Good: 4D spatio-chromatic field, separable kernels, planform equations, branch examples, and continuation workflow are available. | Full implementation is high cost: 3D/4D state, continuation, and likely GPU-scale workloads. |
 | Carroll and Bressloff 2018, contrast gradients | Low/medium | Good: R2 x S1 field, gradient/tangent solution interpretation, symmetry analysis, and laminar variant are available. | It is an adjacent perceptual-function model, not a hallucination preset. |
@@ -80,7 +82,8 @@ not all should become simulator code at the same depth.
    public-safe Figure 5 source-equation curve samples for all three source DoG
    pairs. A generated decay-width estimate uses the same pole convention only
    when its envelope fit passes the diagnostic quality gate; generated half-max
-   width remains an auxiliary renderer metric.
+   width remains an auxiliary renderer metric. True source-panel digitization is
+   deferred unless a later plot-image comparison layer is explicitly required.
 
 5. `nicks_2d_orthogonal_response_amplitude`
    Source: Nicks et al. 2021. Implemented as a reduced 2:1 resonance amplitude
@@ -88,7 +91,10 @@ not all should become simulator code at the same depth.
    rectangle/oblique/orthogonal response family, orthogonality error,
    Appendix-B kernel-derived coefficient diagnostics, a source-equation Figure
    8 boundary curve, a public residual field over the source grid, and
-   parameter-grid/region residual checks.
+   parameter-grid/region residual checks. The v7 report adds a first-class
+   Figure 8 acceptance policy: curve residual tolerance is numerical roundoff,
+   robust region-side labels require at least half the smallest source gamma
+   grid spacing from the boundary, and boundary-adjacent rows remain diagnostic.
 
 6. `nicks_billock_tsou_generated_map`
    Partially implemented as a source-safe inverse-log-polar generated response
@@ -167,7 +173,7 @@ Initial implemented/planned model-family names:
 | Example id | Equation or reduction | Domain and symmetry | Kernel/connectivity | Input/forcing | Source parameters | Method | Output target | Difficulty | Missing evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `nicks_1d_resonance_tongues` | 1D forced scalar neural field and n:1 amplitude equation | Cortical line, weak forcing near Turing instability | Balanced Wizard-hat/Mexican-hat kernel | `cos(kf x)` multiplicative drive | Example uses `sigma = 0.8`, threshold `h = 0`, small detuning/distance-from-threshold constants | Amplitude-equation scan | Resonance tongue report; dominant 2:1 band | Medium | Needs source curve digitization for quantitative tongue comparison. |
-| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Balanced isotropic source kernel with Appendix-B mode coefficients | Spatial stripe forcing | Generated default uses source Figure 8-style `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, `gamma = {0.1,0.4,0.65,1.1}`, `v2/k0 = {0,0.05,0.25,0.75,1}`, and kernel-derived `Phi` coefficients | Symmetric-branch amplitude solve, generated fields, source-grid checks, coefficient table, and diagnostic classification | `reports/nicks-orthogonal-response.json` | Medium | Implemented as source-equation and Figure 8-style diagnostics; digitized region curves and calibrated thresholds are still missing. |
+| `nicks_2d_orthogonal_response_amplitude` | 2D 2:1 reduced amplitude equations | 2D cortical plane; forcing along x; response allowed along y | Balanced isotropic source kernel with Appendix-B mode coefficients | Spatial stripe forcing | Generated default uses source Figure 8-style `sigma = 0.5`, `h = 0`, `epsilon^2 delta = 0.3`, `gamma = {0.1,0.4,0.65,1.1}`, `v2/k0 = {0,0.05,0.25,0.75,1}`, and kernel-derived `Phi` coefficients | Symmetric-branch amplitude solve, generated fields, source-grid checks, coefficient table, diagnostic classification, and source-derived Figure 8 acceptance policy | `reports/nicks-orthogonal-response.json` | Medium | Implemented as source-equation and Figure 8-style diagnostics; source-panel pixel residuals and full-field half-space validation are still missing. |
 | `nicks_billock_tsou_generated_map` | Reduced-amplitude response mapped through an inverse log-polar visual-field frame | 2D cortical diagnostic frame plus generated retinal/log-polar frame | Same normalized mode-gain abstraction | Stripe forcing with orthogonal response mode | Uses the same generated Nicks defaults | Generated map diagnostic | `reports/nicks-orthogonal-response.json` | Medium/hard | Partially implemented; localized source-target geometry and source metrics remain missing. |
 | `nicks_halfspace_billock_tsou_full_field` | Full neural field with adaptation | 2D cortical half-space plus inverse log-polar retinal view | Isotropic local kernel plus adaptation | Half-space stripe/ring/fan forcing, optional flicker | Numerical method uses regular square mesh and FFT in source; repo can start smaller | Time stepping | Future Billock-Tsou-style ring/fan response report | Hard | Needs grid/boundary choices and private source-target metrics. |
 | `tamekue_plain_funnel_tunnel_negative_control` | Stationary Amari fixed point `a = I + mu omega * f(a)` | 2D cortical plane; funnel/tunnel remain symmetric | 2D DoG | Pure `PF` or `PT` cosine input | DoG constraints and `mu < mu0`; generated defaults can use source-like DoG | Fixed-point iteration | Negative-control report showing no induced MacKay contours | Easy | Needs acceptance metric for "same zero-level structure." |
@@ -364,8 +370,11 @@ orthogonal-response amplitude example. The report compares generated wavevector
 geometry with the equation-derived 2:1 response target and now records
 source-equation coefficient tables, a Figure 8 source-equation boundary curve,
 public residual field over the source grid, curve residual thresholds, and
-source-grid region-side margin checks. Full half-space simulations and
-source-panel calibration remain deferred.
+source-grid region-side margin checks. The v7 report makes the Figure 8
+acceptance policy explicit, including the source gamma-grid spacing, robust
+region-side threshold, robust/boundary-adjacent row counts, and
+`calibration_claim_allowed=false`. Full half-space simulations and source-panel
+calibration remain deferred.
 
 ```powershell
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
@@ -374,7 +383,7 @@ source-panel calibration remain deferred.
 Report format:
 
 ```text
-nicks-orthogonal-response-report-v6
+nicks-orthogonal-response-report-v7
 ```
 
 Delivered fields:
@@ -396,6 +405,8 @@ Delivered fields:
 - public Figure 8 residual field over the source gamma/detuning grid,
 - curve residual tolerance in gamma units and a source-grid region-margin
   threshold derived from the published gamma grid,
+- first-class Figure 8 acceptance-policy fields for robust and
+  boundary-adjacent source-grid rows,
 - kernel-derived `beta_c`, `mu`, `beta2`, `beta3`, `zeta1`, `zeta4`,
   `zeta6`, `Phi1`, `Phi4`, `gamma_c`, and `gamma_p` coefficient
   diagnostics from equations 4.11-4.18 and Appendix B,

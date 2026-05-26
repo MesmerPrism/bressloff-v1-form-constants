@@ -469,6 +469,7 @@ pub(crate) struct NicksOrthogonalResponseReport {
     pub(crate) parameters: NicksReportParameters,
     pub(crate) figure8_source_curves: NicksFigure8SourceCurves,
     pub(crate) figure8_residual_field: NicksFigure8ResidualField,
+    pub(crate) figure8_acceptance_policy: NicksFigure8AcceptancePolicy,
     pub(crate) examples: Vec<NicksGeneratedExample>,
     pub(crate) parameter_sweep: Vec<NicksSweepRow>,
 }
@@ -645,6 +646,29 @@ pub(crate) struct NicksFigure8ResidualFieldRow {
     pub(crate) margin_threshold_gamma: f64,
     pub(crate) source_grid_point: bool,
     pub(crate) status: &'static str,
+}
+
+#[derive(Serialize)]
+pub(crate) struct NicksFigure8AcceptancePolicy {
+    pub(crate) source_target_kind: &'static str,
+    pub(crate) source_target_reference: &'static str,
+    pub(crate) source_parameter_set: &'static str,
+    pub(crate) threshold_basis: &'static str,
+    pub(crate) source_gamma_values: [f64; 4],
+    pub(crate) source_detuning_fractions: [f64; 5],
+    pub(crate) source_gamma_min_spacing: f64,
+    pub(crate) region_margin_threshold_gamma: f64,
+    pub(crate) curve_residual_tolerance_gamma: f64,
+    pub(crate) source_grid_rows: usize,
+    pub(crate) robust_region_rows: usize,
+    pub(crate) boundary_adjacent_rows: usize,
+    pub(crate) robust_region_fraction: f64,
+    pub(crate) acceptance_language: &'static str,
+    pub(crate) source_panel_digitization_required_for: &'static str,
+    pub(crate) calibration_claim_allowed: bool,
+    pub(crate) calibrated: bool,
+    pub(crate) status: &'static str,
+    pub(crate) note: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]

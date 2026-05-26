@@ -199,7 +199,9 @@ names an accepted source-side width convention using the source Fourier
 residual, adds public-safe source-equation Figure 5 curve samples for the three
 source DoG pairs, and adds a generated decay-width estimate in the same pole
 convention when the envelope fit passes the diagnostic quality gate. Generated
-half-max support remains an auxiliary renderer metric.
+half-max support remains an auxiliary renderer metric. True source-panel
+digitization belongs only to a later plot-image comparison layer; this report is
+source-equation comparison.
 
 The first generated Nicks orthogonal-response amplitude diagnostic is generated
 with:
@@ -208,14 +210,15 @@ with:
 .\rust-v1-sim\target\release\bressloff-v1.exe nicks-report --out reports\nicks-orthogonal-response.json
 ```
 
-It writes `format: nicks-orthogonal-response-report-v6` and includes generated
+It writes `format: nicks-orthogonal-response-report-v7` and includes generated
 cortical forcing/response frames, an inverse-log-polar response frame,
 wavevector detuning metrics, orthogonality error, amplitude-equation residuals,
 equation-derived 2:1 wavevector target comparisons, Appendix-B kernel-derived
 coefficient diagnostics, source-equation Figure 8 boundary curves, a public
-residual field over the source grid, residual thresholds, parameter-grid region
-checks, and validation flags. It is a source-target diagnostic report, not a
-calibrated source-figure reproduction claim.
+residual field over the source grid, explicit source-derived Figure 8
+acceptance-policy fields, residual thresholds, parameter-grid region checks,
+and validation flags. It is a source-target diagnostic report, not a calibrated
+source-figure reproduction claim.
 
 Driven-input reports should contain generated outputs and derived numeric
 metrics only. PDFs, paper figure crops, page renders, and private extraction

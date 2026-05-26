@@ -4,11 +4,11 @@ use base64::{engine::general_purpose, Engine as _};
 
 use super::reports::{
     NicksAmplitudeCoefficientTable, NicksAmplitudeSolution, NicksFieldThumbnail,
-    NicksFigure8RegionComparison, NicksFigure8ResidualField, NicksFigure8ResidualFieldRow,
-    NicksFigure8SourceCurvePoint, NicksFigure8SourceCurves, NicksGeneratedExample,
-    NicksOrthogonalMetrics, NicksOrthogonalResponseReport, NicksReportConfig,
-    NicksReportParameters, NicksReportSolver, NicksSourceTargetComparison, NicksSweepRow,
-    NicksWavevectorDiagnostics,
+    NicksFigure8AcceptancePolicy, NicksFigure8RegionComparison, NicksFigure8ResidualField,
+    NicksFigure8ResidualFieldRow, NicksFigure8SourceCurvePoint, NicksFigure8SourceCurves,
+    NicksGeneratedExample, NicksOrthogonalMetrics, NicksOrthogonalResponseReport,
+    NicksReportConfig, NicksReportParameters, NicksReportSolver, NicksSourceTargetComparison,
+    NicksSweepRow, NicksWavevectorDiagnostics,
 };
 use crate::{numeric::metrics, MODEL_FAMILY_DRIVEN_ORTHOGONAL, PI};
 
@@ -102,12 +102,16 @@ pub(crate) fn nicks_orthogonal_response_report(
         }
     }
 
+    let figure8_source_curves = nicks_figure8_source_curves();
+    let figure8_residual_field = nicks_figure8_residual_field();
+    let figure8_acceptance_policy = nicks_figure8_acceptance_policy(&figure8_residual_field);
+
     Ok(NicksOrthogonalResponseReport {
-        format: "nicks-orthogonal-response-report-v6",
+        format: "nicks-orthogonal-response-report-v7",
         model_family: MODEL_FAMILY_DRIVEN_ORTHOGONAL,
         source_key: "nicks-et-al-2021",
         status: "generated-first-pass-diagnostic",
-        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables, source-equation Figure 8 boundary curves, a public residual field over the source grid, and residual thresholds. This is not a source-figure reproduction or calibration claim.",
+        note: "Generated Nicks-style 2:1 spatial-forcing diagnostics with kernel-derived Appendix-B coefficient tables, source-equation Figure 8 boundary curves, a public residual field over the source grid, and an explicit source-derived acceptance policy. This is not a source-figure reproduction or calibration claim.",
         rights_status: "generated outputs only; no copied paper figures or full text",
         solver: NicksReportSolver {
             method: "source-equation two-amplitude 2:1 spatial-resonance diagnostic with Appendix-B kernel-derived coefficients",
@@ -116,8 +120,9 @@ pub(crate) fn nicks_orthogonal_response_report(
             claim_level: "first-pass diagnostic",
         },
         parameters,
-        figure8_source_curves: nicks_figure8_source_curves(),
-        figure8_residual_field: nicks_figure8_residual_field(),
+        figure8_source_curves,
+        figure8_residual_field,
+        figure8_acceptance_policy,
         examples,
         parameter_sweep,
     })
@@ -221,7 +226,7 @@ fn nicks_generated_example(
         status: "generated-first-pass-diagnostic",
         expected_behavior: run.metrics.classification,
         public_claim_level: "source-target comparison",
-        note: "Uses generated mode geometry, source-equation amplitude diagnostics, Figure 8-style parameter-grid comparisons, and public residual thresholds; private source panels remain out of the public report.",
+        note: "Uses generated mode geometry, source-equation amplitude diagnostics, Figure 8-style parameter-grid comparisons, and source-derived residual thresholds; private source panels remain out of the public report.",
     }
 }
 
@@ -622,6 +627,49 @@ fn nicks_figure8_residual_field() -> NicksFigure8ResidualField {
         rows,
         calibrated: false,
         note: "This residual field exposes the source-grid relationship to the equation-derived boundary so website and report consumers can inspect which points are boundary-adjacent. It is not a source-figure reproduction.",
+    }
+}
+
+fn nicks_figure8_acceptance_policy(
+    residual_field: &NicksFigure8ResidualField,
+) -> NicksFigure8AcceptancePolicy {
+    let source_grid_rows = residual_field.rows.len();
+    let robust_region_rows = residual_field
+        .rows
+        .iter()
+        .filter(|row| row.robust_region_side)
+        .count();
+    let boundary_adjacent_rows = source_grid_rows.saturating_sub(robust_region_rows);
+    let robust_region_fraction = if source_grid_rows == 0 {
+        0.0
+    } else {
+        robust_region_rows as f64 / source_grid_rows as f64
+    };
+    NicksFigure8AcceptancePolicy {
+        source_target_kind: "source-derived Figure 8 region-boundary acceptance policy",
+        source_target_reference:
+            "Nicks et al. 2021 Figure 8 parameter grid and equations 4.17-4.20; no copied source panel pixels",
+        source_parameter_set:
+            "sigma=0.5, h=0, epsilon^2 delta=0.3, gamma={0.1,0.4,0.65,1.1}, v2/k0={0,0.05,0.25,0.75,1}",
+        threshold_basis:
+            "curve residual tolerance is numerical roundoff against gamma_p(v2/k0); robust region-side threshold is half the smallest published Figure 8 gamma-grid spacing",
+        source_gamma_values: SOURCE_FIGURE8_GAMMAS,
+        source_detuning_fractions: SOURCE_FIGURE8_DETUNINGS,
+        source_gamma_min_spacing: source_gamma_min_spacing(),
+        region_margin_threshold_gamma: source_region_margin_threshold_gamma(),
+        curve_residual_tolerance_gamma: SOURCE_CURVE_RESIDUAL_TOLERANCE_GAMMA,
+        source_grid_rows,
+        robust_region_rows,
+        boundary_adjacent_rows,
+        robust_region_fraction,
+        acceptance_language:
+            "Rows at or beyond the source-derived margin are accepted only as robust region-side diagnostics; boundary-adjacent rows remain diagnostics, and neither status is a calibration claim.",
+        source_panel_digitization_required_for:
+            "plot-image comparison or source-panel calibration claims",
+        calibration_claim_allowed: false,
+        calibrated: false,
+        status: "source-equation-acceptance-policy",
+        note: "This policy validates equation-derived Figure 8 region-side diagnostics from source parameters. It does not validate a copied or digitized source-panel image.",
     }
 }
 
