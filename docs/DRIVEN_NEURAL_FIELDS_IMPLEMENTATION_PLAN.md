@@ -33,6 +33,14 @@ Current tracked outputs:
   include equation-derived source-target comparison layers while still reporting
   `calibrated=false`.
 
+Related provenance note:
+
+- [`docs/ORIGINAL_AUTHOR_SOFTWARE_METHODS.md`](ORIGINAL_AUTHOR_SOFTWARE_METHODS.md)
+  records what the source papers say about AUTO/XPPAUT, MATLAB, Julia,
+  Mathematica, PETSc/Trilinos, BifurcationKit, and other original-author
+  computational workflows. It should guide implementation decisions, but it does
+  not change any report's calibration status.
+
 ## Audit Verdict
 
 The seven papers contain enough mathematics for implementation planning, but
@@ -449,6 +457,11 @@ Defer these until the three core driven-input reports are implemented:
 - Carroll laminar contrast-gradient neural field.
 - Sarti-Citti SE(2) grouping over generated image fragments.
 - Any source-figure reuse path that requires explicit license verification.
+
+The software-methods audit reinforces this deferral: Veltz/Faugeras-style
+architecture and color work was computed with continuation, Krylov, PETSc,
+Trilinos, Julia, BifurcationKit, CUDA, and large-grid workflows that are outside
+the current compact Rust report layer.
 
 ## Public Sources
 

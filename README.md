@@ -268,6 +268,10 @@ V1-sim.ipynb          Upstream notebook lineage from karacsm/V1-sim
   audits the post-Rule driven-input neural-field papers and turns them into a
   public-safe implementation plan for localized input, time-periodic input,
   MacKay/Billock-Tsou-style targets, and deferred architecture/color extensions.
+- [`docs/ORIGINAL_AUTHOR_SOFTWARE_METHODS.md`](docs/ORIGINAL_AUTHOR_SOFTWARE_METHODS.md)
+  records what the source papers say about original software stacks and
+  numerical workflows. It is implementation provenance, not a claim that this
+  repo has the authors' code or exact figure scripts.
 - [`docs/WEB_HOSTING_PLAN.md`](docs/WEB_HOSTING_PLAN.md) describes the
   server-backed container deployment path for a public interactive version.
 - [`viewer/README.md`](viewer/README.md) documents the local browser viewer.
