@@ -158,6 +158,7 @@ pub(crate) fn bressloff_geometry_command(
             load_bressloff_source_profile(&source_profile_dir, calibration.preset.id)?;
         let source_comparison =
             bressloff_source_comparison(calibration.preset.id, &metrics, source_profile.as_ref());
+        let acceptance = evaluate_bressloff_geometry_acceptance(&source_comparison);
         stills.push(BressloffFigureStill {
             preset: calibration.preset,
             target_mask_status: source_comparison.status,
@@ -176,6 +177,7 @@ pub(crate) fn bressloff_geometry_command(
             },
             metrics,
             source_comparison,
+            acceptance,
         });
     }
 
@@ -187,8 +189,13 @@ pub(crate) fn bressloff_geometry_command(
         .iter()
         .filter(|still| still.source_comparison.status == "compared")
         .count();
+    let threshold_accepted_still_count = stills
+        .iter()
+        .filter(|still| still.acceptance.passes_thresholds)
+        .count();
     let width = stills.first().map(|still| still.width).unwrap_or(0);
     let height = stills.first().map(|still| still.height).unwrap_or(0);
+    let acceptance_policy = bressloff_geometry_acceptance_policy();
     let report = BressloffFigureGeometryReport {
         format: "bressloff-generated-figure-stills-v2",
         model_family: MODEL_FAMILY_BRESSLOFF,
@@ -199,11 +206,14 @@ pub(crate) fn bressloff_geometry_command(
             "generated-targets-ready-for-private-mask-calibration"
         },
         note: "Bressloff figure stills and public-safe geometry metrics. Private source scans/crops stay out of the report; comparisons use only derived numeric masks/profiles when available.",
+        acceptance_policy,
+        calibration_claim_allowed: acceptance_policy.calibration_claim_allowed,
         source_profile_dir: source_profile_dir.display().to_string(),
         width,
         height,
         still_count,
         compared_still_count,
+        threshold_accepted_still_count,
         stills,
     };
     fs::write(&out, serde_json::to_vec_pretty(&report)?)?;
@@ -430,6 +440,8 @@ pub(crate) fn bressloff_source_comparison(
             status: "source-profile-missing",
             source_profile_id: None,
             source_mask_id: None,
+            generated_dominant_angle_degrees: None,
+            source_lattice_angle_degrees: None,
             radial_profile_error: None,
             angular_profile_error: None,
             edge_overlap: None,
@@ -467,12 +479,109 @@ pub(crate) fn bressloff_source_comparison(
             .clone()
             .or_else(|| Some(format!("{preset_id}-source-profile"))),
         source_mask_id: source.mask_id.clone(),
+        generated_dominant_angle_degrees: Some(metrics.dominant_angle_degrees),
+        source_lattice_angle_degrees: source.lattice_angle_degrees,
         radial_profile_error,
         angular_profile_error,
         edge_overlap,
         active_fraction_error,
         edge_density_error,
         lattice_angle_error_degrees,
+    }
+}
+
+pub(crate) fn bressloff_geometry_acceptance_policy() -> BressloffGeometryAcceptancePolicy {
+    BressloffGeometryAcceptancePolicy {
+        policy_id: "bressloff-figure-geometry-diagnostic-v1",
+        claim_level: "source-target-diagnostic",
+        calibration_claim_allowed: false,
+        radial_profile_error_max: 0.12,
+        angular_profile_error_max: 0.12,
+        edge_overlap_min: 0.70,
+        active_fraction_error_max: 0.08,
+        edge_density_error_max: 0.04,
+        lattice_angle_error_degrees_max: 15.0,
+        required_compared_still_fraction: 1.0,
+        note: "These thresholds gate future calibration language. Passing them would only mark a source-target diagnostic as threshold-accepted; calibration claims remain disabled until private crop/threshold QA, source-angle review, and figure-level acceptance policy are separately approved.",
+    }
+}
+
+pub(crate) fn evaluate_bressloff_geometry_acceptance(
+    comparison: &BressloffSourceComparison,
+) -> BressloffGeometryAcceptanceResult {
+    let policy = bressloff_geometry_acceptance_policy();
+    if comparison.status != "compared" {
+        return BressloffGeometryAcceptanceResult {
+            status: "source-profile-missing",
+            passes_thresholds: false,
+            evaluated_metric_count: 0,
+            passed_metric_count: 0,
+            failed_metrics: vec!["source_profile"],
+            note: "No private source-derived profile was available, so the still cannot pass the diagnostic threshold gate.",
+        };
+    }
+
+    let mut failed_metrics = Vec::new();
+    let mut passed_metric_count = 0usize;
+    let mut check_metric = |name: &'static str, passes: bool| {
+        if passes {
+            passed_metric_count += 1;
+        } else {
+            failed_metrics.push(name);
+        }
+    };
+    check_metric(
+        "radial_profile_error",
+        comparison
+            .radial_profile_error
+            .is_some_and(|value| value <= policy.radial_profile_error_max),
+    );
+    check_metric(
+        "angular_profile_error",
+        comparison
+            .angular_profile_error
+            .is_some_and(|value| value <= policy.angular_profile_error_max),
+    );
+    check_metric(
+        "edge_overlap",
+        comparison
+            .edge_overlap
+            .is_some_and(|value| value >= policy.edge_overlap_min),
+    );
+    check_metric(
+        "active_fraction_error",
+        comparison
+            .active_fraction_error
+            .is_some_and(|value| value <= policy.active_fraction_error_max),
+    );
+    check_metric(
+        "edge_density_error",
+        comparison
+            .edge_density_error
+            .is_some_and(|value| value <= policy.edge_density_error_max),
+    );
+    check_metric(
+        "lattice_angle_error_degrees",
+        comparison
+            .lattice_angle_error_degrees
+            .is_some_and(|value| value <= policy.lattice_angle_error_degrees_max),
+    );
+    let passes_thresholds = failed_metrics.is_empty();
+    BressloffGeometryAcceptanceResult {
+        status: if passes_thresholds {
+            "threshold-accepted-diagnostic"
+        } else {
+            "outside-threshold-diagnostic"
+        },
+        passes_thresholds,
+        evaluated_metric_count: 6,
+        passed_metric_count,
+        failed_metrics,
+        note: if passes_thresholds {
+            "All current diagnostic thresholds pass, but calibration language remains disabled by policy."
+        } else {
+            "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
+        },
     }
 }
 

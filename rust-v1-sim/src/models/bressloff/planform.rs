@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 use crate::*;
 
 pub(crate) fn generate_planform_frames(

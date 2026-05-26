@@ -104,6 +104,16 @@ Generate public-safe Bressloff figure-geometry still targets for Figures 29-36:
 .\rust-v1-sim\target\release\bressloff-v1.exe bressloff-geometry --out reports\figure-targets\bressloff-generated-stills.json
 ```
 
+Run the full local verification wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify.ps1
+```
+
+The wrapper runs Rust formatting, tests, clippy, website JavaScript syntax
+checks, `git diff --check` in both repos, and the report-to-website asset hash
+comparison listed in `AGENTS.md`.
+
 Generate the first Rule 2011 qualitative regime report:
 
 ```powershell

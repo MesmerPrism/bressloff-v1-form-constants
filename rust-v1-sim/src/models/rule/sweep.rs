@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
+use base64::{engine::general_purpose, Engine as _};
+
 use super::floquet::rule_floquet_report;
 use super::reports::{representative_rule_frame, rule_details};
 use super::simulate_rule_flicker_frames;

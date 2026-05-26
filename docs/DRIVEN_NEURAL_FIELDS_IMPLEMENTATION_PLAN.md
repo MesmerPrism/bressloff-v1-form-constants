@@ -51,7 +51,7 @@ not all should become simulator code at the same depth.
 | Paper | Implementation depth | Math completeness | Main gap |
 | --- | --- | --- | --- |
 | Nicks et al. 2021, sensory-induced hallucinations | High | Strong: driven neural field, kernels, 1D and 2D amplitude equations, resonance tongues, orthogonal-response figures, and numerical method are available. | Source-panel pixel residuals and full-field half-space validation are still missing; equation-derived Figure 8 region thresholds are now report-backed diagnostics, not calibration claims. |
-| Tamekue, Prandi, Chitour 2024, MacKay effect | High | Strong: Amari field, DoG kernel, retinocortical map, MacKay inputs, fixed-point map, parameter examples, and Gaussian-kernel negative control are available. | Public validation should be generated zero-level metrics, not copied SIAM figures. |
+| Tamekue, Prandi, Chitour 2024, MacKay effect | High | Strong: Amari field, DoG kernel, retinocortical map, MacKay inputs, fixed-point map, parameter examples, and Gaussian-kernel negative control are available. | Current decision: keep MacKay diagnostic-only. Public validation should remain generated zero-level metrics unless a source-derived numeric target is extracted later. |
 | Bolelli and Prandi 2025, time-periodic inputs | High | Strong: periodic input theorem, linear periodic-state formula, DoG kernel, localized flicker inputs, contour-width pole diagnostics, and example parameters are available. | The current report layer is source-equation comparison; true source-panel digitization is only needed for later plot-image comparison or stronger calibration claims. |
 | Veltz, Chossat, Faugeras 2015, pinwheels | Medium | Good: neural field, local/long-range kernels, pinwheel lattices, symmetry groups, torus dynamics, and simulation parameters are available. | Requires pinwheel maps, wallpaper-group machinery, and large-domain FFT/continuation work. |
 | Faugeras, Song, Veltz 2022, spatial-color hallucinations | Medium | Good: 4D spatio-chromatic field, separable kernels, planform equations, branch examples, and continuation workflow are available. | Full implementation is high cost: 3D/4D state, continuation, and likely GPU-scale workloads. |
@@ -221,7 +221,7 @@ binary remains one crate, but its model-family code is split under
 - `models/bressloff/presets.rs`, `planform.rs`, and `reports.rs` own the
   Bressloff preset registry, orientation-hypercolumn planforms, stability
   diagnostics, and public calibration reports.
-- `models/rule/presets.rs`, `mod.rs`, `sweep.rs`, `floquet.rs`, `fit.rs`, and
+- `models/rule/presets.rs`, `mod.rs`, `sweep.rs`, `floquet/`, `fit.rs`, and
   `reports.rs` own the Rule preset registry, E/I flicker simulator, sweeps,
   Floquet boundary curves, Figure 8 fit diagnostics, and Rule reports.
 - `models/driven/registry.rs`, `mackay.rs`, `bolelli.rs`, `nicks.rs`, and
@@ -467,7 +467,11 @@ match exists, use `diagnostic`, `first_pass`, `calibration_target`, or
 Current report status:
 
 - MacKay: rendered target coverage and diagnostic metrics are present;
-  source-target comparison is still false.
+  source-target comparison is still false. Current project decision: keep MacKay
+  as diagnostic-only until a source-derived numeric target is extracted from the
+  paper equations or a public-safe source target. Do not block Bolelli/Nicks on
+  MacKay calibration, and do not promote localized-input visual similarity to
+  source-target or calibration language.
 - Bolelli: principal-pole width source-target comparisons and an accepted
   source-side pole-width convention are present. The report now includes
   public-safe Figure 5 source-equation curves for the three source DoG pairs. A

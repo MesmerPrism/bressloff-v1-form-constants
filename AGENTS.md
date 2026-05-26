@@ -129,10 +129,15 @@ rust-v1-sim/src/models/bressloff/
 rust-v1-sim/src/models/rule/
 rust-v1-sim/src/models/driven/
 rust-v1-sim/src/numeric/
+rust-v1-sim/src/params.rs
+rust-v1-sim/src/payload.rs
+rust-v1-sim/src/export.rs
 ```
 
 Prefer extending the local model-family module over adding logic back into
 `main.rs`. Shared numerical helpers belong under `rust-v1-sim/src/numeric/`.
+Request/query coercion and payload assembly belong in `params.rs` and
+`payload.rs`; export-only CLI glue belongs in `export.rs`.
 
 Common validation commands:
 
@@ -140,6 +145,12 @@ Common validation commands:
 cargo fmt --manifest-path rust-v1-sim\Cargo.toml
 cargo test --manifest-path rust-v1-sim\Cargo.toml
 git diff --check
+```
+
+Use the wrapper when a change may affect both reports and website assets:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify.ps1
 ```
 
 Report commands documented in `README.md` and `reports/README.md` should

@@ -1,6 +1,6 @@
 # Bressloff Future Implementation Plan
 
-Updated: 2026-05-24
+Updated: 2026-05-26
 
 This plan starts from the current Bressloff implementation state:
 
@@ -13,10 +13,13 @@ This plan starts from the current Bressloff implementation state:
   stability reports, and 1 stability review item.
 - The remaining work is calibration and model fidelity, not basic source
   incorporation.
-- Workstream 1 now has a generated-only report scaffold:
+- Workstream 1 now has a generated report plus a private source-profile pass:
   `reports/figure-targets/bressloff-generated-stills.json` exports stable
-  Figures 29-36 stills and public-safe derived metrics. Private/source-derived
-  masks remain the next step.
+  Figures 29-36 stills, public-safe derived metrics, and source-profile
+  residual fields populated from ignored private page renders/profile JSON.
+  It also records a conservative `acceptance_policy`, source-angle residuals,
+  and per-still threshold checks. This is a source-target comparison layer, not
+  figure-level reproduction.
 
 The implementation deliberately separates three claims:
 
@@ -49,17 +52,24 @@ only as named pattern families. It covers the non-contoured single-map figures
 1. Create a `reports/figure-targets/` convention for public-safe derived
    calibration data. Do not commit original figure scans unless reuse permission
    or a compatible license is confirmed.
-   Status: started with generated-only still targets and metrics.
+   Status: complete for the current v2 report schema.
 2. Add a local/private extraction path for source-page screenshots and derived
    binary/edge masks.
+   Status: first pass complete for Figures 29-36. Keep source PDFs, page
+   renders, crops, private config, and derived source profiles under ignored
+   `private/figure-targets/`; commit only generated report fields and
+   public-safe documentation.
 3. Add a calibration command mode that exports fixed-size rendered stills for
    each preset with stable viewport, scale, phase, and threshold settings.
    Status: started as `bressloff-geometry`.
 4. Add image metrics:
-   - orientation-independent structural similarity for scalar figures,
    - edge/contour overlap for contoured figures,
    - radial/angular profile error for rings, tunnels, and cobwebs,
-   - lattice-angle error for square, rhombic, and hexagonal figures.
+   - active-fraction and edge-density residuals for scalar masks,
+   - lattice-angle error from private source-angle annotations.
+   Status: implemented as first-pass source-target diagnostics. Source angles
+   currently use the same dominant angular-profile bin convention as the
+   generated still metrics.
 5. Add per-preset calibration fields:
    - target image/mask ID,
    - metric values,
@@ -73,6 +83,20 @@ only as named pattern families. It covers the non-contoured single-map figures
 - The report distinguishes categorical pass from geometry-calibrated pass.
 - Public docs can say which figures are calibrated without showing copyrighted
   figure crops.
+- Calibration language stays disabled until every required metric passes the
+  documented threshold gate and private crop/threshold/source-angle QA is
+  explicitly reviewed.
+
+Near-term source-profile extraction should prioritize public-safe derived data:
+radial profiles for rings/tunnels, angular profiles for rays/spirals/cobwebs,
+edge-density masks for contoured examples, and lattice-angle summaries for
+square, rhombic, and hexagonal examples. The first private profile pass now
+populates profile, active-fraction, edge-density, and angle residuals for all
+Figure 29-36 presets. The current public report records zero
+threshold-accepted stills, which is the correct state for a first-pass renderer.
+The next refinement is improving the renderer/parameters and repeating private
+QA of crop/threshold/source-angle choices. These are calibration metrics, not
+source-figure republication.
 
 **Effort**
 
@@ -307,6 +331,9 @@ models without forcing every paper into Bressloff-specific terms.
    preset registry and qualitative regime report.
 4. Return to Bressloff digitized calibration after Rule has a minimal working
    simulator and qualitative regime presets.
+   Status: unblocked. Rule now has sweep, Floquet, and Figure 8 diagnostic
+   reports, so the next Bressloff step is private source-profile extraction for
+   Figure 29-36 geometry metrics.
 
 This sequence keeps the project moving while avoiding a false sense that the
 remaining Bressloff work is a blocker for Rule. The unresolved Bressloff items

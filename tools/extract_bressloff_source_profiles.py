@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from PIL import Image, ImageFilter
+    from PIL import Image
 except ImportError as exc:  # pragma: no cover - runtime dependency guard
     raise SystemExit(
         "Pillow is required: python -m pip install pillow"
@@ -43,10 +43,50 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_luma(path: Path, invert: bool) -> tuple[list[float], int, int]:
-    image = Image.open(path).convert("L")
+def crop_image(image: Image.Image, crop_box: Any | None) -> Image.Image:
+    if crop_box is None:
+        return image
+    if not isinstance(crop_box, list) or len(crop_box) not in {4, 5}:
+        raise SystemExit("crop_box must be [left, top, right, bottom]")
+    left, top, right, bottom = [int(value) for value in crop_box[:4]]
+    return image.crop((left, top, right, bottom))
+
+
+def autocrop_image(
+    image: Image.Image, invert: bool, threshold: float, padding: int
+) -> Image.Image:
     width, height = image.size
-    values = [px / 255.0 for px in image.getdata()]
+    values = [px / 255.0 for px in image.tobytes()]
+    if invert:
+        values = [1.0 - value for value in values]
+    active_pixels = [
+        (index % width, index // width)
+        for index, value in enumerate(values)
+        if value >= threshold
+    ]
+    if not active_pixels:
+        return image
+    left = max(0, min(x for x, _ in active_pixels) - padding)
+    top = max(0, min(y for _, y in active_pixels) - padding)
+    right = min(width, max(x for x, _ in active_pixels) + padding + 1)
+    bottom = min(height, max(y for _, y in active_pixels) + padding + 1)
+    return image.crop((left, top, right, bottom))
+
+
+def load_luma(
+    path: Path,
+    invert: bool,
+    crop_box: Any | None,
+    autocrop: bool,
+    threshold: float,
+    autocrop_padding: int,
+) -> tuple[list[float], int, int]:
+    image = Image.open(path).convert("L")
+    image = crop_image(image, crop_box)
+    if autocrop:
+        image = autocrop_image(image, invert, threshold, autocrop_padding)
+    width, height = image.size
+    values = [px / 255.0 for px in image.tobytes()]
     if invert:
         values = [1.0 - value for value in values]
     return values, width, height
@@ -101,6 +141,13 @@ def angular_profile(values: list[float], width: int, height: int, bins: int) -> 
     return [sums[i] / counts[i] if counts[i] else 0.0 for i in range(bins)]
 
 
+def dominant_angle_degrees(profile: list[float]) -> float | None:
+    if not profile:
+        return None
+    index = max(range(len(profile)), key=lambda i: profile[i])
+    return (index + 0.5) * 360.0 / len(profile)
+
+
 def normalize_entry(
     config_path: Path, entry: dict[str, Any], radial_bins: int, angular_bins: int
 ) -> dict[str, Any]:
@@ -110,8 +157,28 @@ def normalize_entry(
         source_path = (config_path.parent / source_path).resolve()
     threshold = float(entry.get("threshold", 0.5))
     invert = bool(entry.get("invert", False))
-    values, width, height = load_luma(source_path, invert)
+    autocrop = bool(entry.get("autocrop", False))
+    autocrop_padding = int(entry.get("autocrop_padding", 4))
+    values, width, height = load_luma(
+        source_path,
+        invert,
+        entry.get("crop_box"),
+        autocrop,
+        threshold,
+        autocrop_padding,
+    )
     mask = threshold_mask(values, threshold)
+    radial = radial_profile(
+        mask, width, height, int(entry.get("radial_bins", radial_bins))
+    )
+    angular = angular_profile(
+        mask, width, height, int(entry.get("angular_bins", angular_bins))
+    )
+    source_angle = entry.get("lattice_angle_degrees")
+    angle_method = entry.get("angle_annotation_method")
+    if source_angle is None:
+        source_angle = dominant_angle_degrees(angular)
+        angle_method = angle_method or "dominant_angular_profile_bin_center"
     return {
         "format": "bressloff-source-profile-v1",
         "preset_id": preset_id,
@@ -123,16 +190,17 @@ def normalize_entry(
         ),
         "width": width,
         "height": height,
+        "crop_box": entry.get("crop_box"),
+        "autocrop": autocrop,
+        "autocrop_padding": autocrop_padding if autocrop else None,
         "threshold": threshold,
         "active_fraction": sum(mask) / len(mask) if mask else 0.0,
         "edge_density": edge_density(mask, width, height),
-        "lattice_angle_degrees": entry.get("lattice_angle_degrees"),
-        "radial_profile": radial_profile(
-            mask, width, height, int(entry.get("radial_bins", radial_bins))
-        ),
-        "angular_profile": angular_profile(
-            mask, width, height, int(entry.get("angular_bins", angular_bins))
-        ),
+        "lattice_angle_degrees": source_angle,
+        "angle_annotation_method": angle_method,
+        "crop_qa_status": entry.get("crop_qa_status", "first_pass_private_crop_reviewed"),
+        "radial_profile": radial,
+        "angular_profile": angular,
     }
 
 

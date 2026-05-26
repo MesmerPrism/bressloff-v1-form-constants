@@ -1,6 +1,6 @@
 # Rule 2011 Implementation Status
 
-Updated: 2026-05-24
+Updated: 2026-05-26
 
 Rule, Stoffregen, and Ermentrout 2011 is implemented as a separate model
 family:
@@ -135,6 +135,25 @@ against the published Figure 8C boundary geometry. The current comparison is a
 calibration diagnostic, not a claim of reproduction; remaining error is
 expected until the Rule constants, branch coverage, and domain scale are tuned.
 
+Current Figure 8 claim gate:
+
+- `source_curve_comparison.fit_objective.status` must be `scored`.
+- All four source branches must have a matched generated branch with overlapping
+  period support; current status is still partial coverage.
+- Domain-normalized beta RMS should be treated as the primary model-domain
+  residual; raw, scale-only, and affine mappings stay diagnostics.
+- The report now records the explicit diagnostic gate in
+  `fit_objective`: domain-normalized beta RMS <= `0.10`, source branch coverage
+  `1.0`, generated curve coverage >= `0.95`, overlap point coverage >= `0.75`,
+  continuity score >= `0.75`, ordering score `1.0`, and underresolved branch
+  fraction `0.0`.
+- `fit_objective.calibration_claim_allowed` remains `false`. Passing this gate
+  would only mark the comparison as a threshold-accepted diagnostic; a stronger
+  calibration claim still needs a separate source-figure review decision.
+- Until those thresholds are met and recorded in the report, the website should
+  continue to say `diagnostic`, `source-target comparison`, or `calibration
+  target`, not `calibrated reproduction`.
+
 Generate the compact Figure 8 fit-search report with:
 
 ```powershell
@@ -169,7 +188,9 @@ bressloff-paper-calibration-v4
 
 - Paper-calibrated dense sweeps for Rule Figures 3 and 6.
 - Further Figure 8 calibration: reduce the current source-curve residuals by
-  tuning model constants and domain/wave-number normalization.
+  tuning model constants and domain/wave-number normalization, then promote
+  report-level acceptance thresholds only after all branches pass the documented
+  gate above.
 - Feed-forward inhibition sweep for Rule Figure 9.
 - Hexagonal-lattice normal-form report for Rule Figure 10.
 - Two-hemifield coupling for Rule Figure 11.

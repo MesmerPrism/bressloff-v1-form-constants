@@ -83,7 +83,22 @@
     },
     "fit_objective": {
       "status": "scored",
+      "acceptance_status": "outside-threshold-diagnostic",
+      "calibration_claim_allowed": false,
       "score": 0.42553929432078735,
+      "domain_normalized_rms_beta_error_max": 0.1,
+      "source_branch_coverage_min": 1.0,
+      "generated_curve_coverage_min": 0.95,
+      "overlap_point_coverage_min": 0.75,
+      "continuity_score_min": 0.75,
+      "ordering_score_min": 1.0,
+      "underresolved_branch_fraction_max": 0.0,
+      "failed_acceptance_checks": [
+        "domain_normalized_rms_beta_error",
+        "source_branch_coverage",
+        "continuity_score",
+        "underresolved_branch_fraction"
+      ],
       "domain_normalized_rms_beta_error": 0.15399214217014467,
       "raw_rms_beta_error": 0.873789020705062,
       "affine_rms_beta_error": 0.08320113162874257,

@@ -2,13 +2,28 @@
   "format": "bressloff-generated-figure-stills-v2",
   "model_family": "bressloff_orientation_hypercolumn",
   "source_key": "bressloff-2001-2002",
-  "status": "generated-targets-ready-for-private-mask-calibration",
+  "status": "generated-vs-source-derived-comparison",
   "note": "Bressloff figure stills and public-safe geometry metrics. Private source scans/crops stay out of the report; comparisons use only derived numeric masks/profiles when available.",
-  "source_profile_dir": "private/figure-targets/derived",
+  "acceptance_policy": {
+    "policy_id": "bressloff-figure-geometry-diagnostic-v1",
+    "claim_level": "source-target-diagnostic",
+    "calibration_claim_allowed": false,
+    "radial_profile_error_max": 0.12,
+    "angular_profile_error_max": 0.12,
+    "edge_overlap_min": 0.7,
+    "active_fraction_error_max": 0.08,
+    "edge_density_error_max": 0.04,
+    "lattice_angle_error_degrees_max": 15.0,
+    "required_compared_still_fraction": 1.0,
+    "note": "These thresholds gate future calibration language. Passing them would only mark a source-target diagnostic as threshold-accepted; calibration claims remain disabled until private crop/threshold QA, source-angle review, and figure-level acceptance policy are separately approved."
+  },
+  "calibration_claim_allowed": false,
+  "source_profile_dir": "private\\figure-targets\\derived",
   "width": 96,
   "height": 96,
   "still_count": 16,
-  "compared_still_count": 0,
+  "compared_still_count": 16,
+  "threshold_accepted_still_count": 0,
   "stills": [
     {
       "preset": {
@@ -30,8 +45,8 @@
         "visual_target": "single inverse retinocortical map of a non-contoured square activity planform",
         "source_note": "Activity-threshold planform; no local orientation contours are sampled."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig29a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -96,15 +111,30 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig29a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig29a-private-mask",
+        "generated_dominant_angle_degrees": 352.5,
+        "source_lattice_angle_degrees": 352.5,
+        "radial_profile_error": 0.12282074013219804,
+        "angular_profile_error": 0.09456602496720497,
+        "edge_overlap": 0.3194777995153639,
+        "active_fraction_error": 0.08402405403235158,
+        "edge_density_error": 0.12226399503392092,
+        "lattice_angle_error_degrees": 0.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 2,
+        "failed_metrics": [
+          "radial_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -127,8 +157,8 @@
         "visual_target": "single inverse retinocortical map of a non-contoured roll activity planform",
         "source_note": "Rendered with the rings/tunnel roll orientation; rotate manually for ray or spiral variants."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig29b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -193,15 +223,29 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig29b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig29b-private-mask",
+        "generated_dominant_angle_degrees": 262.5,
+        "source_lattice_angle_degrees": 97.5,
+        "radial_profile_error": 0.11898054375947675,
+        "angular_profile_error": 0.08814678004288234,
+        "edge_overlap": 0.5837022196237148,
+        "active_fraction_error": 0.08273459024363894,
+        "edge_density_error": 0.0518288588489111,
+        "lattice_angle_error_degrees": 15.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 3,
+        "failed_metrics": [
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -224,8 +268,8 @@
         "visual_target": "single inverse retinocortical map of a non-contoured rhombic activity planform",
         "source_note": "Activity-threshold companion to the contoured rhombic Figure 33/34 family."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig30a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -290,15 +334,31 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig30a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig30a-private-mask",
+        "generated_dominant_angle_degrees": 322.5,
+        "source_lattice_angle_degrees": 37.5,
+        "radial_profile_error": 0.13420781847105442,
+        "angular_profile_error": 0.0853384888489583,
+        "edge_overlap": 0.46868468200355384,
+        "active_fraction_error": 0.08709976093677274,
+        "edge_density_error": 0.08818781060811393,
+        "lattice_angle_error_degrees": 75.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 1,
+        "failed_metrics": [
+          "radial_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -321,8 +381,8 @@
         "visual_target": "single inverse retinocortical map of a non-contoured hexagonal activity planform",
         "source_note": "Uses the neutral three-wave hexagonal basis without interpreting local contour orientation."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig30b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -387,15 +447,31 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig30b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig30b-private-mask",
+        "generated_dominant_angle_degrees": 337.5,
+        "source_lattice_angle_degrees": 37.5,
+        "radial_profile_error": 0.1257865549524008,
+        "angular_profile_error": 0.1108674648464522,
+        "edge_overlap": 0.35972937431483665,
+        "active_fraction_error": 0.1145767180575073,
+        "edge_density_error": 0.10372516286899039,
+        "lattice_angle_error_degrees": 60.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 1,
+        "failed_metrics": [
+          "radial_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -418,8 +494,8 @@
         "visual_target": "square lattice in cortex mapped to cobweb-like visual-field structure",
         "source_note": "Analytic planform preset for checking the double-map geometry."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig31a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -484,15 +560,31 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig31a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig31a-private-mask",
+        "generated_dominant_angle_degrees": 352.5,
+        "source_lattice_angle_degrees": 172.5,
+        "radial_profile_error": 0.25767699490482765,
+        "angular_profile_error": 0.2583995603158095,
+        "edge_overlap": 0.230005248722421,
+        "active_fraction_error": 0.26068574524486754,
+        "edge_density_error": 0.22736101467740816,
+        "lattice_angle_error_degrees": 0.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 1,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -515,8 +607,8 @@
         "visual_target": "even roll branch mapped through the double retinocortical map",
         "source_note": "Roll companion subpanel for the even square/cobweb figure."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig31b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -581,15 +673,30 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig31b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig31b-private-mask",
+        "generated_dominant_angle_degrees": 97.5,
+        "source_lattice_angle_degrees": 67.5,
+        "radial_profile_error": 0.19126777603196465,
+        "angular_profile_error": 0.18863988407081536,
+        "edge_overlap": 0.8735373096803838,
+        "active_fraction_error": 0.19194602890168283,
+        "edge_density_error": 0.018026877255390303,
+        "lattice_angle_error_degrees": 30.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 2,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "active_fraction_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -612,8 +719,8 @@
         "visual_target": "odd square lattice variant mapped through the retino-cortical double map",
         "source_note": "Analytic planform preset for checking parity-dependent contour structure."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig32a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -678,15 +785,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig32a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig32a-private-mask",
+        "generated_dominant_angle_degrees": 82.5,
+        "source_lattice_angle_degrees": 187.5,
+        "radial_profile_error": 0.31423177726125084,
+        "angular_profile_error": 0.3071915911549557,
+        "edge_overlap": 0.34164756822539755,
+        "active_fraction_error": 0.30323178741139556,
+        "edge_density_error": 0.11913246210169301,
+        "lattice_angle_error_degrees": 75.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -709,8 +833,8 @@
         "visual_target": "odd roll branch mapped through the double retinocortical map",
         "source_note": "Roll companion subpanel for the odd square/cobweb figure."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig32b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -775,15 +899,31 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig32b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig32b-private-mask",
+        "generated_dominant_angle_degrees": 82.5,
+        "source_lattice_angle_degrees": 112.5,
+        "radial_profile_error": 0.16925736354891807,
+        "angular_profile_error": 0.15774915325774705,
+        "edge_overlap": 0.7456803933625622,
+        "active_fraction_error": 0.16186771829362723,
+        "edge_density_error": 0.042461435328498415,
+        "lattice_angle_error_degrees": 30.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 1,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -806,8 +946,8 @@
         "visual_target": "rhombic cortical lattice mapped into warped visual-field contours",
         "source_note": "Analytic planform preset for the oblique-lattice family."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig33a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -872,15 +1012,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig33a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig33a-private-mask",
+        "generated_dominant_angle_degrees": 262.5,
+        "source_lattice_angle_degrees": 112.5,
+        "radial_profile_error": 0.2994104019630899,
+        "angular_profile_error": 0.2895768269813268,
+        "edge_overlap": 0.456774468728968,
+        "active_fraction_error": 0.2930536432836374,
+        "edge_density_error": 0.11330512919402538,
+        "lattice_angle_error_degrees": 30.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -903,8 +1060,8 @@
         "visual_target": "even roll branch in the rhombic family mapped through the double map",
         "source_note": "Roll companion subpanel for the even rhombic figure."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig33b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -969,15 +1126,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig33b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig33b-private-mask",
+        "generated_dominant_angle_degrees": 307.5,
+        "source_lattice_angle_degrees": 82.5,
+        "radial_profile_error": 0.24482764693094403,
+        "angular_profile_error": 0.24845368451872465,
+        "edge_overlap": 0.6876511850460613,
+        "active_fraction_error": 0.2502064951516558,
+        "edge_density_error": 0.05504180839367749,
+        "lattice_angle_error_degrees": 45.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1000,8 +1174,8 @@
         "visual_target": "odd rhombic cortical lattice mapped through the retino-cortical double map",
         "source_note": "Analytic companion to the even rhombic Fig 33 preset; calibration still depends on the paper rhombic angle."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig34a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1066,15 +1240,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig34a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig34a-private-mask",
+        "generated_dominant_angle_degrees": 352.5,
+        "source_lattice_angle_degrees": 82.5,
+        "radial_profile_error": 0.2826462866887367,
+        "angular_profile_error": 0.27786061231779874,
+        "edge_overlap": 0.2721433763792921,
+        "active_fraction_error": 0.28129956623473107,
+        "edge_density_error": 0.2760431298376128,
+        "lattice_angle_error_degrees": 90.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1097,8 +1288,8 @@
         "visual_target": "odd roll branch in the rhombic family mapped through the double map",
         "source_note": "Roll companion subpanel for the odd rhombic figure."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig34b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1163,15 +1354,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig34b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig34b-private-mask",
+        "generated_dominant_angle_degrees": 307.5,
+        "source_lattice_angle_degrees": 82.5,
+        "radial_profile_error": 0.24406870858116472,
+        "angular_profile_error": 0.24777814991534583,
+        "edge_overlap": 0.6918375882660038,
+        "active_fraction_error": 0.24934123405749867,
+        "edge_density_error": 0.05430302436595372,
+        "lattice_angle_error_degrees": 45.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1194,8 +1402,8 @@
         "visual_target": "hexagonal branch with pi-phase sign structure",
         "source_note": "Analytic planform preset for the three-wave hexagonal family."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig35a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1260,15 +1468,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig35a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig35a-private-mask",
+        "generated_dominant_angle_degrees": 67.5,
+        "source_lattice_angle_degrees": 37.5,
+        "radial_profile_error": 0.16323760332177903,
+        "angular_profile_error": 0.12123445027546102,
+        "edge_overlap": 0.3709376761445977,
+        "active_fraction_error": 0.1381036829228658,
+        "edge_density_error": 0.21666173971440694,
+        "lattice_angle_error_degrees": 30.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1291,8 +1516,8 @@
         "visual_target": "0-hexagonal even phase partner of the Fig 35 hexagonal planform",
         "source_note": "Analytic phase companion to the pi-hexagonal Fig 35 preset."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig35b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1357,15 +1582,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig35b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig35b-private-mask",
+        "generated_dominant_angle_degrees": 82.5,
+        "source_lattice_angle_degrees": 127.5,
+        "radial_profile_error": 0.3172182942023247,
+        "angular_profile_error": 0.31271290169123583,
+        "edge_overlap": 0.25757248841578795,
+        "active_fraction_error": 0.34069645411572724,
+        "edge_density_error": 0.2615131953439731,
+        "lattice_angle_error_degrees": 45.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1388,8 +1630,8 @@
         "visual_target": "odd triangular branch on a hexagonal lattice mapped through the double map",
         "source_note": "Uses the odd hexagonal sine-combination branch; higher-order terms determine stability in the source discussion."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig36a-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1454,15 +1696,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig36a-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig36a-private-mask",
+        "generated_dominant_angle_degrees": 127.5,
+        "source_lattice_angle_degrees": 217.5,
+        "radial_profile_error": 0.25848319428233524,
+        "angular_profile_error": 0.2542294403368291,
+        "edge_overlap": 0.24674356426177857,
+        "active_fraction_error": 0.2560909729350116,
+        "edge_density_error": 0.2887858724967563,
+        "lattice_angle_error_degrees": 90.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     },
     {
@@ -1485,8 +1744,8 @@
         "visual_target": "odd 0-hexagonal branch on a hexagonal lattice mapped through the double map",
         "source_note": "Odd-parity companion to the even 0-hexagonal phase target."
       },
-      "target_mask_status": "source-profile-missing",
-      "target_mask_id": null,
+      "target_mask_status": "compared",
+      "target_mask_id": "bressloff-2001-fig36b-private-mask",
       "width": 96,
       "height": 96,
       "frame_index": 7,
@@ -1551,15 +1810,32 @@
         ]
       },
       "source_comparison": {
-        "status": "source-profile-missing",
-        "source_profile_id": null,
-        "source_mask_id": null,
-        "radial_profile_error": null,
-        "angular_profile_error": null,
-        "edge_overlap": null,
-        "active_fraction_error": null,
-        "edge_density_error": null,
-        "lattice_angle_error_degrees": null
+        "status": "compared",
+        "source_profile_id": "bressloff-2001-fig36b-private-derived-profile",
+        "source_mask_id": "bressloff-2001-fig36b-private-mask",
+        "generated_dominant_angle_degrees": 97.5,
+        "source_lattice_angle_degrees": 202.5,
+        "radial_profile_error": 0.15436233075987477,
+        "angular_profile_error": 0.14669882170271317,
+        "edge_overlap": 0.20563957605519423,
+        "active_fraction_error": 0.1491578212540498,
+        "edge_density_error": 0.33975440220526787,
+        "lattice_angle_error_degrees": 75.0
+      },
+      "acceptance": {
+        "status": "outside-threshold-diagnostic",
+        "passes_thresholds": false,
+        "evaluated_metric_count": 6,
+        "passed_metric_count": 0,
+        "failed_metrics": [
+          "radial_profile_error",
+          "angular_profile_error",
+          "edge_overlap",
+          "active_fraction_error",
+          "edge_density_error",
+          "lattice_angle_error_degrees"
+        ],
+        "note": "One or more diagnostic thresholds fail or are missing; use source-target diagnostic language only."
       }
     }
   ]
